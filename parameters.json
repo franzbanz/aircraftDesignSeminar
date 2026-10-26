@@ -1,0 +1,28 @@
+{
+  "payload": {
+    "numberOfPassengers": [19, ""],
+    "weightPerPassenger": [90, "kg"],
+    "maxStructuralPayloadPerPassenger": [100, "kg"],
+    "luggageVolumePerPassenger": [110, "liters"]
+  },
+  "mission": {
+    "range": [185.2, "km"],
+    "routeReserve": [0.05, ""],
+    "diversionDistance": [92.6, "km"],
+    "loiterTime": [0.5, "h"],
+    "turnaroundTimeMax": [1, "h"]
+  },
+  "performance": {
+    "takeOffFieldLengthMax": [800, "m"],
+    "takeOffMassMax": [8.618, "kg"], 
+    "takeOffAltitude": [0, "m"],
+    "takeOffTemperature": [15, "degC"],
+    "takeOffPressure": [101325, "pa"],
+    "takeOffDensity": [1.225, "kg/m^3"],
+    "cruiseSpeedMin": [170, "kt"]
+  },
+  "battery": {
+    "cellEnergyDensityMax": [420, "Wh/kg"],
+    "cellToPackFactorMin": [1.2, ""]
+  }
+}
