@@ -14,7 +14,8 @@
   },
   "performance": {
     "takeOffFieldLengthMax": [800, "m"],
-    "takeOffMassMax": [8.618, "kg"], 
+    "landingFieldLengthMax": [800, "m"],
+    "takeOffMassMax": [8618, "kg"],
     "takeOffAltitude": [0, "m"],
     "takeOffTemperature": [15, "degC"],
     "takeOffPressure": [101325, "pa"],

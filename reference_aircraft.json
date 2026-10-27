@@ -1,0 +1,35 @@
+{
+  "mass": {
+    "takeOffMass": [6400, "kg"],
+    "wing": [645, "kg"],
+    "fuselage": [765, "kg"],
+    "horizontalEmpennage": [90, "kg"],
+    "verticalEmpennage": [60, "kg"],
+    "landingGear": [285, "kg"],
+    "pylons": [105, "kg"],
+    "engine": [585, "kg"],
+    "systems": [675, "kg"],
+    "furnishings": [270, "kg"],
+    "operatorItems": [435, "kg"]
+  },
+  "dimensions": {
+    "wingArea": [32.0, "m^2"],
+    "wingspan": [17, "m"],
+    "fuselageLength": [16.6, "m"],
+    "fuselageHeight": [2.0, "m"],
+    "horizontalTailArea": [8.3, "m^2"],
+    "verticalTailArea": [6.0, "m^2"]
+  },
+  "flightLoads": {
+    "ultimateLoadFactor": [3.75, ""]
+  },
+  "aerodynamics": {
+    "liftToDragRatioCruise": [12.1, ""],
+    "maxTakeOffLiftCoefficient": [1.7, ""],
+    "maxLandingLiftCoefficient": [2.6, ""]
+  },
+  "propulsion": {
+    "engineTakeOffPower": [580, "kW"],
+    "numberOfEngines": [2, ""]
+  }
+}
