@@ -1,6 +1,6 @@
 {
   "mass": {
-    "takeOffMass": [6400, "kg"],
+    "takeOffMassMax": [6400, "kg"],
     "wing": [645, "kg"],
     "fuselage": [765, "kg"],
     "horizontalEmpennage": [90, "kg"],
@@ -16,6 +16,7 @@
     "wingArea": [32.0, "m^2"],
     "wingspan": [17, "m"],
     "fuselageLength": [16.6, "m"],
+    "fuselageWidth": [1.7, "m"],
     "fuselageHeight": [2.0, "m"],
     "horizontalTailArea": [8.3, "m^2"],
     "verticalTailArea": [6.0, "m^2"]
