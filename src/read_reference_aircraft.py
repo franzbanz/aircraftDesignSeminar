@@ -16,8 +16,10 @@ from mass_formulas import (
     calc_horizontal_tail_volume_coefficient,
     calc_landing_gear_mass,
     calc_mean_aerodynamic_chord,
+    calc_pylons_mass,
     calc_systems_mass,
     calc_vertical_tail_volume_coefficient,
+    calc_wing_mass,
 )
 from read_parameters import Parameter, _parameter_group
 
@@ -27,6 +29,8 @@ class ReferenceMassParameters:
     """Component mass breakdown parameters for the reference aircraft."""
 
     takeOffMassMax: Parameter
+    landingMassMax: Parameter
+    zeroFuelMassMax: Parameter
     wing: Parameter
     fuselage: Parameter
     horizontalEmpennage: Parameter
@@ -51,6 +55,16 @@ class ReferenceMassParameters:
         """Alias for maximum take-off mass (takeOffMassMax)."""
         return self.takeOffMassMax
 
+    @property
+    def mlm(self) -> Parameter:
+        """Alias for maximum landing mass (landingMassMax)."""
+        return self.landingMassMax
+
+    @property
+    def mzfm(self) -> Parameter:
+        """Alias for maximum zero-fuel mass (zeroFuelMassMax)."""
+        return self.zeroFuelMassMax
+
 
 @dataclass(frozen=True)
 class ReferenceDimensionsParameters:
@@ -66,10 +80,37 @@ class ReferenceDimensionsParameters:
 
 
 @dataclass(frozen=True)
-class ReferenceFlightLoadsParameters:
-    """Structural flight load parameters of the reference aircraft."""
+class ReferencePerformanceParameters:
+    """Cruise performance parameters of the reference aircraft."""
 
-    ultimateLoadFactor: Parameter
+    cruiseSpeedTAS: Parameter
+    cruiseAltitude: Parameter
+
+
+@dataclass(frozen=True)
+class ReferenceAssumptionsParameters:
+    """Assumed parameters for the reference aircraft (not directly specified in datasheet)."""
+
+    limitLoad: Parameter
+    maxTakeOffLiftCoefficient: Parameter
+    wingRootThickness: Parameter
+    wingSweepHalfChord: Parameter
+    wingMassPenaltyFactor: Parameter
+
+    @property
+    def CA_MAX_TO(self) -> Parameter:
+        """Short alias for maximum take-off lift coefficient."""
+        return self.maxTakeOffLiftCoefficient
+
+    @property
+    def d_root(self) -> Parameter:
+        """Short alias for wing root thickness."""
+        return self.wingRootThickness
+
+    @property
+    def phi_50(self) -> Parameter:
+        """Short alias for mid-chord wing sweep angle."""
+        return self.wingSweepHalfChord
 
 
 @dataclass(frozen=True)
@@ -77,7 +118,6 @@ class ReferenceAerodynamicParameters:
     """Aerodynamic performance parameters of the reference aircraft."""
 
     liftToDragRatioCruise: Parameter
-    maxTakeOffLiftCoefficient: Parameter
     maxLandingLiftCoefficient: Parameter
 
     @property
@@ -91,11 +131,6 @@ class ReferenceAerodynamicParameters:
         return self.liftToDragRatioCruise
 
     @property
-    def CA_MAX_TO(self) -> Parameter:
-        """Short alias for maximum take-off lift coefficient."""
-        return self.maxTakeOffLiftCoefficient
-
-    @property
     def CA_MAX_LDG(self) -> Parameter:
         """Short alias for maximum landing lift coefficient."""
         return self.maxLandingLiftCoefficient
@@ -107,6 +142,7 @@ class ReferencePropulsionParameters:
 
     engineTakeOffPower: Parameter
     numberOfEngines: Parameter
+    tsfcCruise: Parameter
 
     @property
     def totalTakeOffPower(self) -> Parameter:
@@ -118,15 +154,47 @@ class ReferencePropulsionParameters:
 
 
 @dataclass(frozen=True)
+class ReferenceFuelParameters:
+    """Fuel energy density and mission phase fuel masses of the reference aircraft."""
+
+    energyDensity: Parameter
+    taxiOutAndTakeOff: Parameter
+    climb: Parameter
+    cruise: Parameter
+    descent: Parameter
+    approachLandingAndTaxiIn: Parameter
+
+    @property
+    def totalMass(self) -> Parameter:
+        """Returns total mission fuel mass across all flight phases."""
+        return Parameter(
+            value=(
+                self.taxiOutAndTakeOff.value
+                + self.climb.value
+                + self.cruise.value
+                + self.descent.value
+                + self.approachLandingAndTaxiIn.value
+            ),
+            unit=self.cruise.unit,
+        )
+
+
+@dataclass(frozen=True)
 class ReferenceCalculatedValues:
     """Values calculated/derived for the reference aircraft (not directly specified in JSON)."""
 
     aspectRatio: Parameter
     meanAerodynamicChord: Parameter
+    structuralWingspan: Parameter
+    designDivingSpeed: Parameter
+    ultimateLoadFactor: Parameter
     horizontalTailLeverArm: Parameter
     verticalTailLeverArm: Parameter
     horizontalTailVolumeCoefficient: Parameter
     verticalTailVolumeCoefficient: Parameter
+
+    wingEstimatedMass: Parameter
+    wingCalibrationFactor: Parameter
 
     landingGearEstimatedMass: Parameter
     landingGearCalibrationFactor: Parameter
@@ -136,6 +204,9 @@ class ReferenceCalculatedValues:
 
     empennageEstimatedMass: Parameter
     empennageCalibrationFactor: Parameter
+
+    pylonsEstimatedMass: Parameter
+    pylonsCalibrationFactor: Parameter
 
     systemsEstimatedMass: Parameter
     systemsCalibrationFactor: Parameter
@@ -150,6 +221,21 @@ class ReferenceCalculatedValues:
     def c_mu(self) -> Parameter:
         """Short alias for mean aerodynamic chord."""
         return self.meanAerodynamicChord
+
+    @property
+    def b_s(self) -> Parameter:
+        """Short alias for structural wingspan."""
+        return self.structuralWingspan
+
+    @property
+    def v_D(self) -> Parameter:
+        """Short alias for design diving speed (v_D = 1.25 * v_cruise)."""
+        return self.designDivingSpeed
+
+    @property
+    def n_ult(self) -> Parameter:
+        """Short alias for ultimate load factor (n_ult = 1.5 * n_max)."""
+        return self.ultimateLoadFactor
 
     @property
     def c_HT(self) -> Parameter:
@@ -178,17 +264,20 @@ class ReferenceAircraft:
 
     mass: ReferenceMassParameters
     dimensions: ReferenceDimensionsParameters
-    flightLoads: ReferenceFlightLoadsParameters
+    performance: ReferencePerformanceParameters
+    assumptions: ReferenceAssumptionsParameters
     aerodynamics: ReferenceAerodynamicParameters
     propulsion: ReferencePropulsionParameters
+    fuel: ReferenceFuelParameters
     calculatedValues: ReferenceCalculatedValues
 
 
 def _compute_reference_calculated_values(
     mass: ReferenceMassParameters,
     dimensions: ReferenceDimensionsParameters,
-    flightLoads: ReferenceFlightLoadsParameters,
-    v_D: float = 140.0,
+    performance: ReferencePerformanceParameters,
+    assumptions: ReferenceAssumptionsParameters,
+    propulsion: ReferencePropulsionParameters,
     r_H: float = 8.8,
     r_V: float = 8.8,
     delta_m_F: float = 0.07,
@@ -198,8 +287,9 @@ def _compute_reference_calculated_values(
     Args:
         mass: Reference aircraft mass breakdown parameters.
         dimensions: Reference aircraft geometric dimensions.
-        flightLoads: Reference aircraft structural load parameters.
-        v_D: Design diving speed [m/s].
+        performance: Reference aircraft cruise performance parameters.
+        assumptions: Reference aircraft assumed parameters.
+        propulsion: Reference aircraft propulsion parameters.
         r_H: Horizontal tail lever arm [m].
         r_V: Vertical tail lever arm [m].
         delta_m_F: Fuselage mass penalty factor [-].
@@ -211,6 +301,7 @@ def _compute_reference_calculated_values(
     b_w = dimensions.wingspan
     aspect_ratio = (b_w ** 2) / s_w
     c_mu = calc_mean_aerodynamic_chord(s_w, b_w)
+    b_s = b_w / math.cos(math.radians(assumptions.wingSweepHalfChord))
 
     b_r = dimensions.fuselageWidth
     h_r = dimensions.fuselageHeight
@@ -226,15 +317,32 @@ def _compute_reference_calculated_values(
 
     # Component mass estimations using uncalibrated formulas
     mtom_ref = mass.takeOffMassMax
+    mzfm_ref = mass.zeroFuelMassMax
+    n_ult = 1.5 * assumptions.limitLoad
+    # Design diving speed v_D = 1.25 * v_cruise converted from kts to m/s
+    v_D = 1.25 * performance.cruiseSpeedTAS * (1.852 / 3.6)
+
+    m_wing_calc = calc_wing_mass(
+        mzfm=mzfm_ref,
+        b_s=b_s,
+        n_ult=n_ult,
+        d_root=assumptions.wingRootThickness,
+        s_w=s_w,
+        delta_m_F=assumptions.wingMassPenaltyFactor,
+    )
+    k_wing = mass.wing / m_wing_calc
+
     m_lg_calc = calc_landing_gear_mass(mtom_ref)
     k_lg = mass.landingGear / m_lg_calc
 
     m_fus_calc = calc_fuselage_mass(v_D, r_H, b_r, h_r, s_o, delta_m_F)
     k_fus = mass.fuselage / m_fus_calc
 
-    n_ult = flightLoads.ultimateLoadFactor
     m_emp_calc = calc_empennage_mass(n_ult, s_htp, s_vtp)
     k_emp = mass.empennage / m_emp_calc
+
+    m_pyl_calc = calc_pylons_mass(propulsion.totalTakeOffPower)
+    k_pyl = mass.pylons / m_pyl_calc
 
     m_sys_calc = calc_systems_mass(mtom_ref)
     k_sys = mass.systems / m_sys_calc
@@ -242,16 +350,23 @@ def _compute_reference_calculated_values(
     return ReferenceCalculatedValues(
         aspectRatio=Parameter(aspect_ratio, ""),
         meanAerodynamicChord=Parameter(c_mu, "m"),
+        structuralWingspan=Parameter(b_s, "m"),
+        designDivingSpeed=Parameter(v_D, "m/s"),
+        ultimateLoadFactor=Parameter(n_ult, ""),
         horizontalTailLeverArm=Parameter(r_H, "m"),
         verticalTailLeverArm=Parameter(r_V, "m"),
         horizontalTailVolumeCoefficient=Parameter(c_ht, ""),
         verticalTailVolumeCoefficient=Parameter(c_vt, ""),
+        wingEstimatedMass=Parameter(m_wing_calc, "kg"),
+        wingCalibrationFactor=Parameter(k_wing, ""),
         landingGearEstimatedMass=Parameter(m_lg_calc, "kg"),
         landingGearCalibrationFactor=Parameter(k_lg, ""),
         fuselageEstimatedMass=Parameter(m_fus_calc, "kg"),
         fuselageCalibrationFactor=Parameter(k_fus, ""),
         empennageEstimatedMass=Parameter(m_emp_calc, "kg"),
         empennageCalibrationFactor=Parameter(k_emp, ""),
+        pylonsEstimatedMass=Parameter(m_pyl_calc, "kg"),
+        pylonsCalibrationFactor=Parameter(k_pyl, ""),
         systemsEstimatedMass=Parameter(m_sys_calc, "kg"),
         systemsCalibrationFactor=Parameter(k_sys, ""),
     )
@@ -269,7 +384,6 @@ def _find_reference_file() -> Path:
 
 def load_reference_aircraft(
     path: Path | str | None = None,
-    v_D: float = 140.0,
     r_H: float = 8.8,
     r_V: float = 8.8,
     delta_m_F: float = 0.07,
@@ -278,7 +392,6 @@ def load_reference_aircraft(
 
     Args:
         path: Optional explicit path to the reference aircraft JSON file.
-        v_D: Design diving speed [m/s].
         r_H: Horizontal tail lever arm [m].
         r_V: Vertical tail lever arm [m].
         delta_m_F: Fuselage mass penalty factor [-].
@@ -292,15 +405,18 @@ def load_reference_aircraft(
 
     mass = ReferenceMassParameters(**_parameter_group(data["mass"]))
     dimensions = ReferenceDimensionsParameters(**_parameter_group(data["dimensions"]))
-    flightLoads = ReferenceFlightLoadsParameters(**_parameter_group(data["flightLoads"]))
+    performance = ReferencePerformanceParameters(**_parameter_group(data["performance"]))
+    assumptions = ReferenceAssumptionsParameters(**_parameter_group(data["assumptions"]))
     aerodynamics = ReferenceAerodynamicParameters(**_parameter_group(data["aerodynamics"]))
     propulsion = ReferencePropulsionParameters(**_parameter_group(data["propulsion"]))
+    fuel = ReferenceFuelParameters(**_parameter_group(data["fuel"]))
 
     calculatedValues = _compute_reference_calculated_values(
         mass=mass,
         dimensions=dimensions,
-        flightLoads=flightLoads,
-        v_D=v_D,
+        performance=performance,
+        assumptions=assumptions,
+        propulsion=propulsion,
         r_H=r_H,
         r_V=r_V,
         delta_m_F=delta_m_F,
@@ -309,9 +425,11 @@ def load_reference_aircraft(
     return ReferenceAircraft(
         mass=mass,
         dimensions=dimensions,
-        flightLoads=flightLoads,
+        performance=performance,
+        assumptions=assumptions,
         aerodynamics=aerodynamics,
         propulsion=propulsion,
+        fuel=fuel,
         calculatedValues=calculatedValues,
     )
 
@@ -324,6 +442,8 @@ def print_reference_aircraft(ref: ReferenceAircraft) -> None:
 
     print("\n--- GIVEN PARAMETERS (FROM JSON) ---")
     print(f"MTOM:                            {ref.mass.takeOffMassMax}")
+    print(f"MLM:                             {ref.mass.landingMassMax}")
+    print(f"MZFM:                            {ref.mass.zeroFuelMassMax}")
     print(f"Wing area (S_W):                 {ref.dimensions.wingArea}")
     print(f"Wingspan (b_W):                  {ref.dimensions.wingspan}")
     print(f"Fuselage length (l_R):           {ref.dimensions.fuselageLength}")
@@ -331,21 +451,24 @@ def print_reference_aircraft(ref: ReferenceAircraft) -> None:
     print(f"Fuselage height (h_R):           {ref.dimensions.fuselageHeight}")
     print(f"Horizontal tail area (S_HTP):    {ref.dimensions.horizontalTailArea}")
     print(f"Vertical tail area (S_VTP):      {ref.dimensions.verticalTailArea}")
-    print(f"Ultimate load factor (n_ult):    {ref.flightLoads.ultimateLoadFactor}")
+    print(f"Limit load factor (n_max):       {ref.assumptions.limitLoad}")
 
     print("\n--- CALCULATED VALUES (DERIVED) ---")
     calc = ref.calculatedValues
     print(f"Aspect ratio (AR):               {calc.aspectRatio.value:.3f}")
     print(f"Mean aerodynamic chord (c_mu):   {calc.meanAerodynamicChord.value:.3f} m")
+    print(f"Ultimate load factor (n_ult):    {calc.ultimateLoadFactor.value:.2f}")
     print(f"Horizontal tail arm (r_H):       {calc.horizontalTailLeverArm}")
     print(f"Horizontal tail volume coeff (c_HT): {calc.horizontalTailVolumeCoefficient.value:.4f}")
     print(f"Vertical tail arm (r_V):         {calc.verticalTailLeverArm}")
     print(f"Vertical tail volume coeff (c_VT):   {calc.verticalTailVolumeCoefficient.value:.4f}")
 
     print("\n--- FORMULA MASS ESTIMATIONS & CALIBRATION FACTORS ---")
+    print(f"Wing:         Catalog: {ref.mass.wing!s:>7} | Formula: {calc.wingEstimatedMass.value:7.2f} kg | Factor: {calc.wingCalibrationFactor.value:.4f}")
     print(f"Fuselage:     Catalog: {ref.mass.fuselage!s:>7} | Formula: {calc.fuselageEstimatedMass.value:7.2f} kg | Factor: {calc.fuselageCalibrationFactor.value:.4f}")
     print(f"Empennage:    Catalog: {ref.mass.empennage!s:>7} | Formula: {calc.empennageEstimatedMass.value:7.2f} kg | Factor: {calc.empennageCalibrationFactor.value:.4f}")
     print(f"Landing gear: Catalog: {ref.mass.landingGear!s:>7} | Formula: {calc.landingGearEstimatedMass.value:7.2f} kg | Factor: {calc.landingGearCalibrationFactor.value:.4f}")
+    print(f"Pylons:       Catalog: {ref.mass.pylons!s:>7} | Formula: {calc.pylonsEstimatedMass.value:7.2f} kg | Factor: {calc.pylonsCalibrationFactor.value:.4f}")
     print(f"Systems:      Catalog: {ref.mass.systems!s:>7} | Formula: {calc.systemsEstimatedMass.value:7.2f} kg | Factor: {calc.systemsCalibrationFactor.value:.4f}")
     print("=" * 65 + "\n")
 

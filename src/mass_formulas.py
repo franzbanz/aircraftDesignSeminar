@@ -4,6 +4,48 @@ Contains empirical and physical formulas for aircraft preliminary design.
 """
 
 
+def calc_wing_mass(
+    mzfm: float,
+    b_s: float,
+    n_ult: float,
+    d_root: float,
+    s_w: float,
+    delta_m_F: float = 0.0,
+) -> float:
+    """Calculates wing mass based on MZFM, structural span, load factor, and geometry [kg].
+
+    Uses Torenbeek formula [Strohmayer - Flugzeugentwurf 2 | p. 116] for aircraft with MTOM > 5670 kg.
+
+    Args:
+        mzfm: Maximum zero-fuel mass MZFM [kg]. In Torenbeek's formula, MZFM is used because
+            fuel stored in the wing relieves the wing root bending moment, making the zero-fuel
+            state the critical sizing case. For battery-electric aircraft (especially with
+            fuselage-mounted batteries and no consumable fuel), MZFM equals MTOM.
+        b_s: Structural wingspan b_s = b / cos(phi_50) [m].
+        n_ult: Ultimate load factor n_ult = 1.5 * n_max [-].
+        d_root: Wing root thickness d_root [m].
+        s_w: Wing reference area S [m^2].
+        delta_m_F: Mass penalty/relief factor for wing design features [-]:
+            - High-lift devices & ailerons: 0.00 (included)
+            - Spoilers / speedbrakes: +0.02 (+2%)
+            - 2 wing-mounted engines: -0.05 (-5%)
+            - 4 wing-mounted engines: -0.10 (-10%)
+            - Landing gear not wing-mounted: -0.05 (-5%)
+            - Braced / strutted wing: -0.30 (-30%)
+
+    Returns:
+        Wing mass m_F [kg].
+    """
+    base_mass = mzfm * (
+        6.67e-3
+        * b_s**0.75
+        * (1.0 + (1.905 / b_s) ** 0.5)
+        * n_ult**0.55
+        * ((b_s / d_root) / (mzfm / s_w)) ** 0.3
+    )
+    return base_mass * (1.0 + delta_m_F)
+
+
 def calc_landing_gear_mass(mtom: float, k_fw: float = 1.08) -> float:
     """Calculates total landing gear mass based on MTOM [kg].
 
@@ -60,7 +102,8 @@ def calc_fuselage_mass(
     Returns:
         Fuselage mass [kg].
     """
-    return 0.23 * ((v_D * r_H) / (b_R + h_R)) ** 0.5 * s_o ** 1.2 * (1.0 + delta_m_F)
+    base_mass = 0.23 * ((v_D * r_H) / (b_R + h_R)) ** 0.5 * s_o ** 1.2
+    return base_mass * (1.0 + delta_m_F)
 
 
 def calc_empennage_mass(n_ult: float, s_htp: float, s_vtp: float) -> float:
@@ -77,6 +120,28 @@ def calc_empennage_mass(n_ult: float, s_htp: float, s_vtp: float) -> float:
         Total empennage mass [kg].
     """
     return 0.64 * (n_ult * (s_htp + s_vtp) ** 2) ** 0.75
+
+
+def calc_pylons_mass(p_to_kw: float) -> float:
+    """Calculates cowling/nacelle and pylon mass based on total take-off shaft power [kg].
+
+    Uses Torenbeek formula [Strohmayer - Flugzeugentwurf 2 | p. 123] for
+    turboprop aircraft: m_C = 0.0635 * ESHP (includes engine mounts/pylons, firewall,
+    and acoustic insulation). The turboprop correlation is chosen because the reference
+    aircraft (Do 228) is a twin-engine turboprop and the wing-mounted electric propeller
+    nacelles/pylons scale analogously with installed shaft power (whereas Torenbeek's
+    small-aircraft formulas apply to piston engines).
+
+    Args:
+        p_to_kw: Total take-off shaft power across all engines P_TO [kW].
+            Converted internally to Equivalent Shaft Horsepower (ESHP [hp], 1 hp = 0.7457 kW)
+            because the empirical factor 0.0635 is in [kg/hp] (0.14 lb/ESHP).
+
+    Returns:
+        Total cowling/nacelle and pylon mass m_C [kg].
+    """
+    eshp = p_to_kw / 0.7457
+    return 0.0635 * eshp
 
 
 def calc_systems_mass(mtom: float) -> float:
