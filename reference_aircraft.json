@@ -29,6 +29,7 @@
   },
   "aerodynamics": {
     "liftToDragRatioCruise": [12.1, ""],
+    "liftToDragRatioLoiter": [15.7, ""],
     "maxLandingLiftCoefficient": [2.6, ""]
   },
   "propulsion": {
@@ -38,11 +39,14 @@
   },
   "fuel": {
     "energyDensity": [42.8, "MJ/kg"],
+    "referenceRange": [185200, "m"],
+    "referenceMass": [5950, "kg"],
     "taxiOutAndTakeOff": [24, "kg"],
     "climb": [36, "kg"],
     "cruise": [78, "kg"],
     "descent": [9, "kg"],
-    "approachLandingAndTaxiIn": [17, "kg"]
+    "approachLandingAndTaxiIn": [17, "kg"],
+    "reserve": [186, "kg"]
   },
   "assumptions": {
     "limitLoad": [3.0, ""],

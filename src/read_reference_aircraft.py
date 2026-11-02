@@ -118,6 +118,7 @@ class ReferenceAerodynamicParameters:
     """Aerodynamic performance parameters of the reference aircraft."""
 
     liftToDragRatioCruise: Parameter
+    liftToDragRatioLoiter: Parameter
     maxLandingLiftCoefficient: Parameter
 
     @property
@@ -158,15 +159,18 @@ class ReferenceFuelParameters:
     """Fuel energy density and mission phase fuel masses of the reference aircraft."""
 
     energyDensity: Parameter
+    referenceRange: Parameter
+    referenceMass: Parameter
     taxiOutAndTakeOff: Parameter
     climb: Parameter
     cruise: Parameter
     descent: Parameter
     approachLandingAndTaxiIn: Parameter
+    reserve: Parameter
 
     @property
-    def totalMass(self) -> Parameter:
-        """Returns total mission fuel mass across all flight phases."""
+    def tripMass(self) -> Parameter:
+        """Returns total trip fuel mass across all flight phases (excluding reserve)."""
         return Parameter(
             value=(
                 self.taxiOutAndTakeOff.value
@@ -178,6 +182,13 @@ class ReferenceFuelParameters:
             unit=self.cruise.unit,
         )
 
+    @property
+    def totalMass(self) -> Parameter:
+        """Returns total mission fuel mass including reserve."""
+        return Parameter(
+            value=self.tripMass.value + self.reserve.value,
+            unit=self.cruise.unit,
+        )
 
 @dataclass(frozen=True)
 class ReferenceCalculatedValues:

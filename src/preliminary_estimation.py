@@ -15,7 +15,7 @@ params = load_parameters()
 ref_aircraft = load_reference_aircraft()
 gravity = 9.81  # m/s^2
 L_D = ref_aircraft.aerodynamics.liftToDragRatioCruise  # Cruise lift-to-drag ratio
-MTOM = 7900
+MTOM = 8600
 # (MZFM = MLM = MTOM for battery-electric aircraft)
 MZFM = MTOM
 MLM = MTOM
