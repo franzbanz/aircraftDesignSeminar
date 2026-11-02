@@ -45,8 +45,8 @@ def generate_sizing_diagram():
     Lambda = b**2 / S_ref                                # (A.1) aspect ratio
     cW0 = np.pi * Lambda * oswald_E / (4 * e_cruise**2)  # from E_max = 0.5*sqrt(pi*Lambda*e/cW0)
     eps = 1 / e_cruise                                   # (A.2) eps = CW/CA
-    sigma = isa_density(field_Elevation) / rho_0
-    rho_cr = isa_density(h_Cruise)
+    sigma = isa_density(field_Elevation) / rho_0         # 1, because start at standard density
+    rho_cr = isa_density(h_Cruise)                       # density at cruise height
     q_cr = 0.5 * rho_cr * V_CRUISE**2                    # dynamic pressure
     x = np.linspace(50, 450, 800)                        # m0/S in kg/m^2, needed for plotting everything
 
@@ -82,3 +82,7 @@ def generate_sizing_diagram():
     ax.legend(fontsize=8, loc="upper left")
     plt.tight_layout()
     plt.show()
+
+# def get_design_point():
+#     TODO
+#     return
