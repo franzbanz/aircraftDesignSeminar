@@ -10,7 +10,8 @@
     "routeReserve": [0.05, ""],
     "diversionDistance": [92.6, "km"],
     "loiterTime": [0.5, "h"],
-    "turnaroundTimeMax": [1, "h"]
+    "turnaroundTimeMax": [1, "h"],
+    "gravity": [9.81, "m/s^2"]
   },
   "performance": {
     "takeOffFieldLengthMax": [800, "m"],
