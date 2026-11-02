@@ -3,12 +3,12 @@ import numpy as np
 import matplotlib.pyplot as plt
 from types import SimpleNamespace
 
+def isa_density(h, rho_0):
+   return rho_0 * (1 - 2.25577e-5 * h) ** 4.2559
+
 def hook(d):
     return SimpleNamespace(**{k: v[0] if isinstance(v, list) and len(v) == 2 else v
                               for k, v in d.items()})
-
-def isa_density(h):
-   return rho_0 * (1 - 2.25577e-5 * h) ** 4.2559
 
 def generate_sizing_diagram():
     with open("parameters.json") as f:
@@ -38,17 +38,17 @@ def generate_sizing_diagram():
     ca_Max_L = ref.aerodynamics.maxLandingLiftCoefficient
     s_Tofl = par.performance.takeOffFieldLengthMax
     l_Ldg = par.performance.landingFieldLengthMax
-    rho_0 = par.performance.takeOffDensity
+    rho_0 = par.performance.takeOffDensity  
     field_Elevation = par.performance.takeOffAltitude
     v_Cruise = par.performance.cruiseSpeedMin * 0.5144
 
     Lambda = b**2 / S_ref                                # (A.1) aspect ratio
     cW0 = np.pi * Lambda * oswald_E / (4 * e_cruise**2)  # from E_max = 0.5*sqrt(pi*Lambda*e/cW0)
     eps = 1 / e_cruise                                   # (A.2) eps = CW/CA
-    sigma = isa_density(field_Elevation) / rho_0         # 1, because start at standard density
-    rho_cr = isa_density(h_Cruise)                       # density at cruise height
-    q_cr = 0.5 * rho_cr * V_CRUISE**2                    # dynamic pressure
-    x = np.linspace(50, 450, 800)                        # m0/S in kg/m^2, needed for plotting everything
+    sigma = isa_density(field_Elevation, rho_0) / rho_0         # 1, because start at standard density
+    rho_cr = isa_density(h_Cruise, rho_0)                       # density at cruise height
+    q_cr = 0.5 * rho_cr * v_Cruise**2                    # dynamic pressure
+    x = np.linspace(50, 600, 800)                        # m0/S in kg/m^2, needed for plotting everything
 
     # (G.2) stall speed vertical line
     x_stall = ca_Max_L * rho_0 / (2 * g) * v_S_Max**2
@@ -86,3 +86,5 @@ def generate_sizing_diagram():
 # def get_design_point():
 #     TODO
 #     return
+
+generate_sizing_diagram()
