@@ -2,7 +2,7 @@
 
 import math
 
-from read_reference_aircraft import load_reference_aircraft
+from data import load_reference_aircraft
 
 ref_aircraft = load_reference_aircraft()
 
@@ -340,7 +340,10 @@ def calc_breguet_lift_to_drag_from_endurance(
     endurance_s = endurance_h * 3600.0
     return (endurance_s * GRAVITY * thrust_specific_fuel_consumption_si) / math.log(m_start_kg / m_end_kg)
 
-print("Cruise fuel mass (100NM):", calc_breguet_fuel_mass_from_range(5950 - 24 - 36, 185200))
-print("Cruise fuel mass (50NM):", calc_breguet_fuel_mass_from_range(5950 - 24 - 36 - 78 - 9, 185200 / 2))
-print("Loiter fuel mass (30min):", calc_breguet_fuel_mass_from_endurance(5950 - 24 - 36 - 78 - 9, 0.5))
-print("Cruise range (78kg):", calc_breguet_range(5950 - 24 - 36, 5950 - 24 - 36 - 78))
+
+if __name__ == "__main__":
+    print("Cruise fuel mass (100NM):", calc_breguet_fuel_mass_from_range(5950 - 24 - 36, 185200))
+    print("Cruise fuel mass (50NM):", calc_breguet_fuel_mass_from_range(5950 - 24 - 36 - 78 - 9, 185200 / 2))
+    print("Loiter fuel mass (30min):", calc_breguet_fuel_mass_from_endurance(5950 - 24 - 36 - 78 - 9, 0.5))
+    print("Cruise range (78kg):", calc_breguet_range(5950 - 24 - 36, 5950 - 24 - 36 - 78))
+

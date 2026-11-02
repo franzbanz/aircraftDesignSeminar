@@ -1,6 +1,6 @@
 import math
 
-from mass_formulas import (
+from formulas import (
     calc_empennage_mass,
     calc_fuselage_mass,
     calc_landing_gear_mass,
@@ -8,8 +8,8 @@ from mass_formulas import (
     calc_systems_mass,
     calc_wing_mass,
 )
-from read_parameters import load_parameters
-from read_reference_aircraft import load_reference_aircraft
+from data import load_parameters, load_reference_aircraft
+
 
 params = load_parameters()
 ref_aircraft = load_reference_aircraft()
@@ -43,7 +43,7 @@ def calc_calibrated_wing_mass() -> float:
 def calc_calibrated_fuselage_mass() -> float:
     """Calculates fuselage mass scaled with the reference aircraft calibration factor [kg]."""
     v_D = 1.25 * params.performance.cruiseSpeedMin * (1.852 / 3.6)  # [m/s] Design diving speed (1.25 * v_cruise)
-    r_H = ref_aircraft.calculatedValues.r_H  # [m] Horizontal tail moment arm
+    r_H = ref_aircraft.calculatedValues.horizontalTailLeverArm  # [m] Horizontal tail moment arm
     b_R = ref_aircraft.dimensions.fuselageWidth  # [m] Max fuselage width
     h_R = ref_aircraft.dimensions.fuselageHeight  # [m] Fuselage height
     l_R = ref_aircraft.dimensions.fuselageLength  # [m] Fuselage length
@@ -160,7 +160,7 @@ print(f"Engine mass: {calc_engine_mass()} {mass_unit} (Ref: {ref_aircraft.mass.e
 print(f"Systems mass: {calc_calibrated_systems_mass()} {mass_unit} (Ref: {ref_aircraft.mass.systems})")
 print(f"Furnishings mass: {calc_furnishings_mass()} {mass_unit} (Ref: {ref_aircraft.mass.furnishings})")
 print(f"Battery mass: {m_battery} {mass_unit}")
-print(f"Total Takeoff Mass (MTOM): {MTOM} {mass_unit} (Ref: {ref_aircraft.mass.mtom})\n")
+print(f"Total Takeoff Mass (MTOM): {MTOM} {mass_unit} (Ref: {ref_aircraft.mass.takeOffMassMax})\n")
 
 # ------------- Range ------------------
 range_m = params.battery.cellEnergyDensityMax*3600 * 0.85 * 1/gravity * L_D * m_battery / MTOM

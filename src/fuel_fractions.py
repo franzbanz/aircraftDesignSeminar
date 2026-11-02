@@ -1,12 +1,12 @@
 """Mission fuel fractions and kerosene-to-electric energy transfer calculator."""
 
-from breguet import (
+from formulas import (
     calc_breguet_fuel_mass_from_endurance,
     calc_breguet_fuel_mass_from_range,
     calc_breguet_range,
 )
-from read_parameters import load_parameters
-from read_reference_aircraft import load_reference_aircraft
+from data import load_parameters, load_reference_aircraft
+
 
 params = load_parameters()
 ref_aircraft = load_reference_aircraft()
