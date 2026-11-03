@@ -8,7 +8,7 @@ def isa_density(h, rho_0):
 
 def hook(d):
     return SimpleNamespace(**{k: v[0] if isinstance(v, list) and len(v) == 2 else v
-                              for k, v in d.items()})
+    for k, v in d.items()})
 
 def generate_sizing_diagram():
     with open("parameters.json") as f:
@@ -18,7 +18,7 @@ def generate_sizing_diagram():
         ref = json.load(f, object_hook=hook)
 
     k_TO = ref.assumptions.kTakeOff
-    v_S_Max = ref.assumptions.maxStallSpeed
+    v_S_Max = ref.assumptions.maxStallSpeed * 0.5144 # transfer to SI units
     l_A = ref.assumptions.obstacleClearance
     A = ref.assumptions.reverseThrustFactorA
     gamma_Min_Oei = ref.assumptions.minClimbGradient
@@ -45,8 +45,8 @@ def generate_sizing_diagram():
     Lambda = b**2 / S_ref                                # (A.1) aspect ratio
     cW0 = np.pi * Lambda * oswald_E / (4 * e_cruise**2)  # from E_max = 0.5*sqrt(pi*Lambda*e/cW0)
     eps = 1 / e_cruise                                   # (A.2) eps = CW/CA
-    sigma = isa_density(field_Elevation, rho_0) / rho_0         # 1, because start at standard density
-    rho_cr = isa_density(h_Cruise, rho_0)                       # density at cruise height
+    sigma = isa_density(field_Elevation, rho_0) / rho_0  # 1, because start at standard density
+    rho_cr = isa_density(h_Cruise, rho_0)                # density at cruise height
     q_cr = 0.5 * rho_cr * v_Cruise**2                    # dynamic pressure
     x = np.linspace(50, 600, 800)                        # m0/S in kg/m^2, needed for plotting everything
 
