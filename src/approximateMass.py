@@ -21,7 +21,6 @@ def getTotalMass():
     batteryPackEnergyDensity = par.battery.cellEnergyDensityMax / par.battery.cellToPackFactorMin
 
     # ref aircraft
-    emptyMass = ref.mass.mwe
     mtowRef = ref.mass.takeOffMassMax
     ldRef = ref.aerodynamics.liftToDragRatioCruise
     fuelMassRef = ref.fuel.total
@@ -30,6 +29,7 @@ def getTotalMass():
     energyDensityRef = ref.fuel.energyDensity * 10 ** 6 # convert to SI
 
     # electric aircraft
+    emptyMass = bat.mass.mwe
     etaEl = bat.assumptions.electricFuelEfficiency
     ldBat = bat.aerodynamics.liftToDragRatioCruise
 
@@ -52,6 +52,7 @@ def getTotalMass():
 
     print("")    
     print(f"Lift to drag ratio:                {ldBat:.2f}")
+    print(f"Scaling factor:                    {scale:.2f}")
     print(f"Battery energy pack density:       {batteryPackEnergyDensity:.2f} Wh/kg")
     print(f"Electric propulsion efficiency:    {100 * etaEl:.2f} %")
     print(f"Empty mass:                        {emptyMass:.2f} kg")

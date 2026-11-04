@@ -10,7 +10,7 @@ def hook(d):
 def isaDensity(h, rho0):
     return rho0 * (1 - 2.25577e-5 * h) ** 4.2559
 
-def generateSizingDiagram():
+def getSizingDiagram():
     with open("parameters.json") as f:
         par = json.load(f, object_hook=hook)
     with open("reference_aircraft.json") as f:
