@@ -11,7 +11,7 @@ import warnings
 from pathlib import Path
 from typing import TypeVar
 
-import commentjson as json
+import json
 
 from data.parameters_data import (
     BatteryParameters,
@@ -131,6 +131,15 @@ def _find_reference_file() -> Path:
     return _PROJECT_ROOT / "reference_aircraft.json"
 
 
+def _load_json_with_comments(file_path: Path) -> dict:
+    """Loads a JSON file, stripping single-line (//) and block (/* ... */) comments."""
+    content = file_path.read_text(encoding="utf-8")
+    pattern = re.compile(r'("(?:\\.|[^"\\])*")|(/\*[\s\S]*?\*/)|(//[^\r\n]*)')
+    cleaned = pattern.sub(lambda m: m.group(1) if m.group(1) else "", content)
+    cleaned = re.sub(r",\s*([\]}])", r"\1", cleaned)
+    return json.loads(cleaned)
+
+
 def load_parameters(path: Path | str | None = None) -> Parameters:
     """Loads target aircraft design parameters from ``parameters.json``.
 
@@ -141,8 +150,7 @@ def load_parameters(path: Path | str | None = None) -> Parameters:
         Populated ``Parameters`` dataclass instance.
     """
     file_path = Path(path) if path else _find_parameters_file()
-    with file_path.open(encoding="utf-8") as file:
-        data = json.load(file)
+    data = _load_json_with_comments(file_path)
 
     return Parameters(
         payload=instantiate_dataclass_with_extra_warning(PayloadParameters, _parameter_group(data["payload"])),
@@ -170,8 +178,7 @@ def load_reference_aircraft(
         Populated ``ReferenceAircraft`` instance.
     """
     file_path = Path(path) if path else _find_reference_file()
-    with file_path.open(encoding="utf-8") as file:
-        data = json.load(file)
+    data = _load_json_with_comments(file_path)
 
     mass = instantiate_dataclass_with_extra_warning(ReferenceMassParameters, _parameter_group(data["mass"]))
     dimensions = instantiate_dataclass_with_extra_warning(ReferenceDimensionsParameters, _parameter_group(data["dimensions"]))
