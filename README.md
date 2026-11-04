@@ -4,7 +4,7 @@ Preliminary design, mass estimation, and performance sizing for an electric comm
 
 ## Configuration Files
 
-All parameters in the JSON files are stored as `[value, "unit"]` pairs and are loaded into unit-aware `Parameter` objects (subclassing `float`, so they can be used directly in arithmetic while preserving `.value` and `.unit`).
+All parameters in the JSON files are stored as `[value, "unit"]` pairs and are loaded into unit-aware `UnitValue` objects (subclassing `float`, so they can be used directly in arithmetic while preserving `.value` and `.unit`).
 
 - **`reference_aircraft.json`**: Contains all given data of the reference aircraft (masses, dimensions, aerodynamics, flight loads, propulsion). These values serve as the baseline and are used to calibrate the empirical estimation formulas.
 - **`parameters.json`**: Contains the design requirements and constraints that must be met (e.g., mission range, field lengths, maximum take-off mass), as well as predefined assumptions and boundary conditions (e.g., mass per passenger, atmospheric conditions, battery energy density).

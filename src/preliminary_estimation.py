@@ -8,7 +8,7 @@ from formulas import (
     calc_systems_mass,
     calc_wing_mass,
 )
-from data import Parameter, load_parameters, load_reference_aircraft
+from data import UnitValue, load_parameters, load_reference_aircraft
 
 
 params = load_parameters()
@@ -164,6 +164,6 @@ print(f"Total Takeoff Mass (MTOM): {MTOM} {mass_unit} (Ref: {ref_aircraft.mass.t
 
 # ------------- Range ------------------
 range_m = params.battery.cellEnergyDensityMax.to("J/kg") * 0.85 * 1 / gravity * L_D * m_battery / MTOM
-range_km = Parameter(range_m, "m").to("km")
+range_km = UnitValue(range_m, "m").to("km")
 print(f"Range: {range_km}")
 print(f"Range: {range_km.to('NM').value} NM")

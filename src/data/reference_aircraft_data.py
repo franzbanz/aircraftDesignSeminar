@@ -6,32 +6,32 @@ as well as ``ReferenceCalculatedValues`` and the top-level ``ReferenceAircraft``
 
 from dataclasses import dataclass
 
-from data.parameters_data import Parameter
+from data.unit_value import UnitValue
 
 
 @dataclass(frozen=True)
 class ReferenceMassParameters:
     """Component mass breakdown parameters for the reference aircraft."""
 
-    takeOffMassMax: Parameter
-    landingMassMax: Parameter
-    zeroFuelMassMax: Parameter
-    mwe: Parameter
-    wing: Parameter
-    fuselage: Parameter
-    horizontalEmpennage: Parameter
-    verticalEmpennage: Parameter
-    landingGear: Parameter
-    pylons: Parameter
-    engine: Parameter
-    systems: Parameter
-    furnishings: Parameter
-    operatorItems: Parameter
+    takeOffMassMax: UnitValue
+    landingMassMax: UnitValue
+    zeroFuelMassMax: UnitValue
+    mwe: UnitValue
+    wing: UnitValue
+    fuselage: UnitValue
+    horizontalEmpennage: UnitValue
+    verticalEmpennage: UnitValue
+    landingGear: UnitValue
+    pylons: UnitValue
+    engine: UnitValue
+    systems: UnitValue
+    furnishings: UnitValue
+    operatorItems: UnitValue
 
     @property
-    def empennage(self) -> Parameter:
+    def empennage(self) -> UnitValue:
         """Returns total empennage mass (horizontal + vertical tailplane)."""
-        return Parameter(
+        return UnitValue(
             value=self.horizontalEmpennage.value + self.verticalEmpennage.value,
             unit=self.horizontalEmpennage.unit,
         )
@@ -41,55 +41,55 @@ class ReferenceMassParameters:
 class ReferenceDimensionsParameters:
     """Geometric dimension parameters of the reference aircraft."""
 
-    wingArea: Parameter
-    wingspan: Parameter
-    fuselageLength: Parameter
-    fuselageWidth: Parameter
-    fuselageHeight: Parameter
-    horizontalTailArea: Parameter
-    verticalTailArea: Parameter
+    wingArea: UnitValue
+    wingspan: UnitValue
+    fuselageLength: UnitValue
+    fuselageWidth: UnitValue
+    fuselageHeight: UnitValue
+    horizontalTailArea: UnitValue
+    verticalTailArea: UnitValue
 
 
 @dataclass(frozen=True)
 class ReferencePerformanceParameters:
     """Cruise performance parameters of the reference aircraft."""
 
-    cruiseSpeedTAS: Parameter
-    cruiseAltitude: Parameter
+    cruiseSpeedTAS: UnitValue
+    cruiseAltitude: UnitValue
 
 
 @dataclass(frozen=True)
 class ReferenceAssumptionsParameters:
     """Assumed parameters for the reference aircraft (not directly specified in datasheet)."""
 
-    limitLoad: Parameter
-    maxTakeOffLiftCoefficient: Parameter
-    wingRootThickness: Parameter
-    wingSweepHalfChord: Parameter
-    wingMassPenaltyFactor: Parameter
+    limitLoad: UnitValue
+    maxTakeOffLiftCoefficient: UnitValue
+    wingRootThickness: UnitValue
+    wingSweepHalfChord: UnitValue
+    wingMassPenaltyFactor: UnitValue
 
 
 @dataclass(frozen=True)
 class ReferenceAerodynamicParameters:
     """Aerodynamic performance parameters of the reference aircraft."""
 
-    liftToDragRatioCruise: Parameter
-    liftToDragRatioLoiter: Parameter
-    maxLandingLiftCoefficient: Parameter
+    liftToDragRatioCruise: UnitValue
+    liftToDragRatioLoiter: UnitValue
+    maxLandingLiftCoefficient: UnitValue
 
 
 @dataclass(frozen=True)
 class ReferencePropulsionParameters:
     """Propulsion and engine power parameters of the reference aircraft."""
 
-    engineTakeOffPower: Parameter
-    numberOfEngines: Parameter
-    tsfcCruise: Parameter
+    engineTakeOffPower: UnitValue
+    numberOfEngines: UnitValue
+    tsfcCruise: UnitValue
 
     @property
-    def totalTakeOffPower(self) -> Parameter:
+    def totalTakeOffPower(self) -> UnitValue:
         """Returns total take-off power across all engines."""
-        return Parameter(
+        return UnitValue(
             value=self.engineTakeOffPower.value * self.numberOfEngines.value,
             unit=self.engineTakeOffPower.unit,
         )
@@ -99,21 +99,21 @@ class ReferencePropulsionParameters:
 class ReferenceFuelParameters:
     """Fuel energy density and mission phase fuel masses of the reference aircraft."""
 
-    energyDensity: Parameter
-    referenceRange: Parameter
-    referenceMass: Parameter
-    taxiOutAndTakeOff: Parameter
-    climb: Parameter
-    cruise: Parameter
-    descent: Parameter
-    approachLandingAndTaxiIn: Parameter
-    reserve: Parameter
-    total: Parameter
+    energyDensity: UnitValue
+    referenceRange: UnitValue
+    referenceMass: UnitValue
+    taxiOutAndTakeOff: UnitValue
+    climb: UnitValue
+    cruise: UnitValue
+    descent: UnitValue
+    approachLandingAndTaxiIn: UnitValue
+    reserve: UnitValue
+    total: UnitValue
 
     @property
-    def tripMass(self) -> Parameter:
+    def tripMass(self) -> UnitValue:
         """Returns total trip fuel mass across all flight phases (excluding reserve)."""
-        return Parameter(
+        return UnitValue(
             value=(
                 self.taxiOutAndTakeOff.value
                 + self.climb.value
@@ -125,9 +125,9 @@ class ReferenceFuelParameters:
         )
 
     @property
-    def totalMass(self) -> Parameter:
+    def totalMass(self) -> UnitValue:
         """Returns total mission fuel mass including reserve."""
-        return Parameter(
+        return UnitValue(
             value=self.tripMass.value + self.reserve.value,
             unit=self.cruise.unit,
         )
@@ -137,33 +137,33 @@ class ReferenceFuelParameters:
 class ReferenceCalculatedValues:
     """Values calculated/derived for the reference aircraft (not directly specified in JSON)."""
 
-    aspectRatio: Parameter
-    meanAerodynamicChord: Parameter
-    structuralWingspan: Parameter
-    designDivingSpeed: Parameter
-    ultimateLoadFactor: Parameter
-    horizontalTailLeverArm: Parameter
-    verticalTailLeverArm: Parameter
-    horizontalTailVolumeCoefficient: Parameter
-    verticalTailVolumeCoefficient: Parameter
+    aspectRatio: UnitValue
+    meanAerodynamicChord: UnitValue
+    structuralWingspan: UnitValue
+    designDivingSpeed: UnitValue
+    ultimateLoadFactor: UnitValue
+    horizontalTailLeverArm: UnitValue
+    verticalTailLeverArm: UnitValue
+    horizontalTailVolumeCoefficient: UnitValue
+    verticalTailVolumeCoefficient: UnitValue
 
-    wingEstimatedMass: Parameter
-    wingCalibrationFactor: Parameter
+    wingEstimatedMass: UnitValue
+    wingCalibrationFactor: UnitValue
 
-    landingGearEstimatedMass: Parameter
-    landingGearCalibrationFactor: Parameter
+    landingGearEstimatedMass: UnitValue
+    landingGearCalibrationFactor: UnitValue
 
-    fuselageEstimatedMass: Parameter
-    fuselageCalibrationFactor: Parameter
+    fuselageEstimatedMass: UnitValue
+    fuselageCalibrationFactor: UnitValue
 
-    empennageEstimatedMass: Parameter
-    empennageCalibrationFactor: Parameter
+    empennageEstimatedMass: UnitValue
+    empennageCalibrationFactor: UnitValue
 
-    pylonsEstimatedMass: Parameter
-    pylonsCalibrationFactor: Parameter
+    pylonsEstimatedMass: UnitValue
+    pylonsCalibrationFactor: UnitValue
 
-    systemsEstimatedMass: Parameter
-    systemsCalibrationFactor: Parameter
+    systemsEstimatedMass: UnitValue
+    systemsCalibrationFactor: UnitValue
 
 
 @dataclass(frozen=True)

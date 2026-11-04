@@ -6,7 +6,7 @@ reference aircraft (Dornier 228) from its datasheet parameters.
 
 import math
 
-from data.parameters_data import Parameter
+from data.unit_value import UnitValue
 from data.reference_aircraft_data import (
     ReferenceAircraft,
     ReferenceAssumptionsParameters,
@@ -107,27 +107,27 @@ def calc_reference_aircraft_values(
     k_sys = mass.systems / m_sys_calc
 
     return ReferenceCalculatedValues(
-        aspectRatio=Parameter(aspect_ratio, ""),
-        meanAerodynamicChord=Parameter(c_mu, "m"),
-        structuralWingspan=Parameter(b_s, "m"),
-        designDivingSpeed=Parameter(v_D, "m/s"),
-        ultimateLoadFactor=Parameter(n_ult, ""),
-        horizontalTailLeverArm=Parameter(r_H, "m"),
-        verticalTailLeverArm=Parameter(r_V, "m"),
-        horizontalTailVolumeCoefficient=Parameter(c_ht, ""),
-        verticalTailVolumeCoefficient=Parameter(c_vt, ""),
-        wingEstimatedMass=Parameter(m_wing_calc, "kg"),
-        wingCalibrationFactor=Parameter(k_wing, ""),
-        landingGearEstimatedMass=Parameter(m_lg_calc, "kg"),
-        landingGearCalibrationFactor=Parameter(k_lg, ""),
-        fuselageEstimatedMass=Parameter(m_fus_calc, "kg"),
-        fuselageCalibrationFactor=Parameter(k_fus, ""),
-        empennageEstimatedMass=Parameter(m_emp_calc, "kg"),
-        empennageCalibrationFactor=Parameter(k_emp, ""),
-        pylonsEstimatedMass=Parameter(m_pyl_calc, "kg"),
-        pylonsCalibrationFactor=Parameter(k_pyl, ""),
-        systemsEstimatedMass=Parameter(m_sys_calc, "kg"),
-        systemsCalibrationFactor=Parameter(k_sys, ""),
+        aspectRatio=UnitValue(aspect_ratio, ""),
+        meanAerodynamicChord=UnitValue(c_mu, "m"),
+        structuralWingspan=UnitValue(b_s, "m"),
+        designDivingSpeed=UnitValue(v_D, "m/s"),
+        ultimateLoadFactor=UnitValue(n_ult, ""),
+        horizontalTailLeverArm=UnitValue(r_H, "m"),
+        verticalTailLeverArm=UnitValue(r_V, "m"),
+        horizontalTailVolumeCoefficient=UnitValue(c_ht, ""),
+        verticalTailVolumeCoefficient=UnitValue(c_vt, ""),
+        wingEstimatedMass=UnitValue(m_wing_calc, "kg"),
+        wingCalibrationFactor=UnitValue(k_wing, ""),
+        landingGearEstimatedMass=UnitValue(m_lg_calc, "kg"),
+        landingGearCalibrationFactor=UnitValue(k_lg, ""),
+        fuselageEstimatedMass=UnitValue(m_fus_calc, "kg"),
+        fuselageCalibrationFactor=UnitValue(k_fus, ""),
+        empennageEstimatedMass=UnitValue(m_emp_calc, "kg"),
+        empennageCalibrationFactor=UnitValue(k_emp, ""),
+        pylonsEstimatedMass=UnitValue(m_pyl_calc, "kg"),
+        pylonsCalibrationFactor=UnitValue(k_pyl, ""),
+        systemsEstimatedMass=UnitValue(m_sys_calc, "kg"),
+        systemsCalibrationFactor=UnitValue(k_sys, ""),
     )
 
 
