@@ -3,6 +3,7 @@
     "takeOffMassMax": [6400, "kg"],
     "landingMassMax": [6100, "kg"],
     "zeroFuelMassMax": [5940, "kg"],
+    "mwe": [3480, "kg"],
     "wing": [645, "kg"],
     "fuselage": [765, "kg"],
     "horizontalEmpennage": [90, "kg"],
@@ -46,23 +47,14 @@
     "cruise": [78, "kg"],
     "descent": [9, "kg"],
     "approachLandingAndTaxiIn": [17, "kg"],
-    "reserve": [186, "kg"]
+    "reserve": [186, "kg"],
+    "total": [339, "kg"]
   },
   "assumptions": {
     "limitLoad": [3.0, ""],
     "maxTakeOffLiftCoefficient": [1.7, ""],
     "wingRootThickness": [0.33, "m"],
     "wingSweepHalfChord": [0.0, "deg"],
-    "wingMassPenaltyFactor": [-0.10, ""],
-    "kTakeOff": [2.45, "m^3/kg"],
-    "maxStallSpeed": [113, "kts"],
-    "obstacleClearance": [183.0, "m"],
-    "reverseThrustFactorA": [1.0, ""],
-    "minClimbGradient": [0.015, ""],
-    "massClimbRatio": [1.0, ""],
-    "oswaldFactor": [0.8, ""],
-    "maxThrustOverCruiseThrustRatio": [4.0, ""],
-    "maxMassOverCruiseMassRatio": [1.0, ""],
-    "maxMassOverLandingMassRatio": [1.0, ""]
-  }
+    "wingMassPenaltyFactor": [-0.10, ""]
+    }
 }
