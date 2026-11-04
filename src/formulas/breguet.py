@@ -2,17 +2,13 @@
 
 import math
 
-from data import load_reference_aircraft
-
-ref_aircraft = load_reference_aircraft()
-
 GRAVITY = 9.81  # [m/s^2]
 KTS_TO_MS = 1.852 / 3.6  # [m/s per kt]
 
-DEFAULT_CRUISE_SPEED_MS = ref_aircraft.performance.cruiseSpeedTAS * KTS_TO_MS  # [m/s]
-DEFAULT_TSFC_SI = ref_aircraft.propulsion.tsfcCruise / (3600.0 * GRAVITY)  # [kg/(N*s)]
-DEFAULT_L_D_CRUISE = ref_aircraft.aerodynamics.liftToDragRatioCruise  # [-]
-DEFAULT_L_D_LOITER = ref_aircraft.aerodynamics.liftToDragRatioLoiter  # [-]
+DEFAULT_CRUISE_SPEED_MS = 200.0 * KTS_TO_MS  # [m/s] (Do 228 reference TAS: 200 kts)
+DEFAULT_TSFC_SI = 0.46 / (3600.0 * GRAVITY)  # [kg/(N*s)] (Do 228 reference TSFC: 0.46 lb/(h*lbf))
+DEFAULT_L_D_CRUISE = 12.1  # [-] (Do 228 reference cruise L/D)
+DEFAULT_L_D_LOITER = 15.7  # [-] (Do 228 reference loiter L/D)
 
 
 # ==============================================================================

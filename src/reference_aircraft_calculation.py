@@ -79,7 +79,7 @@ def calc_reference_aircraft_values(
     mzfm_ref = mass.zeroFuelMassMax
     n_ult = 1.5 * assumptions.limitLoad
     # Design diving speed v_D = 1.25 * v_cruise converted from kts to m/s
-    v_D = 1.25 * performance.cruiseSpeedTAS * (1.852 / 3.6)
+    v_D = 1.25 * performance.cruiseSpeedTAS.to("m/s")
 
     m_wing_calc = calc_wing_mass(
         mzfm=mzfm_ref,
