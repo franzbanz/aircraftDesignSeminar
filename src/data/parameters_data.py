@@ -24,7 +24,6 @@ class MissionParameters:
     diversionDistance: UnitValue
     loiterTime: UnitValue
     turnaroundTimeMax: UnitValue
-    gravity: UnitValue
 
 
 @dataclass(frozen=True)

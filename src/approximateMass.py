@@ -1,16 +1,15 @@
 import json
 import numpy as np
 from types import SimpleNamespace
+from data import load_parameters, load_reference_aircraft
 
 def hook(d):
     return SimpleNamespace(**{k: v[0] if isinstance(v, list) and len(v) == 2 else v
                               for k, v in d.items()})
 
 def getTotalMass():
-    with open("parameters.json") as f:
-        par = json.load(f, object_hook=hook)
-    with open("reference_aircraft.json") as f:  
-        ref = json.load(f, object_hook=hook)
+    par = load_parameters()
+    ref = load_reference_aircraft()
     with open("battery_aircraft.json") as f:
         bat = json.load(f, object_hook=hook)
 
@@ -62,3 +61,6 @@ def getTotalMass():
     print("")
 
     return batteryMass + fixedMass
+
+if __name__ == "__main__":
+    getTotalMass()

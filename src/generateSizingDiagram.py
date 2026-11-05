@@ -1,46 +1,158 @@
+from formulas.geometry import aspect_ratio
+from data import SiValue, UnitValue, load_parameters, load_reference_aircraft
 import json
+import warnings
 import numpy as np
 import matplotlib.pyplot as plt
 from types import SimpleNamespace
+from constants import GRAVITY, RHO_0
 
 def hook(d):
-    return SimpleNamespace(**{k: v[0] if isinstance(v, list) and len(v) == 2 else v
+    return SimpleNamespace(**{k: UnitValue(v[0], v[1]) if isinstance(v, list) and len(v) == 2 else v
                               for k, v in d.items()})
 
 def isaDensity(h, rho0):
     return rho0 * (1 - 2.25577e-5 * h) ** 4.2559
 
-def getSizingDiagram():
-    with open("parameters.json") as f:
-        par = json.load(f, object_hook=hook)
-    with open("reference_aircraft.json") as f:
-        ref = json.load(f, object_hook=hook)
+
+def calc_stall_wing_loading(caMaxL: float, rho0: SiValue, vSMax: SiValue) -> SiValue:
+    """Calculates maximum allowable wing loading from stall speed [Strohmayer - Flugzeugentwurf 2 | p. 105] [kg/m^2].
+
+    Args:
+        caMaxL: Maximum landing lift coefficient c_A,max,L [-].
+        rho0: Take-off air density rho_0 [kg/m^3].
+        vSMax: Maximum stall speed v_S,max [m/s].
+
+    Returns:
+        Maximum allowable wing loading for stall speed [kg/m^2].
+    """
+    return SiValue(caMaxL * rho0 / (2 * GRAVITY) * vSMax**2, "kg/m^2")
+
+
+def calc_takeoff_thrust_loading(
+    n_engines: int,
+    caMaxTo: float,
+    sigma: float,
+    sTofl: SiValue,
+    x: np.ndarray,
+) -> np.ndarray:
+    """Calculates required take-off thrust loading T/G as a function of wing loading [Strohmayer - Flugzeugentwurf 2 | p. 82] [-].
+
+    Args:
+        n_engines: Number of engines [-].
+        caMaxTo: Maximum take-off lift coefficient c_A,max,TO [-].
+        sigma: Relative air density ratio rho / rho_0 [-].
+        sTofl: Required take-off field length s_TOFL [m].
+        x: Wing loading array m_0 / S [kg/m^2].
+
+    Returns:
+        Required take-off thrust loading array T/G [-].
+    """
+    k_to_map = {2: 2.45, 3: 2.26, 4: 2.06}
+    if (n := int(n_engines)) not in k_to_map:
+        warnings.warn(f"kTO only defined for 2, 3, 4 engines (got {n_engines}).")
+    kTO = k_to_map.get(n, 2.45 if n < 2 else 2.06)
+
+    return kTO / (caMaxTo * sigma * sTofl) * x
+
+
+def calc_oei_climb_thrust_loading(
+    mClimbRatio: float,
+    nEng: int,
+    gammaMinOei: float,
+    eps: float,
+    x: np.ndarray,
+) -> np.ndarray:
+    """Calculates required OEI 2nd segment climb thrust loading T/G [Strohmayer - Flugzeugentwurf 2 | p. 86] [-].
+
+    Args:
+        mClimbRatio: Ratio of climb mass to take-off mass m_climb / m_0 [-].
+        nEng: Number of engines n [-].
+        gammaMinOei: Minimum climb gradient with one engine inoperative [-].
+        eps: Inverse glide ratio in climb eps = c_W / c_A [-].
+        x: Wing loading array m_0 / S [kg/m^2].
+
+    Returns:
+        Required OEI climb thrust loading array T/G [-].
+    """
+    return mClimbRatio * nEng / (nEng - 1) * (gammaMinOei + eps) * np.ones_like(x)
+
+
+def calc_cruise_thrust_loading(
+    fOverFcr: float,
+    cW0: float,
+    qCr: float,
+    Lambda: float,
+    oswaldE: float,
+    mCrRatio: float,
+    x: np.ndarray,
+) -> np.ndarray:
+    """Calculates required cruise thrust loading T/G as a function of wing loading [Strohmayer - Flugzeugentwurf 2 | p. 92] [-].
+
+    Args:
+        fOverFcr: Ratio of maximum take-off thrust to cruise thrust F_max / F_cr [-].
+        cW0: Zero-lift drag coefficient c_W0 [-].
+        qCr: Dynamic pressure in cruise [Pa].
+        Lambda: Wing aspect ratio Lambda [-].
+        oswaldE: Oswald efficiency factor e [-].
+        mCrRatio: Ratio of cruise mass to take-off mass m_cr / m_0 [-].
+        x: Wing loading array m_0 / S [kg/m^2].
+
+    Returns:
+        Required cruise thrust loading array T/G [-].
+    """
+    return fOverFcr * (
+        cW0 * qCr / (x * GRAVITY)
+        + x * GRAVITY / (qCr * np.pi * Lambda * oswaldE) * mCrRatio**2
+    )
+
+
+def calc_landing_wing_loading(
+    mlwRatio: float,
+    lLdg: SiValue,
+    sigma: float,
+    caMaxL: float,
+) -> SiValue:
+    """Calculates maximum allowable wing loading from landing field length [Strohmayer - Flugzeugentwurf 2 | p. 106] [kg/m^2].
+
+    Args:
+        mlwRatio: Ratio of take-off mass to maximum landing mass m_0 / m_MLW [-].
+        lLdg: Available landing field length [m].
+        sigma: Relative air density ratio rho / rho_0 [-].
+        caMaxL: Maximum landing lift coefficient c_A,max,L [-].
+
+    Returns:
+        Maximum allowable wing loading for landing [kg/m^2].
+    """
+    lA = SiValue(183.0, "m")  # CS-23 standard air distance over 50 ft obstacle (600 ft)
+    A = 1.0                   # CS-23 standard braking factor (wheel brakes only)
+    return SiValue(mlwRatio * (lLdg - lA) * sigma * caMaxL / (0.51 * A * GRAVITY), "kg/m^2")
+
+
+def getSizingDiagram(should_plot: bool = False):
+    par = load_parameters()
+    ref = load_reference_aircraft()
     with open("battery_aircraft.json") as f:
         bat = json.load(f, object_hook=hook)
 
     # parameters
-    g = par.mission.gravity
-    sTofl = par.performance.takeOffFieldLengthMax
-    lLdg = par.performance.landingFieldLengthMax
-    rho0 = par.performance.takeOffDensity
-    fieldElevation = par.performance.takeOffAltitude
-    vCruise = par.performance.cruiseSpeedMin * 0.5144
+    sTofl = par.performance.takeOffFieldLengthMax.si
+    lLdg = par.performance.landingFieldLengthMax.si
+    rho0 = par.performance.takeOffDensity.si
+    fieldElevation = par.performance.takeOffAltitude.si
+    vCruise = par.performance.cruiseSpeedMin.si
 
     # ref aircraft
-    m0Ref = ref.mass.takeOffMassMax
-    Sref = ref.dimensions.wingArea
-    b = ref.dimensions.wingspan
-    nEng = ref.propulsion.numberOfEngines
+    Sref = ref.dimensions.wingArea.si
+    b = ref.dimensions.wingspan.si
+    nEng = int(ref.propulsion.numberOfEngines)
     eCruise = ref.aerodynamics.liftToDragRatioCruise
-    hCruise = ref.performance.cruiseAltitude
+    hCruise = ref.performance.cruiseAltitude.si
     caMaxTo = ref.assumptions.maxTakeOffLiftCoefficient
     caMaxL = ref.aerodynamics.maxLandingLiftCoefficient
 
     # electric aircraft
-    kTO = bat.assumptions.kTakeOff
-    vSMax = bat.assumptions.maxStallSpeed * 0.5144  # transfer to SI units
-    lA = bat.assumptions.obstacleClearance
-    A = bat.assumptions.reverseThrustFactorA
+    vSMax = bat.assumptions.maxStallSpeed.si
     gammaMinOei = bat.assumptions.minClimbGradient
     mClimbRatio = bat.assumptions.massClimbRatio
     oswaldE = bat.assumptions.oswaldFactor
@@ -48,24 +160,19 @@ def getSizingDiagram():
     mCrRatio = bat.assumptions.maxMassOverCruiseMassRatio
     mlwRatio = bat.assumptions.maxMassOverLandingMassRatio
 
-    Lambda = b**2 / Sref                                # (A.1) aspect ratio
+    Lambda = aspect_ratio(b, Sref)
     cW0 = np.pi * Lambda * oswaldE / (4 * eCruise**2)   # from E_max = 0.5*sqrt(pi*Lambda*e/cW0)
     eps = 1 / eCruise                                   # (A.2) eps = CW/CA
-    sigma = isaDensity(fieldElevation, rho0) / rho0     # 1, because start at standard density
+    sigma = isaDensity(fieldElevation, rho0) / RHO_0    # 1, because start at standard density
     rhoCr = isaDensity(hCruise, rho0)                   # density at cruise height
     qCr = 0.5 * rhoCr * vCruise**2                      # dynamic pressure
-    x = np.linspace(50, 600, 800)                       # m0/S in kg/m^2, needed for plotting everything
+    x = np.linspace(5, 600, 800)                        # m0/S in kg/m^2, needed for plotting everything
 
-    # (G.2) stall speed vertical line
-    xStall = caMaxL * rho0 / (2 * g) * vSMax**2
-    # (F.8) takeoff field length line through origin
-    yTo = kTO / (caMaxTo * sigma * sTofl) * x
-    # (H.2) OEI climb gradient horizontal line
-    yClimb = mClimbRatio * nEng / (nEng - 1) * (gammaMinOei + eps) * np.ones_like(x)
-    # (I.1) cruise curve
-    yCruise = fOverFcr * (cW0 * qCr / (x * g) + x * g / (qCr * np.pi * Lambda * oswaldE) * mCrRatio**2)
-    # (K.6) landing distance vertical line
-    xLanding = mlwRatio * (lLdg - lA) * sigma * caMaxL / (0.51 * A * g)
+    xStall = calc_stall_wing_loading(caMaxL, rho0, vSMax)
+    yTo = calc_takeoff_thrust_loading(nEng, caMaxTo, sigma, sTofl, x)
+    yClimb = calc_oei_climb_thrust_loading(mClimbRatio, nEng, gammaMinOei, eps, x)
+    yCruise = calc_cruise_thrust_loading(fOverFcr, cW0, qCr, Lambda, oswaldE, mCrRatio, x)
+    xLanding = calc_landing_wing_loading(mlwRatio, lLdg, sigma, caMaxL)
 
     # calculate design point
     yReq = np.maximum.reduce([yTo, yClimb, yCruise])
@@ -90,22 +197,25 @@ def getSizingDiagram():
     print(f"DESIGN THRUST LOADING:             {designPoint[1]:.4f}")
     print("")
 
-    # plot
-    fig, ax = plt.subplots(figsize=(9, 6))
-    ax.axvline(xStall, color="red", ls="--", label="Überziehgeschwindigkeit (G.2)")
-    ax.plot(x, yTo, label="Startstrecke (F.8)")
-    ax.plot(x, yClimb, label="Steiggradient OEI (H.2)")
-    ax.plot(x, yCruise, label="Reiseflug (I.1)")
-    ax.plot(*designPoint, "ko", label="Entwurfspunkt")
-    ax.axvline(xLanding, color="purple", ls="--", label="Landestrecke (K.6)")
-    ax.set_xlim(x[0], x[-1])
-    ax.set_ylim(0, 0.6)
-    ax.set_xlabel(r"$m_0/S$ in kg m$^{-2}$")
-    ax.set_ylabel(r"$F/(m_0\cdot g)$ (–)")
-    ax.set_title("Entwurfsdiagramm")
-    ax.grid(alpha=0.3)
-    ax.legend(fontsize=8, loc="upper left")
-    plt.tight_layout()
-    plt.show()
+    if should_plot:
+        _, ax = plt.subplots(figsize=(9, 6))
+        ax.axvline(xStall, color="red", ls="--", label="Stall speed (G.2)")
+        ax.plot(x, yTo, label="Take-off field length (F.8)")
+        ax.plot(x, yClimb, label="Climb gradient OEI (H.2)")
+        ax.plot(x, yCruise, label="Cruise (I.1)")
+        ax.plot(*designPoint, "ko", label="Design point")
+        ax.axvline(xLanding, color="purple", ls="--", label="Landing field length (K.6)")
+        ax.set_xlim(x[0], x[-1])
+        ax.set_ylim(0, 0.6)
+        ax.set_xlabel(r"$m_0/S$ in kg m$^{-2}$")
+        ax.set_ylabel(r"$T/(m_0\cdot g)$ (–)")
+        ax.set_title("Sizing Diagram")
+        ax.grid(alpha=0.3)
+        ax.legend(fontsize=8, loc="upper left")
+        plt.tight_layout()
+        plt.show()
     
     return designPoint
+
+if __name__ == "__main__":
+    getSizingDiagram(True)

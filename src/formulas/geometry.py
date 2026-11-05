@@ -54,3 +54,15 @@ def calc_vertical_tail_volume_coefficient(
         Vertical tail volume coefficient c_VT [-].
     """
     return (s_vtp * r_v) / (wing_area * wingspan)
+
+def aspect_ratio(b: SiValue, s_ref: SiValue) -> float:
+    """Calculates aspect ratio A = b^2 / S_W [-].
+
+    Args:
+        b: Wingspan b_W [m].
+        s_ref: Wing reference area S_W [m^2].
+
+    Returns:
+        Aspect ratio A [-].
+    """
+    return b**2 / s_ref

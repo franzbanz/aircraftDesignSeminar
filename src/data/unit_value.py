@@ -68,6 +68,8 @@ class UnitValue(float):
         "kpa": ("pa", 1e3),
         "bar": ("pa", 1e5),
         "mbar": ("pa", 100.0),
+        # Surface density / Wing loading (SI: kg/m^2)
+        "kg/m^2": ("kg/m^2", 1.0),
         # Density (SI: kg/m^3)
         "kg/m^3": ("kg/m^3", 1.0),
         # Acceleration (SI: m/s^2)

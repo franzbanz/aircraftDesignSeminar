@@ -40,7 +40,7 @@
   },
   "fuel": {
     "energyDensity": [42.8, "MJ/kg"],
-    "referenceRange": [185200, "m"],
+    "referenceRange": [100, "nm"],
     "referenceMass": [5950, "kg"],
     "taxiOutAndTakeOff": [24, "kg"],
     "climb": [36, "kg"],
@@ -48,13 +48,16 @@
     "descent": [9, "kg"],
     "approachLandingAndTaxiIn": [17, "kg"],
     "reserve": [186, "kg"],
-    "total": [339, "kg"]
+    "total": [350, "kg"]
   },
   "assumptions": {
     "limitLoad": [3.0, ""],
     "maxTakeOffLiftCoefficient": [1.7, ""],
+    // 16% maximum thickness
     "wingRootThickness": [0.33, "m"],
+    // rectangular wing
     "wingSweepHalfChord": [0.0, "deg"],
+    // 2 engines (-5%) and no landing gear on wing (-5%)
     "wingMassPenaltyFactor": [-0.10, ""]
     }
 }

@@ -6,12 +6,11 @@
     "luggageVolumePerPassenger": [110, "liters"]
   },
   "mission": {
-    "range": [185.2, "km"],
+    "range": [100, "nm"],
     "routeReserve": [0.05, ""],
-    "diversionDistance": [92.6, "km"],
+    "diversionDistance": [50, "nm"],
     "loiterTime": [0.5, "h"],
-    "turnaroundTimeMax": [1, "h"],
-    "gravity": [9.81, "m/s^2"]
+    "turnaroundTimeMax": [1, "h"]
   },
   "performance": {
     "takeOffFieldLengthMax": [800, "m"],
