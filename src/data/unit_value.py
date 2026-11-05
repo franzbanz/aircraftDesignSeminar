@@ -74,6 +74,11 @@ class UnitValue(float):
         "kg/m^3": ("kg/m^3", 1.0),
         # Acceleration (SI: m/s^2)
         "m/s^2": ("m/s^2", 1.0),
+        # Force (SI: N)
+        "n": ("n", 1.0),
+        "kn": ("n", 1e3),
+        "mn": ("n", 1e6),
+        "lbf": ("n", 4.4482216152605),
         # Fuel consumption (TSFC) (SI: kg/(N*s))
         "kg/(n*s)": ("kg/(n*s)", 1.0),
         "lb/(h*lbf)": ("kg/(n*s)", 1.0 / (3600.0 * 9.80665)),
