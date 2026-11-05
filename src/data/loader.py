@@ -1,7 +1,7 @@
-"""JSON loaders for target aircraft parameters and reference aircraft data.
+"""JSON loaders for target aircraft design constraints and reference aircraft data.
 
-Provides ``load_parameters`` and ``load_reference_aircraft`` to read
-``parameters.json`` and ``reference_aircraft.json`` into typed dataclasses.
+Provides ``load_constraints`` and ``load_reference_aircraft`` to read
+``constraints.json`` and ``reference_aircraft.json`` into typed dataclasses.
 """
 
 import dataclasses
@@ -13,12 +13,13 @@ from typing import TypeVar
 
 import json
 
-from data.parameters_data import (
-    BatteryParameters,
-    MissionParameters,
-    Parameters,
-    PayloadParameters,
-    PerformanceParameters,
+from data.constraints_data import (
+    BatteryConstraints,
+    Constraints,
+    Cs23Constraints,
+    MissionConstraints,
+    PayloadConstraints,
+    PerformanceConstraints,
 )
 from data.reference_aircraft_data import (
     ReferenceAerodynamicParameters,
@@ -117,17 +118,13 @@ def instantiate_dataclass_with_extra_warning(cls: type[T], data: dict[str, UnitV
     return cls(**data)
 
 
-def _find_parameters_file() -> Path:
-    """Resolves the path to ``parameters.json`` in the project root."""
-    return _PROJECT_ROOT / "parameters.json"
+def _find_constraints_file() -> Path:
+    """Resolves the path to ``constraints.json`` in the project root."""
+    return _PROJECT_ROOT / "constraints.json"
 
 
 def _find_reference_file() -> Path:
     """Resolves the path to the reference aircraft JSON file in the project root."""
-    for filename in ("reference_aircraft.json", "referenceAircraft.json"):
-        path = _PROJECT_ROOT / filename
-        if path.exists():
-            return path
     return _PROJECT_ROOT / "reference_aircraft.json"
 
 
@@ -140,23 +137,24 @@ def _load_json_with_comments(file_path: Path) -> dict:
     return json.loads(cleaned)
 
 
-def load_parameters(path: Path | str | None = None) -> Parameters:
-    """Loads target aircraft design parameters from ``parameters.json``.
+def load_constraints(path: Path | str | None = None) -> Constraints:
+    """Loads target aircraft design constraints from ``constraints.json``.
 
     Args:
-        path: Optional explicit path to ``parameters.json``.
+        path: Optional explicit path to ``constraints.json``.
 
     Returns:
-        Populated ``Parameters`` dataclass instance.
+        Populated ``Constraints`` dataclass instance.
     """
-    file_path = Path(path) if path else _find_parameters_file()
+    file_path = Path(path) if path else _find_constraints_file()
     data = _load_json_with_comments(file_path)
 
-    return Parameters(
-        payload=instantiate_dataclass_with_extra_warning(PayloadParameters, _parameter_group(data["payload"])),
-        mission=instantiate_dataclass_with_extra_warning(MissionParameters, _parameter_group(data["mission"])),
-        performance=instantiate_dataclass_with_extra_warning(PerformanceParameters, _parameter_group(data["performance"])),
-        battery=instantiate_dataclass_with_extra_warning(BatteryParameters, _parameter_group(data["battery"])),
+    return Constraints(
+        payload=instantiate_dataclass_with_extra_warning(PayloadConstraints, _parameter_group(data["payload"])),
+        mission=instantiate_dataclass_with_extra_warning(MissionConstraints, _parameter_group(data["mission"])),
+        performance=instantiate_dataclass_with_extra_warning(PerformanceConstraints, _parameter_group(data["performance"])),
+        battery=instantiate_dataclass_with_extra_warning(BatteryConstraints, _parameter_group(data["battery"])),
+        cs23=instantiate_dataclass_with_extra_warning(Cs23Constraints, _parameter_group(data["cs23"])),
     )
 
 

@@ -17,13 +17,14 @@
     "landingFieldLengthMax": [800, "m"],
     "takeOffMassMax": [8618, "kg"],
     "takeOffAltitude": [0, "m"],
-    "takeOffTemperature": [15, "degC"],
-    "takeOffPressure": [101325, "pa"],
-    "takeOffDensity": [1.225, "kg/m^3"],
     "cruiseSpeedMin": [170, "kt"]
   },
   "battery": {
     "cellEnergyDensityMax": [420, "Wh/kg"],
     "cellToPackFactorMin": [1.2, ""]
+  },
+  "cs23": {
+    "maxStallSpeed": [61, "kts"],
+    "minClimbGradient": [0.015, ""]
   }
 }

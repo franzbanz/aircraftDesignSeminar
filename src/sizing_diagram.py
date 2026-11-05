@@ -1,5 +1,5 @@
 from formulas.geometry import aspect_ratio
-from data import SiValue, UnitValue, load_parameters, load_reference_aircraft
+from data import SiValue, UnitValue, load_constraints, load_reference_aircraft
 import json
 import warnings
 import numpy as np
@@ -129,18 +129,18 @@ def calc_landing_wing_loading(
     return SiValue(mlwRatio * (lLdg - lA) * sigma * caMaxL / (0.51 * A * GRAVITY), "kg/m^2")
 
 
-def getSizingDiagram(should_plot: bool = False):
-    par = load_parameters()
+def getDesignPoint(should_plot: bool = False):
+    constraints = load_constraints()
     ref = load_reference_aircraft()
     with open("battery_aircraft.json") as f:
         bat = json.load(f, object_hook=hook)
 
-    # parameters
-    sTofl = par.performance.takeOffFieldLengthMax.si
-    lLdg = par.performance.landingFieldLengthMax.si
-    rho0 = par.performance.takeOffDensity.si
-    fieldElevation = par.performance.takeOffAltitude.si
-    vCruise = par.performance.cruiseSpeedMin.si
+    # constraints
+    sTofl = constraints.performance.takeOffFieldLengthMax.si
+    lLdg = constraints.performance.landingFieldLengthMax.si
+    rho0 = RHO_0
+    fieldElevation = constraints.performance.takeOffAltitude.si
+    vCruise = constraints.performance.cruiseSpeedMin.si
 
     # ref aircraft
     Sref = ref.dimensions.wingArea.si
@@ -151,9 +151,11 @@ def getSizingDiagram(should_plot: bool = False):
     caMaxTo = ref.assumptions.maxTakeOffLiftCoefficient
     caMaxL = ref.aerodynamics.maxLandingLiftCoefficient
 
+    # CS-23 certification requirements
+    vSMax = constraints.cs23.maxStallSpeed.si
+    gammaMinOei = constraints.cs23.minClimbGradient.value
+
     # electric aircraft
-    vSMax = bat.assumptions.maxStallSpeed.si
-    gammaMinOei = bat.assumptions.minClimbGradient
     mClimbRatio = bat.assumptions.massClimbRatio
     oswaldE = bat.assumptions.oswaldFactor
     fOverFcr = bat.assumptions.maxThrustOverCruiseThrustRatio
@@ -218,4 +220,4 @@ def getSizingDiagram(should_plot: bool = False):
     return designPoint
 
 if __name__ == "__main__":
-    getSizingDiagram(True)
+    getDesignPoint(True)

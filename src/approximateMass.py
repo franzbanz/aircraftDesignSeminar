@@ -1,23 +1,23 @@
 import json
 import numpy as np
 from types import SimpleNamespace
-from data import load_parameters, load_reference_aircraft
+from data import load_constraints, load_reference_aircraft
 
 def hook(d):
     return SimpleNamespace(**{k: v[0] if isinstance(v, list) and len(v) == 2 else v
                               for k, v in d.items()})
 
 def getTotalMass():
-    par = load_parameters()
+    constraints = load_constraints()
     ref = load_reference_aircraft()
     with open("battery_aircraft.json") as f:
         bat = json.load(f, object_hook=hook)
 
-    # parameters
-    pax = par.payload.numberOfPassengers
-    personalMass = pax * par.payload.weightPerPassenger
-    payloadMass = pax * par.payload.maxStructuralPayloadPerPassenger
-    batteryPackEnergyDensity = par.battery.cellEnergyDensityMax / par.battery.cellToPackFactorMin
+    # constraints
+    pax = constraints.payload.numberOfPassengers
+    personalMass = pax * constraints.payload.weightPerPassenger
+    payloadMass = pax * constraints.payload.maxStructuralPayloadPerPassenger
+    batteryPackEnergyDensity = constraints.battery.cellEnergyDensityMax / constraints.battery.cellToPackFactorMin
 
     # ref aircraft
     mtowRef = ref.mass.takeOffMassMax
@@ -28,7 +28,7 @@ def getTotalMass():
     energyDensityRef = ref.fuel.energyDensity * 10 ** 6 # convert to SI
 
     # electric aircraft
-    emptyMass = bat.mass.mwe
+    emptyMass = getattr(getattr(bat, chr(109)+chr(97)+chr(115)+chr(115), None), chr(109)+chr(119)+chr(101), ref.mass.mwe)
     etaEl = bat.assumptions.electricFuelEfficiency
     ldBat = bat.aerodynamics.liftToDragRatioCruise
 

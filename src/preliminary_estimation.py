@@ -1,7 +1,7 @@
 import math
 
 from constants import GRAVITY
-from data import SiValue, load_parameters, load_reference_aircraft
+from data import SiValue, load_constraints, load_reference_aircraft
 from formulas import (
     calc_empennage_mass,
     calc_fuselage_mass,
@@ -11,7 +11,7 @@ from formulas import (
     calc_wing_mass,
 )
 
-params = load_parameters()
+constraints = load_constraints()
 ref_aircraft = load_reference_aircraft()
 
 L_D = ref_aircraft.aerodynamics.liftToDragRatioCruise  # Cruise lift-to-drag ratio
@@ -42,7 +42,7 @@ def calc_calibrated_wing_mass() -> SiValue:
 
 def calc_calibrated_fuselage_mass() -> SiValue:
     """Calculates fuselage mass scaled with the reference aircraft calibration factor [kg]."""
-    v_D = SiValue(1.25 * params.performance.cruiseSpeedMin.si, "m/s")
+    v_D = SiValue(1.25 * constraints.performance.cruiseSpeedMin.si, "m/s")
     r_H = ref_aircraft.calculatedValues.horizontalTailLeverArm.si
     b_R = ref_aircraft.dimensions.fuselageWidth.si
     h_R = ref_aircraft.dimensions.fuselageHeight.si
@@ -109,7 +109,7 @@ def calc_furnishings_mass() -> SiValue:
 
 def calc_payload_mass() -> SiValue:
     """Calculates design payload mass from passenger count and mass per passenger [kg]."""
-    return SiValue(params.payload.weightPerPassenger.si * params.payload.numberOfPassengers, "kg")
+    return SiValue(constraints.payload.weightPerPassenger.si * constraints.payload.numberOfPassengers, "kg")
 
 
 def calc_operator_items_mass() -> SiValue:
@@ -166,7 +166,7 @@ print(f"Total Takeoff Mass (MTOM): {MTOM} (Ref: {ref_aircraft.mass.takeOffMassMa
 
 # ------------- Range ------------------
 range_ = SiValue(
-    params.battery.cellEnergyDensityMax.si * 0.85 * 1 / GRAVITY * L_D * m_battery / MTOM,
+    constraints.battery.cellEnergyDensityMax.si * 0.85 * 1 / GRAVITY * L_D * m_battery / MTOM,
     "m",
 )
 print(f"Range: {range_.to('km')}")
