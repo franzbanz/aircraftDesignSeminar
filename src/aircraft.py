@@ -1,6 +1,6 @@
 """Battery-powered electric aircraft model with integrated calibrated mass estimation."""
 from formulas.geometry import wing_span
-from sizing_diagram import getDesignPoint
+from sizing_diagram import get_design_point
 
 import math
 
@@ -81,7 +81,7 @@ class BatteryAircraft:
         """Calibrated wing mass [kg]."""
         constraint_mtom = self.constraints.performance.takeOffMassMax.si
         mtom = self.mtom if self.mtom < constraint_mtom else constraint_mtom
-        s_w = SiValue(mtom / getDesignPoint()[0], "m^2")
+        s_w = SiValue(mtom / get_design_point()[0], "m^2")
         b_s = wing_span(s_w, self.design.aerodynamics.aspectRatio)
         # constrain max wing span
         if b_s > self.design.aerodynamics.maxWingSpan.si:

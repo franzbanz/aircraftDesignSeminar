@@ -1,202 +1,233 @@
-from formulas.geometry import aspect_ratio
-from formulas.propulsion import calc_thrust_loading_from_electric_power
-from data import SiValue, UnitValue, load_constraints, load_reference_aircraft, load_design_parameters
-import json
+"""Sizing diagram (Matching Chart) for wing loading and thrust loading determination."""
+
 import warnings
-import numpy as np
+
 import matplotlib.pyplot as plt
-from types import SimpleNamespace
+import numpy as np
+
 from constants import GRAVITY, RHO_0, isa_density
+from data import (
+    SiValue,
+    load_constraints,
+    load_design_parameters,
+    load_reference_aircraft,
+)
+from formulas.geometry import aspect_ratio as calc_aspect_ratio
 
 
-def calc_stall_wing_loading(caMaxL: float, rho0: SiValue, vSMax: SiValue) -> SiValue:
+def calc_stall_wing_loading(
+    c_a_max_l: float,
+    rho: SiValue,
+    v_s_max: SiValue,
+) -> SiValue:
     """Calculates maximum allowable wing loading from stall speed [Strohmayer - Flugzeugentwurf 2 | p. 105] [kg/m^2].
 
     Args:
-        caMaxL: Maximum landing lift coefficient c_A,max,L [-].
-        rho0: Take-off air density rho_0 [kg/m^3].
-        vSMax: Maximum stall speed v_S,max [m/s].
+        c_a_max_l: Maximum landing lift coefficient c_A,max,L [-].
+        rho: Air density rho [kg/m^3].
+        v_s_max: Maximum allowable stall speed v_S,max [m/s].
 
     Returns:
         Maximum allowable wing loading for stall speed [kg/m^2].
     """
-    return SiValue(caMaxL * rho0 / (2 * GRAVITY) * vSMax**2, "kg/m^2")
+    return SiValue(c_a_max_l * rho / (2.0 * GRAVITY) * v_s_max**2, "kg/m^2")
 
 
 def calc_takeoff_thrust_loading(
     n_engines: int,
-    caMaxTo: float,
+    c_a_max_to: float,
     sigma: float,
-    sTofl: SiValue,
-    x: np.ndarray,
+    s_tofl: SiValue,
+    wing_loading: np.ndarray,
 ) -> np.ndarray:
     """Calculates required take-off thrust loading T/G as a function of wing loading [Strohmayer - Flugzeugentwurf 2 | p. 82] [-].
 
     Args:
         n_engines: Number of engines [-].
-        caMaxTo: Maximum take-off lift coefficient c_A,max,TO [-].
+        c_a_max_to: Maximum take-off lift coefficient c_A,max,TO [-].
         sigma: Relative air density ratio rho / rho_0 [-].
-        sTofl: Required take-off field length s_TOFL [m].
-        x: Wing loading array m_0 / S [kg/m^2].
+        s_tofl: Required take-off field length s_TOFL [m].
+        wing_loading: Wing loading array m_0 / S [kg/m^2].
 
     Returns:
         Required take-off thrust loading array T/G [-].
     """
     k_to_map = {2: 2.45, 3: 2.26, 4: 2.06}
-    if (n := int(n_engines)) not in k_to_map:
-        warnings.warn(f"kTO only defined for 2, 3, 4 engines (got {n_engines}).")
-    kTO = k_to_map.get(n, 2.45 if n < 2 else 2.06)
+    if n_engines not in k_to_map:
+        warnings.warn(f"k_to only defined for 2, 3, 4 engines (got {n_engines}).")
+    k_to = k_to_map.get(n_engines, 2.45 if n_engines < 2 else 2.06)
 
-    return kTO / (caMaxTo * sigma * sTofl) * x
+    return k_to / (c_a_max_to * sigma * s_tofl) * wing_loading
 
 
 def calc_oei_climb_thrust_loading(
-    mClimbRatio: float,
-    nEng: int,
-    gammaMinOei: float,
+    n_engines: int,
+    gamma_min_oei: float,
     eps: float,
-    x: np.ndarray,
+    wing_loading: np.ndarray,
+    m_climb_ratio: float = 1.0,
 ) -> np.ndarray:
     """Calculates required OEI 2nd segment climb thrust loading T/G [Strohmayer - Flugzeugentwurf 2 | p. 86] [-].
 
     Args:
-        mClimbRatio: Ratio of climb mass to take-off mass m_climb / m_0 [-].
-        nEng: Number of engines n [-].
-        gammaMinOei: Minimum climb gradient with one engine inoperative [-].
+        n_engines: Number of engines n [-].
+        gamma_min_oei: Minimum climb gradient with one engine inoperative [-].
         eps: Inverse glide ratio in climb eps = c_W / c_A [-].
-        x: Wing loading array m_0 / S [kg/m^2].
+        wing_loading: Wing loading array m_0 / S [kg/m^2].
+        m_climb_ratio: Ratio of climb mass to take-off mass m_climb / m_0 [-] (defaults to 1.0 for electric aircraft).
 
     Returns:
         Required OEI climb thrust loading array T/G [-].
     """
-    return mClimbRatio * nEng / (nEng - 1) * (gammaMinOei + eps) * np.ones_like(x)
+    return (
+        m_climb_ratio
+        * n_engines
+        / (n_engines - 1)
+        * (gamma_min_oei + eps)
+        * np.ones_like(wing_loading)
+    )
 
 
 def calc_cruise_thrust_loading(
-    fOverFcr: float,
-    cW0: float,
-    qCr: float,
-    Lambda: float,
-    oswaldE: float,
-    mCrRatio: float,
-    x: np.ndarray,
+    thrust_ratio: float,
+    c_w0: float,
+    q_cruise: float,
+    aspect_ratio: float,
+    oswald_factor: float,
+    wing_loading: np.ndarray,
+    m_cruise_ratio: float = 1.0,
 ) -> np.ndarray:
     """Calculates required cruise thrust loading T/G as a function of wing loading [Strohmayer - Flugzeugentwurf 2 | p. 92] [-].
 
     Args:
-        fOverFcr: Ratio of maximum take-off thrust to cruise thrust F_max / F_cr [-].
-        cW0: Zero-lift drag coefficient c_W0 [-].
-        qCr: Dynamic pressure in cruise [Pa].
-        Lambda: Wing aspect ratio Lambda [-].
-        oswaldE: Oswald efficiency factor e [-].
-        mCrRatio: Ratio of cruise mass to take-off mass m_cr / m_0 [-].
-        x: Wing loading array m_0 / S [kg/m^2].
+        thrust_ratio: Ratio of maximum take-off thrust to cruise thrust F_max / F_cr [-].
+        c_w0: Zero-lift drag coefficient c_W0 [-].
+        q_cruise: Dynamic pressure in cruise [Pa].
+        aspect_ratio: Wing aspect ratio Lambda [-].
+        oswald_factor: Oswald efficiency factor e [-].
+        wing_loading: Wing loading array m_0 / S [kg/m^2].
+        m_cruise_ratio: Ratio of cruise mass to take-off mass m_cr / m_0 [-] (defaults to 1.0 for electric aircraft).
 
     Returns:
         Required cruise thrust loading array T/G [-].
     """
-    return fOverFcr * (
-        cW0 * qCr / (x * GRAVITY)
-        + x * GRAVITY / (qCr * np.pi * Lambda * oswaldE) * mCrRatio**2
+    return thrust_ratio * (
+        c_w0 * q_cruise / (wing_loading * GRAVITY)
+        + wing_loading * GRAVITY / (q_cruise * np.pi * aspect_ratio * oswald_factor) * m_cruise_ratio**2
     )
 
 
 def calc_landing_wing_loading(
-    mlwRatio: float,
-    lLdg: SiValue,
+    l_ldg: SiValue,
     sigma: float,
-    caMaxL: float,
+    c_a_max_l: float,
+    mlw_ratio: float = 1.0,
 ) -> SiValue:
     """Calculates maximum allowable wing loading from landing field length [Strohmayer - Flugzeugentwurf 2 | p. 106] [kg/m^2].
 
     Args:
-        mlwRatio: Ratio of take-off mass to maximum landing mass m_0 / m_MLW [-].
-        lLdg: Available landing field length [m].
+        l_ldg: Available landing field length [m].
         sigma: Relative air density ratio rho / rho_0 [-].
-        caMaxL: Maximum landing lift coefficient c_A,max,L [-].
+        c_a_max_l: Maximum landing lift coefficient c_A,max,L [-].
+        mlw_ratio: Ratio of take-off mass to maximum landing mass m_0 / m_MLW [-] (defaults to 1.0 for electric aircraft).
 
     Returns:
         Maximum allowable wing loading for landing [kg/m^2].
     """
-    lA = SiValue(183.0, "m")  # CS-23 standard air distance over 50 ft obstacle (600 ft)
-    A = 1.0                   # CS-23 standard braking factor (wheel brakes only)
-    return SiValue(mlwRatio * (lLdg - lA) * sigma * caMaxL / (0.51 * A * GRAVITY), "kg/m^2")
+    l_A = SiValue(183.0, "m")  # CS-23 standard air distance over 50 ft obstacle (600 ft)
+    A = 1.0                    # CS-23 standard braking factor (wheel brakes only)
+    return SiValue(
+        mlw_ratio * (l_ldg - l_A) * sigma * c_a_max_l / (0.51 * A * GRAVITY),
+        "kg/m^2",
+    )
 
 
-def getDesignPoint(should_plot: bool = False):
+def get_design_point(should_plot: bool = False) -> tuple[float, float]:
+    """Calculates the optimum design point (m_0/S, T/G) from CS-23 and performance constraints.
+
+    Args:
+        should_plot: Whether to display the sizing diagram plot.
+
+    Returns:
+        Tuple of (design_wing_loading [kg/m^2], design_thrust_loading [-]).
+    """
     constraints = load_constraints()
     ref = load_reference_aircraft()
     design = load_design_parameters()
 
-    # constraints
-    sTofl = constraints.performance.takeOffFieldLengthMax.si
-    lLdg = constraints.performance.landingFieldLengthMax.si
-    fieldElevation = constraints.performance.takeOffAltitude.si
-    vCruise = constraints.performance.cruiseSpeedMin.si
+    # Constraints
+    s_tofl = constraints.performance.takeOffFieldLengthMax.si
+    l_ldg = constraints.performance.landingFieldLengthMax.si
+    field_elevation = constraints.performance.takeOffAltitude.si
+    v_cruise = constraints.performance.cruiseSpeedMin.si
 
-    # ref aircraft
-    Sref = ref.dimensions.wingArea.si
-    b = ref.dimensions.wingspan.si
-    nEng = int(ref.propulsion.numberOfEngines)
-    eCruise = ref.aerodynamics.liftToDragRatioCruise
-    hCruise = ref.performance.cruiseAltitude.si
-    caMaxTo = ref.assumptions.maxTakeOffLiftCoefficient
-    caMaxL = ref.aerodynamics.maxLandingLiftCoefficient
+    # Reference aircraft dimensions and aerodynamics
+    s_ref = ref.dimensions.wingArea.si
+    wingspan = ref.dimensions.wingspan.si
+    n_engines = int(ref.propulsion.numberOfEngines)
+    l_d_cruise = ref.aerodynamics.liftToDragRatioCruise
+    h_cruise = ref.performance.cruiseAltitude.si
+    c_a_max_to = ref.assumptions.maxTakeOffLiftCoefficient
+    c_a_max_l = ref.aerodynamics.maxLandingLiftCoefficient
 
     # CS-23 certification requirements
-    vSMax = constraints.cs23.maxStallSpeed.si
-    gammaMinOei = constraints.cs23.minClimbGradient.value
+    v_s_max = constraints.cs23.maxStallSpeed.si
+    gamma_min_oei = constraints.cs23.minClimbGradient
 
-    # electric aircraft
-    oswaldE = design.aerodynamics.oswaldFactor
-    fOverFcr = design.propulsion.maxThrustOverCruiseThrustRatio
+    # Design parameters of the electric aircraft
+    oswald_factor = design.aerodynamics.oswaldFactor
+    thrust_ratio = design.propulsion.maxThrustOverCruiseThrustRatio
 
-    Lambda = aspect_ratio(b, Sref)
-    cW0 = np.pi * Lambda * oswaldE / (4 * eCruise**2)   # from E_max = 0.5*sqrt(pi*Lambda*e/cW0)
-    eps = 1 / eCruise                                   # (A.2) eps = CW/CA
-    sigma = isa_density(fieldElevation) / RHO_0         # 1, because start at standard density
-    rhoCr = isa_density(hCruise)                        # density at cruise height
-    qCr = 0.5 * rhoCr * vCruise**2                      # dynamic pressure
-    x = np.linspace(5, 600, 800)                        # m0/S in kg/m^2, needed for plotting everything
+    # Aerodynamics and atmosphere
+    aspect_ratio = calc_aspect_ratio(wingspan, s_ref)
+    c_w0 = np.pi * aspect_ratio * oswald_factor / (4.0 * l_d_cruise**2)
+    eps = 1.0 / l_d_cruise
+    sigma = isa_density(field_elevation) / RHO_0
+    rho_cruise = isa_density(h_cruise)
+    q_cruise = 0.5 * rho_cruise * v_cruise**2
 
-    xStall = calc_stall_wing_loading(caMaxL, RHO_0, vSMax)
-    yTo = calc_takeoff_thrust_loading(nEng, caMaxTo, sigma, sTofl, x)
-    yClimb = calc_oei_climb_thrust_loading(1, nEng, gammaMinOei, eps, x)
-    yCruise = calc_cruise_thrust_loading(fOverFcr, cW0, qCr, Lambda, oswaldE, 1, x)
-    xLanding = calc_landing_wing_loading(1, lLdg, sigma, caMaxL)
+    # Wing loading range for calculation
+    wing_loadings = np.linspace(5, 600, 800)
 
-    # calculate design point
-    yReq = np.maximum.reduce([yTo, yClimb, yCruise])
-    feasible = x <= min(xStall, xLanding)
-    idx = np.flatnonzero(feasible & (yReq <= yReq[feasible].min() * (1 + 1e-6)))[-1]
-    designPoint = (x[idx], yReq[idx])
-    """
+    # Performance constraint curves
+    x_stall = calc_stall_wing_loading(c_a_max_l, RHO_0, v_s_max)
+    y_takeoff = calc_takeoff_thrust_loading(n_engines, c_a_max_to, sigma, s_tofl, wing_loadings)
+    y_climb = calc_oei_climb_thrust_loading(n_engines, gamma_min_oei, eps, wing_loadings)
+    y_cruise = calc_cruise_thrust_loading(thrust_ratio, c_w0, q_cruise, aspect_ratio, oswald_factor, wing_loadings)
+    x_landing = calc_landing_wing_loading(l_ldg, sigma, c_a_max_l)
+
+    # Optimum design point determination (minimum thrust loading in feasible region)
+    y_req = np.maximum.reduce([y_takeoff, y_climb, y_cruise])
+    feasible = wing_loadings <= min(x_stall, x_landing)
+    idx = np.flatnonzero(feasible & (y_req <= y_req[feasible].min() * (1 + 1e-6)))[-1]
+    design_point = (float(wing_loadings[idx]), float(y_req[idx]))
+
     print("")
-    print(f"Aspect ratio:                      {Lambda:.2f}")
-    print(f"Cruise lift to drag ratio:         {eCruise:.2f}")
-    print(f"Cruise speed:                      {vCruise:.2f} m/s")
-    print(f"Cruise air density:                {rhoCr:.4f} kg/m^3")
-    print(f"Cruise dynamic pressure:           {qCr:.2f} Pa")
-    print(f"Max. wing loading (stall):         {xStall:.2f} kg/m^2")
-    print(f"Max. wing loading (landing):       {xLanding:.2f} kg/m^2")
-    print(f"Take-off thrust loading:           {yTo[idx]:.4f}")
-    print(f"OEI climb thrust loading:          {yClimb[idx]:.4f}")
-    print(f"Cruise thrust loading:             {yCruise[idx]:.4f}")
-    print(f"Active thrust constraint:          {['take-off', 'OEI climb', 'cruise'][np.argmax([yTo[idx], yClimb[idx], yCruise[idx]])]}")
-    print(f"Limiting wing loading:             {'stall' if xStall < xLanding else 'landing'}")
-    print(f"DESIGN WING LOADING:               {designPoint[0]:.2f} kg/m^2")
-    print(f"DESIGN THRUST LOADING:             {designPoint[1]:.4f}")
+    print(f"Aspect ratio:                      {aspect_ratio:.2f}")
+    print(f"Cruise lift to drag ratio:         {l_d_cruise:.2f}")
+    print(f"Cruise speed:                      {v_cruise:.2f}")
+    print(f"Cruise air density:                {rho_cruise:.4f}")
+    print(f"Cruise dynamic pressure:           {q_cruise:.2f}")
+    print(f"Max. wing loading (stall):         {x_stall:.2f}")
+    print(f"Max. wing loading (landing):       {x_landing:.2f}")
+    print(f"Take-off thrust loading:           {y_takeoff[idx]:.4f}")
+    print(f"OEI climb thrust loading:          {y_climb[idx]:.4f}")
+    print(f"Cruise thrust loading:             {y_cruise[idx]:.4f}")
+    print(f"Active thrust constraint:          {['take-off', 'OEI climb', 'cruise'][np.argmax([y_takeoff[idx], y_climb[idx], y_cruise[idx]])]}")
+    print(f"Limiting wing loading:             {'stall' if x_stall < x_landing else 'landing'}")
+    print(f"DESIGN WING LOADING:               {design_point[0]:.2f} kg/m^2")
+    print(f"DESIGN THRUST LOADING:             {design_point[1]:.4f}")
     print("")
-    """
+
     if should_plot:
         _, ax = plt.subplots(figsize=(9, 6))
-        ax.axvline(xStall, color="red", ls="--", label="Stall speed (G.2)")
-        ax.plot(x, yTo, label="Take-off field length (F.8)")
-        ax.plot(x, yClimb, label="Climb gradient OEI (H.2)")
-        ax.plot(x, yCruise, label="Cruise (I.1)")
-        ax.plot(*designPoint, "ko", label="Design point")
-        ax.axvline(xLanding, color="purple", ls="--", label="Landing field length (K.6)")
-        ax.set_xlim(x[0], x[-1])
+        ax.axvline(x_stall, color="red", ls="--", label="Stall speed (G.2)")
+        ax.plot(wing_loadings, y_takeoff, label="Take-off field length (F.8)")
+        ax.plot(wing_loadings, y_climb, label="Climb gradient OEI (H.2)")
+        ax.plot(wing_loadings, y_cruise, label="Cruise (I.1)")
+        ax.plot(*design_point, "ko", label="Design point")
+        ax.axvline(x_landing, color="purple", ls="--", label="Landing field length (K.6)")
+        ax.set_xlim(wing_loadings[0], wing_loadings[-1])
         ax.set_ylim(0, 0.6)
         ax.set_xlabel(r"$m_0/S$ in kg m$^{-2}$")
         ax.set_ylabel(r"$T/(m_0\cdot g)$ (–)")
@@ -205,8 +236,9 @@ def getDesignPoint(should_plot: bool = False):
         ax.legend(fontsize=8, loc="upper left")
         plt.tight_layout()
         plt.show()
-    
-    return designPoint
+
+    return design_point
+
 
 if __name__ == "__main__":
-    getDesignPoint(True)
+    get_design_point(should_plot=False)
