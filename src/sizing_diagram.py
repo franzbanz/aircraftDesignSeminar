@@ -8,10 +8,6 @@ import matplotlib.pyplot as plt
 from types import SimpleNamespace
 from constants import GRAVITY, RHO_0, isa_density
 
-def hook(d):
-    return SimpleNamespace(**{k: UnitValue(v[0], v[1]) if isinstance(v, list) and len(v) == 2 else v
-                              for k, v in d.items()})
-
 
 def calc_stall_wing_loading(caMaxL: float, rho0: SiValue, vSMax: SiValue) -> SiValue:
     """Calculates maximum allowable wing loading from stall speed [Strohmayer - Flugzeugentwurf 2 | p. 105] [kg/m^2].
