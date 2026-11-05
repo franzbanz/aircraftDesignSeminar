@@ -10,9 +10,7 @@ from data import (
     SiValue,
     load_constraints,
     load_design_parameters,
-    load_reference_aircraft,
 )
-from formulas.geometry import aspect_ratio as calc_aspect_ratio
 
 
 def calc_stall_wing_loading(
@@ -36,7 +34,7 @@ def calc_stall_wing_loading(
 def calc_takeoff_thrust_loading(
     n_engines: int,
     c_a_max_to: float,
-    sigma: float,
+    rho_takeoff: SiValue,
     s_tofl: SiValue,
     wing_loading: np.ndarray,
 ) -> np.ndarray:
@@ -45,7 +43,7 @@ def calc_takeoff_thrust_loading(
     Args:
         n_engines: Number of engines [-].
         c_a_max_to: Maximum take-off lift coefficient c_A,max,TO [-].
-        sigma: Relative air density ratio rho / rho_0 [-].
+        rho_takeoff: Air density at take-off conditions [kg/m^3].
         s_tofl: Required take-off field length s_TOFL [m].
         wing_loading: Wing loading array m_0 / S [kg/m^2].
 
@@ -57,7 +55,7 @@ def calc_takeoff_thrust_loading(
         warnings.warn(f"k_to only defined for 2, 3, 4 engines (got {n_engines}).")
     k_to = k_to_map.get(n_engines, 2.45 if n_engines < 2 else 2.06)
 
-    return k_to / (c_a_max_to * sigma * s_tofl) * wing_loading
+    return k_to / (c_a_max_to * (rho_takeoff / RHO_0) * s_tofl) * wing_loading
 
 
 def calc_oei_climb_thrust_loading(
@@ -119,7 +117,7 @@ def calc_cruise_thrust_loading(
 
 def calc_landing_wing_loading(
     l_ldg: SiValue,
-    sigma: float,
+    rho_takeoff: SiValue,
     c_a_max_l: float,
     mlw_ratio: float = 1.0,
 ) -> SiValue:
@@ -127,7 +125,7 @@ def calc_landing_wing_loading(
 
     Args:
         l_ldg: Available landing field length [m].
-        sigma: Relative air density ratio rho / rho_0 [-].
+        rho_takeoff: Air density at take-off conditions [kg/m^3].
         c_a_max_l: Maximum landing lift coefficient c_A,max,L [-].
         mlw_ratio: Ratio of take-off mass to maximum landing mass m_0 / m_MLW [-] (defaults to 1.0 for electric aircraft).
 
@@ -137,7 +135,7 @@ def calc_landing_wing_loading(
     l_A = SiValue(183.0, "m")  # CS-23 standard air distance over 50 ft obstacle (600 ft)
     A = 1.0                    # CS-23 standard braking factor (wheel brakes only)
     return SiValue(
-        mlw_ratio * (l_ldg - l_A) * sigma * c_a_max_l / (0.51 * A * GRAVITY),
+        mlw_ratio * (l_ldg - l_A) * (rho_takeoff / RHO_0) * c_a_max_l / (0.51 * A * GRAVITY),
         "kg/m^2",
     )
 
@@ -152,37 +150,33 @@ def get_design_point(should_plot: bool = False) -> tuple[float, float]:
         Tuple of (design_wing_loading [kg/m^2], design_thrust_loading [-]).
     """
     constraints = load_constraints()
-    ref = load_reference_aircraft()
     design = load_design_parameters()
 
     # Constraints
     s_tofl = constraints.performance.takeOffFieldLengthMax.si
     l_ldg = constraints.performance.landingFieldLengthMax.si
     field_elevation = constraints.performance.takeOffAltitude.si
-    v_cruise = constraints.performance.cruiseSpeedMin.si
-
-    # Reference aircraft dimensions and aerodynamics
-    s_ref = ref.dimensions.wingArea.si
-    wingspan = ref.dimensions.wingspan.si
-    n_engines = int(ref.propulsion.numberOfEngines)
-    l_d_cruise = ref.aerodynamics.liftToDragRatioCruise
-    h_cruise = ref.performance.cruiseAltitude.si
-    c_a_max_to = ref.assumptions.maxTakeOffLiftCoefficient
-    c_a_max_l = ref.aerodynamics.maxLandingLiftCoefficient
-
     # CS-23 certification requirements
     v_s_max = constraints.cs23.maxStallSpeed.si
     gamma_min_oei = constraints.cs23.minClimbGradient
 
+    # Electric aircraft design parameters and flight conditions
+    n_engines = int(design.propulsion.numberOfEngines)
+    l_d_cruise = design.aerodynamics.liftToDragRatioCruise
+    h_cruise = design.performance.cruiseAltitude.si
+    c_a_max_to = design.assumptions.maxTakeOffLiftCoefficient
+    c_a_max_l = design.aerodynamics.maxLandingLiftCoefficient
+    v_cruise = design.performance.cruiseSpeedTAS.si
+
     # Design parameters of the electric aircraft
+    aspect_ratio = design.aerodynamics.aspectRatio
     oswald_factor = design.aerodynamics.oswaldFactor
     thrust_ratio = design.propulsion.maxThrustOverCruiseThrustRatio
 
     # Aerodynamics and atmosphere
-    aspect_ratio = calc_aspect_ratio(wingspan, s_ref)
     c_w0 = np.pi * aspect_ratio * oswald_factor / (4.0 * l_d_cruise**2)
     eps = 1.0 / l_d_cruise
-    sigma = isa_density(field_elevation) / RHO_0
+    rho_takeoff = isa_density(field_elevation)
     rho_cruise = isa_density(h_cruise)
     q_cruise = 0.5 * rho_cruise * v_cruise**2
 
@@ -191,17 +185,17 @@ def get_design_point(should_plot: bool = False) -> tuple[float, float]:
 
     # Performance constraint curves
     x_stall = calc_stall_wing_loading(c_a_max_l, RHO_0, v_s_max)
-    y_takeoff = calc_takeoff_thrust_loading(n_engines, c_a_max_to, sigma, s_tofl, wing_loadings)
+    y_takeoff = calc_takeoff_thrust_loading(n_engines, c_a_max_to, rho_takeoff, s_tofl, wing_loadings)
     y_climb = calc_oei_climb_thrust_loading(n_engines, gamma_min_oei, eps, wing_loadings)
     y_cruise = calc_cruise_thrust_loading(thrust_ratio, c_w0, q_cruise, aspect_ratio, oswald_factor, wing_loadings)
-    x_landing = calc_landing_wing_loading(l_ldg, sigma, c_a_max_l)
+    x_landing = calc_landing_wing_loading(l_ldg, rho_takeoff, c_a_max_l)
 
     # Optimum design point determination (minimum thrust loading in feasible region)
     y_req = np.maximum.reduce([y_takeoff, y_climb, y_cruise])
     feasible = wing_loadings <= min(x_stall, x_landing)
     idx = np.flatnonzero(feasible & (y_req <= y_req[feasible].min() * (1 + 1e-6)))[-1]
     design_point = (float(wing_loadings[idx]), float(y_req[idx]))
-
+    """
     print("")
     print(f"Aspect ratio:                      {aspect_ratio:.2f}")
     print(f"Cruise lift to drag ratio:         {l_d_cruise:.2f}")
@@ -218,7 +212,7 @@ def get_design_point(should_plot: bool = False) -> tuple[float, float]:
     print(f"DESIGN WING LOADING:               {design_point[0]:.2f} kg/m^2")
     print(f"DESIGN THRUST LOADING:             {design_point[1]:.4f}")
     print("")
-
+    """
     if should_plot:
         _, ax = plt.subplots(figsize=(9, 6))
         ax.axvline(x_stall, color="red", ls="--", label="Stall speed (G.2)")
@@ -241,4 +235,4 @@ def get_design_point(should_plot: bool = False) -> tuple[float, float]:
 
 
 if __name__ == "__main__":
-    get_design_point(should_plot=False)
+    get_design_point(should_plot=True)
