@@ -5,14 +5,11 @@ import warnings
 import numpy as np
 import matplotlib.pyplot as plt
 from types import SimpleNamespace
-from constants import GRAVITY, RHO_0
+from constants import GRAVITY, RHO_0, isa_density
 
 def hook(d):
     return SimpleNamespace(**{k: UnitValue(v[0], v[1]) if isinstance(v, list) and len(v) == 2 else v
                               for k, v in d.items()})
-
-def isaDensity(h, rho0):
-    return rho0 * (1 - 2.25577e-5 * h) ** 4.2559
 
 
 def calc_stall_wing_loading(caMaxL: float, rho0: SiValue, vSMax: SiValue) -> SiValue:
@@ -165,8 +162,8 @@ def getDesignPoint(should_plot: bool = False):
     Lambda = aspect_ratio(b, Sref)
     cW0 = np.pi * Lambda * oswaldE / (4 * eCruise**2)   # from E_max = 0.5*sqrt(pi*Lambda*e/cW0)
     eps = 1 / eCruise                                   # (A.2) eps = CW/CA
-    sigma = isaDensity(fieldElevation, rho0) / RHO_0    # 1, because start at standard density
-    rhoCr = isaDensity(hCruise, rho0)                   # density at cruise height
+    sigma = isa_density(fieldElevation) / RHO_0         # 1, because start at standard density
+    rhoCr = isa_density(hCruise)                        # density at cruise height
     qCr = 0.5 * rhoCr * vCruise**2                      # dynamic pressure
     x = np.linspace(5, 600, 800)                        # m0/S in kg/m^2, needed for plotting everything
 

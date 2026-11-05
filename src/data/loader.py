@@ -1,7 +1,7 @@
-"""JSON loaders for target aircraft design constraints and reference aircraft data.
+"""JSON loaders for target aircraft design constraints, parameters, and reference aircraft data.
 
-Provides ``load_constraints`` and ``load_reference_aircraft`` to read
-``constraints.json`` and ``reference_aircraft.json`` into typed dataclasses.
+Provides ``load_constraints``, ``load_design_parameters``, and ``load_reference_aircraft`` to read
+``constraints.json``, ``design_parameters.json``, and ``reference_aircraft.json`` into typed dataclasses.
 """
 
 import dataclasses
@@ -20,6 +20,15 @@ from data.constraints_data import (
     MissionConstraints,
     PayloadConstraints,
     PerformanceConstraints,
+)
+from data.design_parameters_data import (
+    DesignAerodynamicParameters,
+    DesignAssumptionsParameters,
+    DesignInitialSizingParameters,
+    DesignMissionParameters,
+    DesignParameters,
+    DesignPerformanceParameters,
+    DesignPropulsionParameters,
 )
 from data.reference_aircraft_data import (
     ReferenceAerodynamicParameters,
@@ -123,6 +132,11 @@ def _find_constraints_file() -> Path:
     return _PROJECT_ROOT / "constraints.json"
 
 
+def _find_design_parameters_file() -> Path:
+    """Resolves the path to ``design_parameters.json`` in the project root."""
+    return _PROJECT_ROOT / "design_parameters.json"
+
+
 def _find_reference_file() -> Path:
     """Resolves the path to the reference aircraft JSON file in the project root."""
     return _PROJECT_ROOT / "reference_aircraft.json"
@@ -155,6 +169,28 @@ def load_constraints(path: Path | str | None = None) -> Constraints:
         performance=instantiate_dataclass_with_extra_warning(PerformanceConstraints, _parameter_group(data["performance"])),
         battery=instantiate_dataclass_with_extra_warning(BatteryConstraints, _parameter_group(data["battery"])),
         cs23=instantiate_dataclass_with_extra_warning(Cs23Constraints, _parameter_group(data["cs23"])),
+    )
+
+
+def load_design_parameters(path: Path | str | None = None) -> DesignParameters:
+    """Loads target aircraft design parameters from ``design_parameters.json``.
+
+    Args:
+        path: Optional explicit path to ``design_parameters.json``.
+
+    Returns:
+        Populated ``DesignParameters`` dataclass instance.
+    """
+    file_path = Path(path) if path else _find_design_parameters_file()
+    data = _load_json_with_comments(file_path)
+
+    return DesignParameters(
+        initialSizing=instantiate_dataclass_with_extra_warning(DesignInitialSizingParameters, _parameter_group(data["initialSizing"])),
+        performance=instantiate_dataclass_with_extra_warning(DesignPerformanceParameters, _parameter_group(data["performance"])),
+        aerodynamics=instantiate_dataclass_with_extra_warning(DesignAerodynamicParameters, _parameter_group(data["aerodynamics"])),
+        propulsion=instantiate_dataclass_with_extra_warning(DesignPropulsionParameters, _parameter_group(data["propulsion"])),
+        mission=instantiate_dataclass_with_extra_warning(DesignMissionParameters, _parameter_group(data["mission"])),
+        assumptions=instantiate_dataclass_with_extra_warning(DesignAssumptionsParameters, _parameter_group(data["assumptions"])),
     )
 
 

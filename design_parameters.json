@@ -1,0 +1,32 @@
+{
+  "initialSizing": {
+    "maximumTakeOffMass": [8618, "kg"]
+  },
+  "performance": {
+    "cruiseSpeedTAS": [200, "kts"],
+    "cruiseAltitude": [10000, "ft"]
+  },
+  "aerodynamics": {
+    "liftToDragRatioCruise": [12.1, ""],
+    "liftToDragRatioLoiter": [15.7, ""],
+    "maxLandingLiftCoefficient": [2.6, ""]
+  },
+  "propulsion": {
+    // assumption of available engine -> to be determined
+    "engineTakeOffPower": [700, "kW"],
+    "numberOfEngines": [2, ""]
+  },
+  "mission": {
+    "cruiseDistance": [100, "nm"],
+  },
+  "assumptions": {
+    "limitLoad": [3.0, ""],
+    "maxTakeOffLiftCoefficient": [1.7, ""],
+    // 16% maximum thickness
+    "wingRootThickness": [0.33, "m"],
+    // rectangular wing
+    "wingSweepHalfChord": [0.0, "deg"],
+    // 2 engines (-5%) and no landing gear on wing (-5%)
+    "wingMassPenaltyFactor": [-0.10, ""]
+  }
+}

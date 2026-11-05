@@ -1,13 +1,16 @@
-"""Data package providing JSON loaders and top-level types for design constraints and reference aircraft."""
+"""Data package providing JSON loaders and top-level types for design constraints, design parameters, and reference aircraft."""
 
 from data.constraints_data import Constraints
-from data.loader import load_constraints, load_reference_aircraft
+from data.design_parameters_data import DesignParameters
+from data.loader import load_constraints, load_design_parameters, load_reference_aircraft
 from data.reference_aircraft_data import ReferenceAircraft
 from data.unit_value import SiValue, UnitValue
 
 __all__ = [
     "Constraints",
+    "DesignParameters",
     "load_constraints",
+    "load_design_parameters",
     "load_reference_aircraft",
     "ReferenceAircraft",
     "SiValue",
