@@ -1,4 +1,6 @@
 """Battery-powered electric aircraft model with integrated calibrated mass estimation."""
+from formulas.geometry import wing_span
+from sizing_diagram import getDesignPoint
 
 import math
 
@@ -7,7 +9,7 @@ from data import Constraints, DesignParameters, ReferenceAircraft, SiValue
 from fuel_fractions import (
     calc_battery_pack_mass,
     calc_total_mission_energy,
-    calc_trip_energy,
+    calc_trip_energy, calc_cruise_energy,
 )
 from formulas import (
     calc_electric_battery_mass_from_range,
@@ -17,7 +19,7 @@ from formulas import (
     calc_landing_gear_mass,
     calc_pylons_mass,
     calc_systems_mass,
-    calc_wing_mass,
+    calc_wing_mass, calc_mean_aerodynamic_chord,
 )
 
 
@@ -65,8 +67,11 @@ class BatteryAircraft:
 
     @property
     def m_engine(self) -> SiValue:
-        """Propulsion engine mass [kg] (adopted from reference aircraft)."""
-        return self.ref.mass.engine.si
+        """Propulsion engine mass [kg] (scaled by number of engines)."""
+        return SiValue(
+            self.design.propulsion.numberOfEngines.value * self.design.propulsion.engineMass.si,
+            "kg",
+        )
 
     # --------------------------------------------------------------------------
     # Calibrated Structural Component Masses
@@ -75,13 +80,21 @@ class BatteryAircraft:
     @property
     def m_wing(self) -> SiValue:
         """Calibrated wing mass [kg]."""
+        constraint_mtom = self.constraints.performance.takeOffMassMax.si
+        mtom = self.mtom if self.mtom < constraint_mtom else constraint_mtom
+        s_w = SiValue(mtom / getDesignPoint()[0], "m^2")
+        b_s = wing_span(s_w, self.design.aerodynamics.aspectRatio)
+        # constrain max wing span
+        if b_s > self.design.aerodynamics.maxWingSpan.si:
+            b_s = self.design.aerodynamics.maxWingSpan.si
+        d_root = calc_mean_aerodynamic_chord(s_w, b_s)
         raw = calc_wing_mass(
             mzfm=self.mtom,
-            b_s=self.ref.calculatedValues.structuralWingspan.si,
-            n_ult=self.ref.calculatedValues.ultimateLoadFactor.value,
-            d_root=self.ref.assumptions.wingRootThickness.si,
-            s_w=self.ref.dimensions.wingArea.si,
-            delta_m_F=self.ref.assumptions.wingMassPenaltyFactor.value,
+            b_s=b_s,
+            n_ult=self.design.assumptions.limitLoad * 1.5,
+            d_root=d_root,
+            s_w=s_w,
+            delta_m_F=self.design.assumptions.wingMassPenaltyFactor.value,
         )
         return SiValue(raw * self.ref.calculatedValues.wingCalibrationFactor, "kg")
 
@@ -116,7 +129,7 @@ class BatteryAircraft:
     @property
     def m_pylons(self) -> SiValue:
         """Calibrated engine pylons/cowling mass [kg]."""
-        p_to = self.ref.propulsion.totalTakeOffPower.si
+        p_to = SiValue(self.design.propulsion.engineTakeOffPower.si * self.design.propulsion.numberOfEngines, "W")
         raw = calc_pylons_mass(p_to)
         return SiValue(raw * self.ref.calculatedValues.pylonsCalibrationFactor, "kg")
 
@@ -192,7 +205,7 @@ class BatteryAircraft:
             take_off_mass=self.mtom,
         )
 
-    def calc_required_battery_mass(self, include_reserves: bool = True) -> SiValue:
+    def calc_required_battery_mass(self) -> SiValue:
         """Calculates required battery pack mass for the complete mission via fuel_fractions [kg].
 
         Args:
@@ -201,13 +214,16 @@ class BatteryAircraft:
         Returns:
             Required battery pack mass [kg].
         """
-        e_mission = calc_total_mission_energy(self.mtom)
-        print("E-Mission:", e_mission)
+        # e_mission = calc_total_mission_energy(self.mtom)
+        # use simpler approach for now
+        range_fuel = self.ref.fuel.climb + self.ref.fuel.cruise + self.ref.fuel.descent
+        range_energy = calc_cruise_energy(self.design.mission.range.si, self.mtom)
+        energy_per_kg = range_energy / range_fuel
+        e_mission = SiValue(energy_per_kg * self.ref.fuel.total, "J")
         return calc_battery_pack_mass(e_mission)
 
     def converge_mtom(
         self,
-        include_reserves: bool = True,
         max_iterations: int = 100,
         tolerance: float = 0.1,
     ) -> list[float]:
@@ -224,12 +240,11 @@ class BatteryAircraft:
         history = [float(self.mtom)]
 
         for _ in range(max_iterations):
-            m_bat_req = self.calc_required_battery_mass(include_reserves=include_reserves)
+            m_bat_req = self.calc_required_battery_mass()
             new_mtom = SiValue(
                 self.m_operating_empty + self.m_payload + m_bat_req,
                 "kg",
             )
-            print(self.mtom, m_bat_req, self.m_operating_empty, self.m_payload, new_mtom)
             history.append(float(new_mtom))
 
             if abs(float(new_mtom) - float(self.mtom)) < tolerance:

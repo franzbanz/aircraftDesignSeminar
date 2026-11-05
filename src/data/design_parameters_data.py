@@ -27,7 +27,8 @@ class DesignAerodynamicParameters:
     liftToDragRatioCruise: UnitValue
     liftToDragRatioLoiter: UnitValue
     maxLandingLiftCoefficient: UnitValue
-    aspect_ratio: UnitValue
+    aspectRatio: UnitValue
+    maxWingSpan: UnitValue
     relWingThickness: UnitValue
 
 
@@ -36,6 +37,8 @@ class DesignPropulsionParameters:
     """Propulsion and engine parameters."""
 
     engineTakeOffPower: UnitValue
+    engineMaxContinousPower: UnitValue
+    engineMass: UnitValue
     numberOfEngines: UnitValue
 
 
@@ -43,7 +46,7 @@ class DesignPropulsionParameters:
 class DesignMissionParameters:
     """Mission distance parameters."""
 
-    cruiseDistance: UnitValue
+    range: UnitValue
 
 
 @dataclass(frozen=True)

@@ -13,16 +13,20 @@
     "liftToDragRatioCruise": [12.1, ""],
     "liftToDragRatioLoiter": [15.7, ""],
     "maxLandingLiftCoefficient": [2.6, ""],
-    "aspect_ratio": [12, ""],
+    // maximum 10.63 if wingspan should be lower than 24m with 54.15m^2 wing area
+    "aspectRatio": [10.5, ""],
+    "maxWingSpan": [24, "m"],
     "relWingThickness": [0.16, ""]
   },
   "propulsion": {
-    // assumption of available engine -> to be determined
+    // assumption of engine magni 650 -> to be determined
     "engineTakeOffPower": [700, "kW"],
+    "engineMaxContinousPower": [510, "kW"],
+    "engineMass": [200, "kg"],
     "numberOfEngines": [2, ""]
   },
   "mission": {
-    "cruiseDistance": [100, "nm"]
+    "range": [100, "nm"]
   },
   "assumptions": {
     "limitLoad": [3.0, ""],
