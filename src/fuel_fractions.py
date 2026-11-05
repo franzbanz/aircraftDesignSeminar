@@ -5,13 +5,13 @@ from data import SiValue, load_constraints, load_reference_aircraft
 from formulas import (
     calc_breguet_fuel_mass_from_endurance,
     calc_breguet_fuel_mass_from_range,
-    calc_breguet_range,
+    calc_breguet_range, calc_electric_range,
 )
 
 constraints = load_constraints()
 ref_aircraft = load_reference_aircraft()
 
-MTOM = SiValue(8600.0, "kg")  # [kg] Design take-off mass of the electric aircraft
+MTOM = SiValue(8618, "kg")  # [kg] Design take-off mass of the electric aircraft
 ETA_ELECTRIC = 0.85  # [-] Overall electric powertrain efficiency
 L_D = 12.1  # [-] Cruise lift-to-drag ratio
 L_D_LOITER = 15.7  # [-] Loiter lift-to-drag ratio
@@ -35,42 +35,47 @@ def calc_reference_propulsive_energy(fuel_mass: SiValue) -> SiValue:
 def calc_scaled_electric_energy(
     fuel_mass_ref: SiValue,
     m_start_ref: SiValue,
+    mtom: SiValue = MTOM,
 ) -> SiValue:
     """Scales reference segment fuel mass to required electric battery energy [J].
 
-    Scales propulsive energy with the instantaneous mass ratio (MTOM / m_avg_ref).
+    Scales propulsive energy with the instantaneous mass ratio (mtom / m_avg_ref).
     """
     m_avg_ref = m_start_ref - 0.5 * fuel_mass_ref
     propulsive_energy_ref = calc_reference_propulsive_energy(fuel_mass_ref)
 
-    propulsive_energy_new = propulsive_energy_ref * MTOM / m_avg_ref
+    propulsive_energy_new = propulsive_energy_ref * mtom / m_avg_ref
     return SiValue(propulsive_energy_new / ETA_ELECTRIC, "J")
 
 
-def calc_taxi_and_takeoff_energy() -> SiValue:
+def calc_taxi_and_takeoff_energy(mtom: SiValue = MTOM) -> SiValue:
     """Calculates electric energy required for taxi-out and take-off [J]."""
     m_start_ref = ref_aircraft.fuel.referenceMass.si
     fuel_ref = ref_aircraft.fuel.taxiOutAndTakeOff.si
-    return calc_scaled_electric_energy(fuel_ref, m_start_ref)
+    return calc_scaled_electric_energy(fuel_ref, m_start_ref, mtom)
 
 
-def calc_cruise_energy(range_: SiValue = constraints.mission.range.si) -> SiValue:
+def calc_cruise_energy(
+    range_: SiValue = constraints.mission.range.si,
+    mtom: SiValue = MTOM,
+) -> SiValue:
     """Calculates required electrical battery energy for horizontal cruise flight [J].
 
-    Derived from steady level flight equilibrium (D = MTOM * g / (L/D)):
-    E_el = (D * R) / eta = (R * g * MTOM) / (eta * L/D)
+    Derived from steady level flight equilibrium (D = mtom * g / (L/D)):
+    E_el = (D * R) / eta = (R * g * mtom) / (eta * L/D)
 
     Args:
         range_: Cruise range [m]. Defaults to constraints.mission.range.
+        mtom: Aircraft take-off mass [kg].
 
     Returns:
         Required electrical energy [J].
     """
-    energy_j = range_ * GRAVITY * MTOM / (ETA_ELECTRIC * L_D)
+    energy_j = range_ * GRAVITY * mtom / (ETA_ELECTRIC * L_D)
     return SiValue(energy_j, "J")
 
 
-def calc_climb_and_descent_energy() -> SiValue:
+def calc_climb_and_descent_energy(mtom: SiValue = MTOM) -> SiValue:
     """Calculates net additional electric energy required for climb and descent [J].
 
     Computes the equivalent Breguet range of the reference aircraft's combined
@@ -90,11 +95,11 @@ def calc_climb_and_descent_energy() -> SiValue:
     reference_range = ref_aircraft.fuel.referenceRange.si
     climb_descent_overhead_factor = (breguet_range - reference_range) / reference_range
 
-    reference_cruise_energy = calc_cruise_energy(reference_range)
+    reference_cruise_energy = calc_cruise_energy(reference_range, mtom)
     return SiValue(climb_descent_overhead_factor * reference_cruise_energy, "J")
 
 
-def calc_approach_and_landing_energy() -> SiValue:
+def calc_approach_and_landing_energy(mtom: SiValue = MTOM) -> SiValue:
     """Calculates electric energy required for approach, landing, and taxi-in [J]."""
     m_start_ref = SiValue(
         ref_aircraft.fuel.referenceMass.si
@@ -105,16 +110,16 @@ def calc_approach_and_landing_energy() -> SiValue:
         "kg",
     )
     fuel_ref = ref_aircraft.fuel.approachLandingAndTaxiIn.si
-    return calc_scaled_electric_energy(fuel_ref, m_start_ref)
+    return calc_scaled_electric_energy(fuel_ref, m_start_ref, mtom)
 
 
-def calc_trip_energy() -> SiValue:
+def calc_trip_energy(mtom: SiValue = MTOM) -> SiValue:
     """Calculates total electric trip energy (Phases 1 to 5) [J]."""
     return SiValue(
-        calc_taxi_and_takeoff_energy()
-        + calc_climb_and_descent_energy()
-        + calc_cruise_energy()
-        + calc_approach_and_landing_energy(),
+        calc_taxi_and_takeoff_energy(mtom)
+        + calc_climb_and_descent_energy(mtom)
+        + calc_cruise_energy(mtom=mtom)
+        + calc_approach_and_landing_energy(mtom),
         "J",
     )
 
@@ -152,48 +157,51 @@ def calc_reference_reserve_fuel_mass() -> SiValue:
     )
 
 
-def calc_route_reserve_energy() -> SiValue:
+def calc_route_reserve_energy(mtom: SiValue = MTOM) -> SiValue:
     """Calculates electric energy required for the 5% route reserve [J]."""
-    return SiValue(constraints.mission.routeReserve * calc_trip_energy(), "J")
+    return SiValue(constraints.mission.routeReserve * calc_trip_energy(mtom), "J")
 
 
 def calc_loiter_energy(
     loiter_time: SiValue = constraints.mission.loiterTime.si,
     lift_to_drag_loiter: float = L_D_LOITER,
     loiter_speed: SiValue = constraints.performance.cruiseSpeedMin.si,
+    mtom: SiValue = MTOM,
 ) -> SiValue:
     """Calculates required electrical battery energy for loiter flight [J].
 
-    Derived from the electric Breguet endurance equation (P_prop = D * v = MTOM * g * v / (L/D)_loiter):
-    E_el = (v * t_loiter * g * MTOM) / (eta_el * (L/D)_loiter)
+    Derived from the electric Breguet endurance equation (P_prop = D * v = mtom * g * v / (L/D)_loiter):
+    E_el = (v * t_loiter * g * mtom) / (eta_el * (L/D)_loiter)
 
     Args:
         loiter_time: Loiter duration [s]. Defaults to constraints.mission.loiterTime.
         lift_to_drag_loiter: Lift-to-drag ratio in loiter [-]. Defaults to reference loiter L/D.
         loiter_speed: True airspeed during loiter [m/s]. Defaults to constraints.performance.cruiseSpeedMin.
+        mtom: Aircraft take-off mass [kg].
 
     Returns:
         Required electrical energy [J].
     """
-    energy_j = (loiter_speed * loiter_time * GRAVITY * MTOM) / (ETA_ELECTRIC * lift_to_drag_loiter)
+    energy_j = (loiter_speed * loiter_time * GRAVITY * mtom) / (ETA_ELECTRIC * lift_to_drag_loiter)
     return SiValue(energy_j, "J")
 
 
 def calc_diversion_energy(
     diversion_distance: SiValue = constraints.mission.diversionDistance.si,
+    mtom: SiValue = MTOM,
 ) -> SiValue:
     """Calculates electric energy required for diversion to alternate airport [J]."""
-    return calc_cruise_energy(diversion_distance)
+    return calc_cruise_energy(diversion_distance, mtom)
 
 
-def calc_reserve_energy() -> SiValue:
+def calc_reserve_energy(mtom: SiValue = MTOM) -> SiValue:
     """Calculates electric reserve energy (5% route + 30 min loiter + 50 NM diversion) [J]."""
-    return SiValue(calc_route_reserve_energy() + calc_loiter_energy() + calc_diversion_energy(), "J")
+    return SiValue(calc_route_reserve_energy(mtom) + calc_loiter_energy(mtom=mtom) + calc_diversion_energy(mtom=mtom), "J")
 
 
-def calc_total_mission_energy() -> SiValue:
+def calc_total_mission_energy(mtom: SiValue = MTOM) -> SiValue:
     """Calculates total electric mission energy (Trip + Reserve) [J]."""
-    return SiValue(calc_trip_energy() + calc_reserve_energy(), "J")
+    return SiValue(calc_trip_energy(mtom) + calc_reserve_energy(mtom), "J")
 
 
 def calc_battery_cell_mass(electric_energy: SiValue) -> SiValue:
@@ -261,3 +269,11 @@ if __name__ == "__main__":
         f"{'MISSION TOTAL (Trip + Reserve)':<32} | {total_fuel.to('kg'):7.1f} kg | {e_total.to('kWh'):11.1f} | "
         f"{calc_battery_cell_mass(e_total):10.1f} kg | {calc_battery_pack_mass(e_total):10.1f} kg"
     )
+
+    print(calc_route_reserve_energy(MTOM))
+    print(calc_loiter_energy(mtom=MTOM))
+    print(calc_diversion_energy(mtom=MTOM))
+    print(calc_trip_energy(MTOM))
+    print(calc_route_reserve_energy(MTOM) + calc_loiter_energy(mtom=MTOM) + calc_diversion_energy(SiValue(50, "nm"), MTOM))
+    print(calc_total_mission_energy(MTOM))
+    print(calc_electric_range(SiValue(420, "Wh/kg"), 0.85, 12.1, SiValue(3260.4, "kg"), MTOM).to("nm"))

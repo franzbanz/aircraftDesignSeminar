@@ -66,3 +66,15 @@ def aspect_ratio(b: SiValue, s_ref: SiValue) -> float:
         Aspect ratio A [-].
     """
     return b**2 / s_ref
+
+def wing_span(s_ref: SiValue, ar: float) -> SiValue:
+    """Calculates wingspan b = sqrt(S_ref * AR) [m].
+
+    Args:
+        s_ref: Wing reference area [m^2].
+        ar: Aspect ratio [-].
+
+    Returns:
+        Wingspan b_W [m].
+    """
+    return SiValue((s_ref * ar) ** 0.5, "m")

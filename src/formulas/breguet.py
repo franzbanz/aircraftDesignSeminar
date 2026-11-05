@@ -342,8 +342,76 @@ def calc_breguet_lift_to_drag_from_endurance(
     return (endurance * GRAVITY * thrust_specific_fuel_consumption) / math.log(m_start / m_end)
 
 
+# ==============================================================================
+# 3. BATTERY-ELECTRIC RANGE & ENDURANCE EQUATIONS
+# ==============================================================================
+
+
+def calc_electric_range(
+    battery_energy_density: SiValue,
+    eta_electric: float,
+    lift_to_drag: float,
+    battery_mass: SiValue,
+    take_off_mass: SiValue,
+) -> SiValue:
+    """Calculates range for a battery-electric aircraft [m].
+
+    Formula:
+        R = e_bat * eta_el * (1 / g) * (L/D) * (m_bat / m_0)
+
+    Args:
+        battery_energy_density: Gravimetric energy density of battery e_bat [J/kg].
+        eta_electric: Total powertrain efficiency eta_el [-].
+        lift_to_drag: Lift-to-drag ratio L/D [-].
+        battery_mass: Installed battery mass m_bat [kg].
+        take_off_mass: Maximum take-off mass m_0 [kg].
+
+    Returns:
+        Flight range [m].
+    """
+    range_ = (
+        battery_energy_density
+        * eta_electric
+        * (1.0 / GRAVITY)
+        * lift_to_drag
+        * (battery_mass / take_off_mass)
+    )
+    return SiValue(range_, "m")
+
+
+def calc_electric_battery_mass_from_range(
+    range_: SiValue,
+    battery_energy_density: SiValue,
+    eta_electric: float,
+    lift_to_drag: float,
+    take_off_mass: SiValue,
+) -> SiValue:
+    """Calculates required battery mass for a given range [kg].
+
+    Formula:
+        m_bat = (R * g * m_0) / (e_bat * eta_el * (L/D))
+
+    Args:
+        range_: Target flight range [m].
+        battery_energy_density: Gravimetric energy density of battery e_bat [J/kg].
+        eta_electric: Total powertrain efficiency eta_el [-].
+        lift_to_drag: Lift-to-drag ratio L/D [-].
+        take_off_mass: Maximum take-off mass m_0 [kg].
+
+    Returns:
+        Required battery mass [kg].
+    """
+    m_bat = (range_ * GRAVITY * take_off_mass) / (
+        battery_energy_density * eta_electric * lift_to_drag
+    )
+    return SiValue(m_bat, "kg")
+
+
 if __name__ == "__main__":
     print("Cruise fuel mass (100NM):", calc_breguet_fuel_mass_from_range(SiValue(5950 - 24 - 36, "kg"), SiValue(100, "nm")))
     print("Cruise fuel mass (50NM):", calc_breguet_fuel_mass_from_range(SiValue(5950 - 24 - 36 - 78 - 9, "kg"), SiValue(50, "nm")))
+    print("Total mission battery mass (100NM):", calc_electric_battery_mass_from_range(SiValue(215, "nm"), SiValue(420, "Wh/kg"), 0.85, 12.1, SiValue(8618, "kg")))
+    print("Cruise battery mass (100NM):", calc_electric_battery_mass_from_range(SiValue(100, "nm"), SiValue(420, "Wh/kg"), 0.85, 12.1, SiValue(8618, "kg")))
+    print("Cruise battery mass (50NM):", calc_electric_battery_mass_from_range(SiValue(50, "nm"), SiValue(420, "Wh/kg"), 0.85, 12.1, SiValue(8618, "kg")))
     print("Loiter fuel mass (30min):", calc_breguet_fuel_mass_from_endurance(SiValue(5950 - 24 - 36 - 78 - 9, "kg"), SiValue(0.5, "h")))
-    print("Cruise range (78kg):", calc_breguet_range(SiValue(5950 - 24 - 36, "kg"), SiValue(5950 - 24 - 36 - 78, "kg")))
+    print("Cruise range (78kg):", calc_breguet_range(SiValue(5950 - 24 - 36, "kg"), SiValue(5950 - 24 - 36 - 78, "kg")).to("nm"))

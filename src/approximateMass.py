@@ -16,7 +16,6 @@ def getTotalMass():
     # constraints
     pax = constraints.payload.numberOfPassengers
     personalMass = pax * constraints.payload.weightPerPassenger
-    payloadMass = pax * constraints.payload.maxStructuralPayloadPerPassenger
     batteryPackEnergyDensity = constraints.battery.cellEnergyDensityMax / constraints.battery.cellToPackFactorMin
 
     # ref aircraft
@@ -39,7 +38,7 @@ def getTotalMass():
 
     # use average weight over course of mission of ref aircraft, batteries stay same mass
     massAvgRef = mtowRef - 0.5 * fuelMassRef
-    fixedMass = emptyMass + payloadMass + personalMass
+    fixedMass = emptyMass + personalMass
     # scaling factor and iteration
     for i in range(100):
         massTotal = fixedMass + batteryMass
@@ -55,7 +54,7 @@ def getTotalMass():
     print(f"Battery energy pack density:       {batteryPackEnergyDensity:.2f} Wh/kg")
     print(f"Electric propulsion efficiency:    {100 * etaEl:.2f} %")
     print(f"Empty mass:                        {emptyMass:.2f} kg")
-    print(f"Payload mass:                      {payloadMass + personalMass:.2f} kg")
+    print(f"Payload mass:                      {personalMass:.2f} kg")
     print(f"Battery mass:                      {batteryMass:.2f} kg")
     print(f"TOTAL MASS:                        {batteryMass + fixedMass:.2f} kg")
     print("")

@@ -18,6 +18,8 @@ from formulas.breguet import (
     calc_breguet_fuel_mass_from_endurance,
     calc_breguet_fuel_mass_from_range,
     calc_breguet_range,
+    calc_electric_battery_mass_from_range,
+    calc_electric_range,
 )
 
 __all__ = [
@@ -34,4 +36,6 @@ __all__ = [
     "calc_breguet_fuel_mass_from_range",
     "calc_breguet_endurance",
     "calc_breguet_fuel_mass_from_endurance",
+    "calc_electric_range",
+    "calc_electric_battery_mass_from_range",
 ]

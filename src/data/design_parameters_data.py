@@ -27,6 +27,8 @@ class DesignAerodynamicParameters:
     liftToDragRatioCruise: UnitValue
     liftToDragRatioLoiter: UnitValue
     maxLandingLiftCoefficient: UnitValue
+    aspect_ratio: UnitValue
+    relWingThickness: UnitValue
 
 
 @dataclass(frozen=True)
@@ -50,7 +52,6 @@ class DesignAssumptionsParameters:
 
     limitLoad: UnitValue
     maxTakeOffLiftCoefficient: UnitValue
-    wingRootThickness: UnitValue
     wingSweepHalfChord: UnitValue
     wingMassPenaltyFactor: UnitValue
 

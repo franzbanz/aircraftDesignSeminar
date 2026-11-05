@@ -178,7 +178,7 @@ def getDesignPoint(should_plot: bool = False):
     feasible = x <= min(xStall, xLanding)
     idx = np.flatnonzero(feasible & (yReq <= yReq[feasible].min() * (1 + 1e-6)))[-1]
     designPoint = (x[idx], yReq[idx])
-
+    """
     print("")
     print(f"Aspect ratio:                      {Lambda:.2f}")
     print(f"Cruise lift to drag ratio:         {eCruise:.2f}")
@@ -195,7 +195,7 @@ def getDesignPoint(should_plot: bool = False):
     print(f"DESIGN WING LOADING:               {designPoint[0]:.2f} kg/m^2")
     print(f"DESIGN THRUST LOADING:             {designPoint[1]:.4f}")
     print("")
-
+    """
     if should_plot:
         _, ax = plt.subplots(figsize=(9, 6))
         ax.axvline(xStall, color="red", ls="--", label="Stall speed (G.2)")
