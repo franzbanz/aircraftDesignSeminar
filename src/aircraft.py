@@ -1,5 +1,4 @@
 """Battery-powered electric aircraft model with integrated calibrated mass estimation."""
-from formulas.geometry import wing_span
 from sizing_diagram import get_design_point
 
 import math
@@ -8,14 +7,19 @@ from constants import GRAVITY
 from data import Constraints, DesignParameters, ReferenceAircraft, SiValue
 from fuel_fractions import MissionEnergyCalculator
 from formulas import (
+    calc_aspect_ratio,
     calc_electric_battery_mass_from_range,
     calc_electric_range,
     calc_empennage_mass,
     calc_fuselage_mass,
+    calc_horizontal_tail_area,
     calc_landing_gear_mass,
+    calc_mean_aerodynamic_chord,
     calc_pylons_mass,
     calc_systems_mass,
-    calc_wing_mass, calc_mean_aerodynamic_chord,
+    calc_vertical_tail_area,
+    calc_wing_mass,
+    wing_span,
 )
 
 
@@ -73,26 +77,101 @@ class BatteryAircraft:
         )
 
     # --------------------------------------------------------------------------
+    # Geometric Dimensions & Sizing
+    # --------------------------------------------------------------------------
+
+    @property
+    def wing_loading_design(self) -> float:
+        """Optimum wing loading from sizing diagram [kg/m^2]."""
+        return get_design_point()[0]
+
+    @property
+    def thrust_loading_design(self) -> float:
+        """Optimum thrust loading from sizing diagram [-]."""
+        return get_design_point()[1]
+
+    @property
+    def wing_area(self) -> SiValue:
+        """Wing reference area S_W [m^2]."""
+        constraint_mtom = self.constraints.performance.takeOffMassMax.si
+        mtom = self.mtom if self.mtom < constraint_mtom else constraint_mtom
+        return SiValue(mtom / self.wing_loading_design, "m^2")
+
+    @property
+    def wingspan(self) -> SiValue:
+        """Wingspan b_W [m], constrained to maximum allowable span."""
+        b_s = wing_span(self.wing_area, self.design.aerodynamics.aspectRatio)
+        max_span = self.design.aerodynamics.maxWingSpan.si
+        return b_s if b_s <= max_span else max_span
+
+    @property
+    def aspect_ratio(self) -> float:
+        """Effective wing aspect ratio b_W^2 / S_W [-]."""
+        return calc_aspect_ratio(self.wingspan, self.wing_area)
+
+    @property
+    def mean_aerodynamic_chord(self) -> SiValue:
+        """Mean aerodynamic chord c_mu [m]."""
+        return calc_mean_aerodynamic_chord(self.wing_area, self.wingspan)
+
+    @property
+    def wing_root_thickness(self) -> SiValue:
+        """Wing thickness at root t_root = c_mu * rel_thickness [m]."""
+        rel_t = self.design.aerodynamics.relWingThickness.value
+        return SiValue(self.mean_aerodynamic_chord * rel_t, "m")
+
+    @property
+    def fuselage_length(self) -> SiValue:
+        """Fuselage length [m] (adopted from 19-pax reference aircraft)."""
+        return self.ref.dimensions.fuselageLength.si
+
+    @property
+    def fuselage_width(self) -> SiValue:
+        """Fuselage width [m]."""
+        return self.ref.dimensions.fuselageWidth.si
+
+    @property
+    def fuselage_height(self) -> SiValue:
+        """Fuselage height [m]."""
+        return self.ref.dimensions.fuselageHeight.si
+
+    @property
+    def horizontal_tail_area(self) -> SiValue:
+        """Horizontal tailplane area S_HTP scaled via volume coefficient [m^2]."""
+        c_ht = self.ref.calculatedValues.horizontalTailVolumeCoefficient
+        r_h = self.ref.calculatedValues.horizontalTailLeverArm.si
+        return calc_horizontal_tail_area(c_ht, r_h, self.wing_area, self.mean_aerodynamic_chord)
+
+    @property
+    def vertical_tail_area(self) -> SiValue:
+        """Vertical tailplane area S_VTP scaled via volume coefficient [m^2]."""
+        c_vt = self.ref.calculatedValues.verticalTailVolumeCoefficient
+        r_v = self.ref.calculatedValues.verticalTailLeverArm.si
+        return calc_vertical_tail_area(c_vt, r_v, self.wing_area, self.wingspan)
+
+    @property
+    def total_takeoff_thrust(self) -> SiValue:
+        """Total required take-off thrust T_TO [N]."""
+        return SiValue(self.thrust_loading_design * self.mtom * GRAVITY, "N")
+
+    @property
+    def total_takeoff_power(self) -> SiValue:
+        """Total required installed take-off power [W]."""
+        return SiValue(self.design.propulsion.engineTakeOffPower.si * self.design.propulsion.numberOfEngines.value, "W")
+
+    # --------------------------------------------------------------------------
     # Calibrated Structural Component Masses
     # --------------------------------------------------------------------------
 
     @property
     def m_wing(self) -> SiValue:
         """Calibrated wing mass [kg]."""
-        constraint_mtom = self.constraints.performance.takeOffMassMax.si
-        mtom = self.mtom if self.mtom < constraint_mtom else constraint_mtom
-        s_w = SiValue(mtom / get_design_point()[0], "m^2")
-        b_s = wing_span(s_w, self.design.aerodynamics.aspectRatio)
-        # constrain max wing span
-        if b_s > self.design.aerodynamics.maxWingSpan.si:
-            b_s = self.design.aerodynamics.maxWingSpan.si
-        d_root = calc_mean_aerodynamic_chord(s_w, b_s)
         raw = calc_wing_mass(
             mzfm=self.mtom,
-            b_s=b_s,
+            b_s=self.wingspan,
             n_ult=self.design.assumptions.limitLoad * 1.5,
-            d_root=d_root,
-            s_w=s_w,
+            d_root=self.mean_aerodynamic_chord,
+            s_w=self.wing_area,
             delta_m_F=self.design.assumptions.wingMassPenaltyFactor.value,
         )
         return SiValue(raw * self.ref.calculatedValues.wingCalibrationFactor, "kg")
@@ -119,10 +198,8 @@ class BatteryAircraft:
     @property
     def m_empennage(self) -> SiValue:
         """Calibrated empennage mass [kg]."""
-        n_ult = self.ref.calculatedValues.ultimateLoadFactor.value
-        s_htp = self.ref.dimensions.horizontalTailArea.si
-        s_vtp = self.ref.dimensions.verticalTailArea.si
-        raw = calc_empennage_mass(n_ult, s_htp, s_vtp)
+        n_ult = self.design.assumptions.limitLoad * 1.5
+        raw = calc_empennage_mass(n_ult, self.horizontal_tail_area, self.vertical_tail_area)
         return SiValue(raw * self.ref.calculatedValues.empennageCalibrationFactor, "kg")
 
     @property

@@ -214,20 +214,45 @@ def get_design_point(should_plot: bool = False) -> tuple[float, float]:
     print("")
     """
     if should_plot:
-        _, ax = plt.subplots(figsize=(9, 6))
-        ax.axvline(x_stall, color="red", ls="--", label="Stall speed (G.2)")
-        ax.plot(wing_loadings, y_takeoff, label="Take-off field length (F.8)")
-        ax.plot(wing_loadings, y_climb, label="Climb gradient OEI (H.2)")
-        ax.plot(wing_loadings, y_cruise, label="Cruise (I.1)")
-        ax.plot(*design_point, "ko", label="Design point")
-        ax.axvline(x_landing, color="purple", ls="--", label="Landing field length (K.6)")
-        ax.set_xlim(wing_loadings[0], wing_loadings[-1])
-        ax.set_ylim(0, 0.6)
-        ax.set_xlabel(r"$m_0/S$ in kg m$^{-2}$")
-        ax.set_ylabel(r"$T/(m_0\cdot g)$ (–)")
-        ax.set_title("Sizing Diagram")
-        ax.grid(alpha=0.3)
-        ax.legend(fontsize=8, loc="upper left")
+        fig, ax = plt.subplots(figsize=(10, 6.5))
+        ax.plot(wing_loadings, y_takeoff, color="#1f77b4", lw=2, label=r"Take-off field length $s_{\mathrm{TOFL}} \leq 800\,\mathrm{m}$ (F.8)")
+        ax.plot(wing_loadings, y_climb, color="#ff7f0e", lw=2, label=r"Climb gradient OEI $\gamma_{\mathrm{OEI}} \geq 1.5\,\%$ (H.2)")
+        ax.plot(wing_loadings, y_cruise, color="#2ca02c", lw=2, label=r"Cruise speed $v_{\mathrm{cruise}} = 200\,\mathrm{kts}$ (I.1)")
+        ax.axvline(x_stall, color="#d62728", lw=2, ls="--", label=f"Stall speed $v_S \\leq 61\\,\\mathrm{{kts}}$ ({x_stall:.1f} kg/m²)")
+        ax.axvline(x_landing, color="#9467bd", lw=2, ls="--", label=f"Landing field length $s_{{\\mathrm{{LDG}}}} \\leq 800\\,\\mathrm{{m}}$ ({x_landing:.1f} kg/m²)")
+
+        # Feasible design region shading
+        x_lim = min(x_stall, x_landing)
+        mask_feas = wing_loadings <= x_lim
+        y_envelope = np.maximum.reduce([y_takeoff, y_climb, y_cruise])
+        ax.fill_between(
+            wing_loadings[mask_feas],
+            y_envelope[mask_feas],
+            0.6,
+            color="green",
+            alpha=0.12,
+            label="Feasible Design Region",
+        )
+
+        # Design point
+        ax.plot(design_point[0], design_point[1], marker="*", markersize=14, color="black", label=f"Design Point ({design_point[0]:.1f} kg/m², {design_point[1]:.4f})")
+        ax.annotate(
+            f"DP: ({design_point[0]:.1f} kg/m², {design_point[1]:.4f})",
+            xy=design_point,
+            xytext=(design_point[0] - 45, design_point[1] + 0.05),
+            arrowprops=dict(facecolor="black", shrink=0.08, width=1.5, headwidth=7),
+            fontsize=10,
+            fontweight="bold",
+            bbox=dict(boxstyle="round,pad=0.4", fc="yellow", alpha=0.7),
+        )
+
+        ax.set_xlim(wing_loadings[0], 350)
+        ax.set_ylim(0, 0.55)
+        ax.set_xlabel(r"Wing Loading $m_0 / S$ [$\mathrm{kg/m}^2$]", fontsize=11)
+        ax.set_ylabel(r"Thrust-to-Weight Ratio $T / (m_0 \cdot g)$ [–]", fontsize=11)
+        ax.set_title("Sizing Diagram (Matching Chart) – Electric Aircraft", fontsize=13, fontweight="bold")
+        ax.grid(True, linestyle=":", alpha=0.6)
+        ax.legend(loc="upper left", fontsize=9, framealpha=0.9)
         plt.tight_layout()
         plt.show()
 

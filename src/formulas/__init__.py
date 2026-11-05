@@ -11,8 +11,11 @@ from formulas.breguet import (
     calc_electric_range,
 )
 from formulas.geometry import (
+    calc_aspect_ratio,
+    calc_horizontal_tail_area,
     calc_horizontal_tail_volume_coefficient,
     calc_mean_aerodynamic_chord,
+    calc_vertical_tail_area,
     calc_vertical_tail_volume_coefficient,
     wing_span,
 )
@@ -43,6 +46,9 @@ __all__ = [
     "calc_pylons_mass",
     "calc_systems_mass",
     "calc_mean_aerodynamic_chord",
+    "calc_aspect_ratio",
+    "calc_horizontal_tail_area",
+    "calc_vertical_tail_area",
     "calc_horizontal_tail_volume_coefficient",
     "calc_vertical_tail_volume_coefficient",
     "wing_span",

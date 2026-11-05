@@ -39,3 +39,23 @@ print(f"Total Takeoff Mass (MTOM): {aircraft.mtom} (Ref: {ref_aircraft.mass.take
 # ------------- Range ------------------
 print(f"Range: {aircraft.range.to('km')}")
 print(f"Range: {aircraft.range.to('NM')}")
+
+# ------------- Aircraft Dimensions & Geometry ------------------
+print("\n----- AIRCRAFT DIMENSIONS & GEOMETRY -----")
+print(f"Wing Area (S_W):             {float(aircraft.wing_area):.2f} m^2 (Ref: {float(ref_aircraft.dimensions.wingArea):.2f} m^2)")
+print(f"Wingspan (b_W):              {float(aircraft.wingspan):.2f} m (Ref: {float(ref_aircraft.dimensions.wingspan):.2f} m, Max: {float(aircraft.design.aerodynamics.maxWingSpan):.2f} m)")
+print(f"Aspect Ratio (AR):           {aircraft.aspect_ratio:.2f} (Ref: {float(ref_aircraft.calculatedValues.aspectRatio.value):.2f})")
+print(f"Mean Aerodynamic Chord:      {float(aircraft.mean_aerodynamic_chord):.2f} m (Ref: {float(ref_aircraft.calculatedValues.meanAerodynamicChord):.2f} m)")
+print(f"Wing Root Thickness (16%):   {float(aircraft.wing_root_thickness):.2f} m (Ref: {float(ref_aircraft.assumptions.wingRootThickness):.2f} m)")
+print(f"Fuselage (L x W x H):        {float(aircraft.fuselage_length):.2f} m x {float(aircraft.fuselage_width):.2f} m x {float(aircraft.fuselage_height):.2f} m")
+print(f"Horizontal Tail Area (S_HT): {float(aircraft.horizontal_tail_area):.2f} m^2 (Ref: {float(ref_aircraft.dimensions.horizontalTailArea):.2f} m^2)")
+print(f"Vertical Tail Area (S_VT):   {float(aircraft.vertical_tail_area):.2f} m^2 (Ref: {float(ref_aircraft.dimensions.verticalTailArea):.2f} m^2)")
+print(f"Design Wing Loading:         {aircraft.wing_loading_design:.2f} kg/m^2")
+print(f"Design Thrust Loading:       {aircraft.thrust_loading_design:.4f}")
+print(f"Total Take-off Thrust:       {float(aircraft.total_takeoff_thrust.to('kN')):.2f} kN")
+print(f"Total Installed Power:       {float(aircraft.total_takeoff_power.to('kW')):.1f} kW")
+
+if __name__ == "__main__":
+    from visualization import interactive_plot_menu
+
+    interactive_plot_menu(aircraft, ref_aircraft)
