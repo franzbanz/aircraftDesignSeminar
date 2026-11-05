@@ -26,7 +26,18 @@
   "fuselage": {
     "fuselageLength": [17.0, "m"],
     "fuselageWidth": [1.82, "m"],
-    "fuselageHeight": [2.25, "m"]
+    "fuselageHeight": [2.25, "m"],
+    "seatPitch": [0.8, "m"],
+    "seatWidth": [0.5, "m"],
+    "armrestWidth": [0.05, "m"],
+    "aisleWidth": [0.5, "m"],
+    "wallClearance": [0.05, "m"],
+    "wallThickness": [0.06, "m"],
+    "aisleHeadroom": [1.65, "m"],
+    "floorStructuralDepth": [0.15, "m"],
+    "noseLength": [2.40, "m"],
+    "frontBulkheadClearance": [0.40, "m"],
+    "minBaggageLength": [1, "m"]
   },
   "mission": {
     "range": [100, "nm"],

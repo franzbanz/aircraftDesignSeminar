@@ -40,11 +40,22 @@ class DesignPropulsionParameters:
 
 @dataclass(frozen=True)
 class DesignFuselageParameters:
-    """Fuselage geometric dimension parameters."""
+    """Fuselage geometric dimension and cabin layout parameters."""
 
     fuselageLength: UnitValue
     fuselageWidth: UnitValue
     fuselageHeight: UnitValue
+    seatPitch: UnitValue
+    seatWidth: UnitValue
+    armrestWidth: UnitValue
+    aisleWidth: UnitValue
+    wallClearance: UnitValue
+    wallThickness: UnitValue
+    aisleHeadroom: UnitValue
+    floorStructuralDepth: UnitValue
+    noseLength: UnitValue
+    frontBulkheadClearance: UnitValue
+    minBaggageLength: UnitValue
 
 
 @dataclass(frozen=True)
