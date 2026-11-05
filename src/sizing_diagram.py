@@ -1,5 +1,6 @@
 from formulas.geometry import aspect_ratio
-from data import SiValue, UnitValue, load_constraints, load_reference_aircraft
+from formulas.propulsion import calc_thrust_loading_from_electric_power
+from data import SiValue, UnitValue, load_constraints, load_reference_aircraft, load_design_parameters
 import json
 import warnings
 import numpy as np
@@ -129,13 +130,11 @@ def calc_landing_wing_loading(
 def getDesignPoint(should_plot: bool = False):
     constraints = load_constraints()
     ref = load_reference_aircraft()
-    with open("battery_aircraft.json") as f:
-        bat = json.load(f, object_hook=hook)
+    design = load_design_parameters()
 
     # constraints
     sTofl = constraints.performance.takeOffFieldLengthMax.si
     lLdg = constraints.performance.landingFieldLengthMax.si
-    rho0 = RHO_0
     fieldElevation = constraints.performance.takeOffAltitude.si
     vCruise = constraints.performance.cruiseSpeedMin.si
 
@@ -153,11 +152,8 @@ def getDesignPoint(should_plot: bool = False):
     gammaMinOei = constraints.cs23.minClimbGradient.value
 
     # electric aircraft
-    mClimbRatio = bat.assumptions.massClimbRatio
-    oswaldE = bat.assumptions.oswaldFactor
-    fOverFcr = bat.assumptions.maxThrustOverCruiseThrustRatio
-    mCrRatio = bat.assumptions.maxMassOverCruiseMassRatio
-    mlwRatio = bat.assumptions.maxMassOverLandingMassRatio
+    oswaldE = design.aerodynamics.oswaldFactor
+    fOverFcr = design.propulsion.maxThrustOverCruiseThrustRatio
 
     Lambda = aspect_ratio(b, Sref)
     cW0 = np.pi * Lambda * oswaldE / (4 * eCruise**2)   # from E_max = 0.5*sqrt(pi*Lambda*e/cW0)
@@ -167,11 +163,11 @@ def getDesignPoint(should_plot: bool = False):
     qCr = 0.5 * rhoCr * vCruise**2                      # dynamic pressure
     x = np.linspace(5, 600, 800)                        # m0/S in kg/m^2, needed for plotting everything
 
-    xStall = calc_stall_wing_loading(caMaxL, rho0, vSMax)
+    xStall = calc_stall_wing_loading(caMaxL, RHO_0, vSMax)
     yTo = calc_takeoff_thrust_loading(nEng, caMaxTo, sigma, sTofl, x)
-    yClimb = calc_oei_climb_thrust_loading(mClimbRatio, nEng, gammaMinOei, eps, x)
-    yCruise = calc_cruise_thrust_loading(fOverFcr, cW0, qCr, Lambda, oswaldE, mCrRatio, x)
-    xLanding = calc_landing_wing_loading(mlwRatio, lLdg, sigma, caMaxL)
+    yClimb = calc_oei_climb_thrust_loading(1, nEng, gammaMinOei, eps, x)
+    yCruise = calc_cruise_thrust_loading(fOverFcr, cW0, qCr, Lambda, oswaldE, 1, x)
+    xLanding = calc_landing_wing_loading(1, lLdg, sigma, caMaxL)
 
     # calculate design point
     yReq = np.maximum.reduce([yTo, yClimb, yCruise])

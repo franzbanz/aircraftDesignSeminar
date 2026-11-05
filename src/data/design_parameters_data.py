@@ -28,6 +28,7 @@ class DesignAerodynamicParameters:
     liftToDragRatioLoiter: UnitValue
     maxLandingLiftCoefficient: UnitValue
     aspectRatio: UnitValue
+    oswaldFactor: UnitValue
     maxWingSpan: UnitValue
     relWingThickness: UnitValue
 
@@ -40,6 +41,8 @@ class DesignPropulsionParameters:
     engineMaxContinousPower: UnitValue
     engineMass: UnitValue
     numberOfEngines: UnitValue
+    maxThrustOverCruiseThrustRatio: UnitValue
+    etaElectric: UnitValue
 
 
 @dataclass(frozen=True)

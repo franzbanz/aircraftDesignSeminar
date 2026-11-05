@@ -6,6 +6,8 @@ from formulas.breguet import (
     calc_breguet_fuel_mass_from_range,
     calc_breguet_range,
     calc_electric_battery_mass_from_range,
+    calc_electric_cruise_energy,
+    calc_electric_loiter_energy,
     calc_electric_range,
 )
 from formulas.geometry import (
@@ -50,6 +52,8 @@ __all__ = [
     "calc_breguet_fuel_mass_from_endurance",
     "calc_electric_range",
     "calc_electric_battery_mass_from_range",
+    "calc_electric_cruise_energy",
+    "calc_electric_loiter_energy",
     "calc_electric_power_from_shaft_power",
     "calc_shaft_power_from_electric_power",
     "calc_electric_power_from_thrust",

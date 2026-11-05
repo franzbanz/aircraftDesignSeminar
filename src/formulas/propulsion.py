@@ -177,4 +177,3 @@ def calc_thrust_loading_from_electric_power(
     """
     thrust = calc_thrust_from_electric_power(p_electric, speed, eta_prop, eta_electric)
     return calc_thrust_loading_from_thrust(thrust, mtom, g)
-

@@ -18,7 +18,6 @@
     "wingRootThickness": [0.33, "m"],
     "wingSweepHalfChord": [0.0, "deg"],
     "wingMassPenaltyFactor": [-0.10, ""],
-    "massClimbRatio": [1.0, ""],
     "oswaldFactor": [0.8, ""],
     "maxThrustOverCruiseThrustRatio": [2.0, ""],
     "maxMassOverCruiseMassRatio": [1.0, ""],

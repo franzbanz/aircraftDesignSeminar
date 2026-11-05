@@ -6,11 +6,7 @@ import math
 
 from constants import GRAVITY
 from data import Constraints, DesignParameters, ReferenceAircraft, SiValue
-from fuel_fractions import (
-    calc_battery_pack_mass,
-    calc_total_mission_energy,
-    calc_trip_energy, calc_cruise_energy,
-)
+from fuel_fractions import MissionEnergyCalculator
 from formulas import (
     calc_electric_battery_mass_from_range,
     calc_electric_range,
@@ -32,15 +28,18 @@ class BatteryAircraft:
         design: DesignParameters,
         ref: ReferenceAircraft,
         mtom: SiValue | None = None,
-        eta_electric: float = 0.85,
     ) -> None:
         self.constraints = constraints
         self.design = design
         self.ref = ref
-        self.eta_electric = eta_electric
         self.mtom: SiValue = (
             mtom if mtom is not None else design.initialSizing.maximumTakeOffMass.si
         )
+
+    @property
+    def eta_electric(self) -> float:
+        """Overall electric powertrain efficiency [-]."""
+        return self.design.propulsion.etaElectric
 
     # --------------------------------------------------------------------------
     # Fixed Operational & Payload Masses
@@ -205,22 +204,31 @@ class BatteryAircraft:
             take_off_mass=self.mtom,
         )
 
-    def calc_required_battery_mass(self) -> SiValue:
-        """Calculates required battery pack mass for the complete mission via fuel_fractions [kg].
+    @property
+    def mission_energy(self) -> MissionEnergyCalculator:
+        """Mission energy calculator bound to current aircraft state."""
+        return MissionEnergyCalculator(
+            constraints=self.constraints,
+            design=self.design,
+            ref=self.ref,
+            mtom=self.mtom,
+        )
 
-        Args:
-            include_reserves: Whether to include reserve energy (route, loiter, diversion).
+    def calc_required_battery_mass(self) -> SiValue:
+        """Calculates required battery pack mass for the complete mission [kg].
 
         Returns:
             Required battery pack mass [kg].
         """
-        # e_mission = calc_total_mission_energy(self.mtom)
-        # use simpler approach for now
+        # Detailed segment-by-segment calculation:
+        # return self.mission_energy.battery_pack_mass()
+
+        # Simpler approach:
         range_fuel = self.ref.fuel.climb + self.ref.fuel.cruise + self.ref.fuel.descent
-        range_energy = calc_cruise_energy(self.design.mission.range.si, self.mtom)
+        range_energy = self.mission_energy.cruise_energy(self.design.mission.range.si)
         energy_per_kg = range_energy / range_fuel
         e_mission = SiValue(energy_per_kg * self.ref.fuel.total, "J")
-        return calc_battery_pack_mass(e_mission)
+        return self.mission_energy.battery_pack_mass(e_mission)
 
     def converge_mtom(
         self,
@@ -237,7 +245,7 @@ class BatteryAircraft:
         Returns:
             History of MTOM values during iteration [kg].
         """
-        history = [float(self.mtom)]
+        history = [self.mtom]
 
         for _ in range(max_iterations):
             m_bat_req = self.calc_required_battery_mass()
@@ -245,9 +253,9 @@ class BatteryAircraft:
                 self.m_operating_empty + self.m_payload + m_bat_req,
                 "kg",
             )
-            history.append(float(new_mtom))
+            history.append(new_mtom)
 
-            if abs(float(new_mtom) - float(self.mtom)) < tolerance:
+            if abs(new_mtom - self.mtom) < tolerance:
                 self.mtom = new_mtom
                 break
 
