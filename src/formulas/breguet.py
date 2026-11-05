@@ -1,12 +1,18 @@
 """Breguet range and endurance equations and their algebraic rearrangements."""
 
 import math
+import sys
+from pathlib import Path
 
-GRAVITY = 9.81  # [m/s^2]
-KTS_TO_MS = 1.852 / 3.6  # [m/s per kt]
+if __package__ in (None, ""):
+    sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-DEFAULT_CRUISE_SPEED_MS = 200.0 * KTS_TO_MS  # [m/s] (Do 228 reference TAS: 200 kts)
-DEFAULT_TSFC_SI = 0.46 / (3600.0 * GRAVITY)  # [kg/(N*s)] (Do 228 reference TSFC: 0.46 lb/(h*lbf))
+from data import SiValue
+from constants import GRAVITY
+
+
+DEFAULT_CRUISE_SPEED = SiValue(200.0, "kts")  # [m/s] (Do 228 reference TAS: 200 kts)
+DEFAULT_TSFC = SiValue(0.46, "lb/(h*lbf)")  # [kg/(N*s)] (Do 228 reference TSFC: 0.46 lb/(h*lbf))
 DEFAULT_L_D_CRUISE = 12.1  # [-] (Do 228 reference cruise L/D)
 DEFAULT_L_D_LOITER = 15.7  # [-] (Do 228 reference loiter L/D)
 
@@ -17,166 +23,167 @@ DEFAULT_L_D_LOITER = 15.7  # [-] (Do 228 reference loiter L/D)
 
 
 def calc_breguet_range(
-    m_start_kg: float,
-    m_end_kg: float,
+    m_start: SiValue,
+    m_end: SiValue,
     lift_to_drag: float = DEFAULT_L_D_CRUISE,
-    cruise_speed_ms: float = DEFAULT_CRUISE_SPEED_MS,
-    thrust_specific_fuel_consumption_si: float = DEFAULT_TSFC_SI,
-) -> float:
+    cruise_speed: SiValue = DEFAULT_CRUISE_SPEED,
+    thrust_specific_fuel_consumption: SiValue = DEFAULT_TSFC,
+) -> SiValue:
     """Calculates Breguet range from start and end mass [m].
 
     Formula:
-        R = (v / (g * TSFC_SI)) * (L/D) * ln(m_start / m_end)
+        R = (v / (g * TSFC)) * (L/D) * ln(m_start / m_end)
 
     Args:
-        m_start_kg: Aircraft mass at the start of the segment [kg].
-        m_end_kg: Aircraft mass at the end of the segment [kg].
+        m_start: Aircraft mass at the start of the segment [kg].
+        m_end: Aircraft mass at the end of the segment [kg].
         lift_to_drag: Lift-to-drag ratio [-].
-        cruise_speed_ms: True airspeed in cruise [m/s].
-        thrust_specific_fuel_consumption_si: Thrust specific fuel consumption [kg/(N*s)].
+        cruise_speed: True airspeed in cruise [m/s].
+        thrust_specific_fuel_consumption: Thrust specific fuel consumption [kg/(N*s)].
 
     Returns:
         Breguet range [m].
     """
-    return (
-        (cruise_speed_ms / (GRAVITY * thrust_specific_fuel_consumption_si))
+    range_ = (
+        (cruise_speed / (GRAVITY * thrust_specific_fuel_consumption))
         * lift_to_drag
-        * math.log(m_start_kg / m_end_kg)
+        * math.log(m_start / m_end)
     )
+    return SiValue(range_, "m")
 
 
 def calc_breguet_mass_fraction_from_range(
-    range_m: float,
+    range_: SiValue,
     lift_to_drag: float = DEFAULT_L_D_CRUISE,
-    cruise_speed_ms: float = DEFAULT_CRUISE_SPEED_MS,
-    thrust_specific_fuel_consumption_si: float = DEFAULT_TSFC_SI,
+    cruise_speed: SiValue = DEFAULT_CRUISE_SPEED,
+    thrust_specific_fuel_consumption: SiValue = DEFAULT_TSFC,
 ) -> float:
     """Calculates segment mass fraction M_ff = m_end / m_start for a given range [-].
 
     Formula:
-        M_ff = m_end / m_start = exp(-R * g * TSFC_SI / (v * (L/D)))
+        M_ff = m_end / m_start = exp(-R * g * TSFC / (v * (L/D)))
 
     Args:
-        range_m: Flight range [m].
+        range_: Flight range [m].
         lift_to_drag: Lift-to-drag ratio [-].
-        cruise_speed_ms: True airspeed in cruise [m/s].
-        thrust_specific_fuel_consumption_si: Thrust specific fuel consumption [kg/(N*s)].
+        cruise_speed: True airspeed in cruise [m/s].
+        thrust_specific_fuel_consumption: Thrust specific fuel consumption [kg/(N*s)].
 
     Returns:
         Mass fraction M_ff = m_end / m_start [-].
     """
-    breguet_factor_m = (cruise_speed_ms / (GRAVITY * thrust_specific_fuel_consumption_si)) * lift_to_drag
-    return math.exp(-range_m / breguet_factor_m)
+    breguet_factor = (cruise_speed / (GRAVITY * thrust_specific_fuel_consumption)) * lift_to_drag
+    return math.exp(-range_ / breguet_factor)
 
 
 def calc_breguet_end_mass_from_range(
-    m_start_kg: float,
-    range_m: float,
+    m_start: SiValue,
+    range_: SiValue,
     lift_to_drag: float = DEFAULT_L_D_CRUISE,
-    cruise_speed_ms: float = DEFAULT_CRUISE_SPEED_MS,
-    thrust_specific_fuel_consumption_si: float = DEFAULT_TSFC_SI,
-) -> float:
+    cruise_speed: SiValue = DEFAULT_CRUISE_SPEED,
+    thrust_specific_fuel_consumption: SiValue = DEFAULT_TSFC,
+) -> SiValue:
     """Calculates aircraft end mass after flying a given range [kg].
 
     Formula:
-        m_end = m_start * exp(-R * g * TSFC_SI / (v * (L/D)))
+        m_end = m_start * exp(-R * g * TSFC / (v * (L/D)))
 
     Args:
-        m_start_kg: Aircraft mass at the start of the segment [kg].
-        range_m: Flight range [m].
+        m_start: Aircraft mass at the start of the segment [kg].
+        range_: Flight range [m].
         lift_to_drag: Lift-to-drag ratio [-].
-        cruise_speed_ms: True airspeed in cruise [m/s].
-        thrust_specific_fuel_consumption_si: Thrust specific fuel consumption [kg/(N*s)].
+        cruise_speed: True airspeed in cruise [m/s].
+        thrust_specific_fuel_consumption: Thrust specific fuel consumption [kg/(N*s)].
 
     Returns:
         Aircraft mass at the end of the segment [kg].
     """
     mass_fraction = calc_breguet_mass_fraction_from_range(
-        range_m, lift_to_drag, cruise_speed_ms, thrust_specific_fuel_consumption_si
+        range_, lift_to_drag, cruise_speed, thrust_specific_fuel_consumption
     )
-    return m_start_kg * mass_fraction
+    return SiValue(m_start * mass_fraction, "kg")
 
 
 def calc_breguet_start_mass_from_range(
-    m_end_kg: float,
-    range_m: float,
+    m_end: SiValue,
+    range_: SiValue,
     lift_to_drag: float = DEFAULT_L_D_CRUISE,
-    cruise_speed_ms: float = DEFAULT_CRUISE_SPEED_MS,
-    thrust_specific_fuel_consumption_si: float = DEFAULT_TSFC_SI,
-) -> float:
+    cruise_speed: SiValue = DEFAULT_CRUISE_SPEED,
+    thrust_specific_fuel_consumption: SiValue = DEFAULT_TSFC,
+) -> SiValue:
     """Calculates required aircraft start mass for a given end mass and range [kg].
 
     Formula:
-        m_start = m_end / exp(-R * g * TSFC_SI / (v * (L/D)))
+        m_start = m_end / exp(-R * g * TSFC / (v * (L/D)))
 
     Args:
-        m_end_kg: Aircraft mass at the end of the segment [kg].
-        range_m: Flight range [m].
+        m_end: Aircraft mass at the end of the segment [kg].
+        range_: Flight range [m].
         lift_to_drag: Lift-to-drag ratio [-].
-        cruise_speed_ms: True airspeed in cruise [m/s].
-        thrust_specific_fuel_consumption_si: Thrust specific fuel consumption [kg/(N*s)].
+        cruise_speed: True airspeed in cruise [m/s].
+        thrust_specific_fuel_consumption: Thrust specific fuel consumption [kg/(N*s)].
 
     Returns:
         Required aircraft mass at the start of the segment [kg].
     """
     mass_fraction = calc_breguet_mass_fraction_from_range(
-        range_m, lift_to_drag, cruise_speed_ms, thrust_specific_fuel_consumption_si
+        range_, lift_to_drag, cruise_speed, thrust_specific_fuel_consumption
     )
-    return m_end_kg / mass_fraction
+    return SiValue(m_end / mass_fraction, "kg")
 
 
 def calc_breguet_fuel_mass_from_range(
-    m_start_kg: float,
-    range_m: float,
+    m_start: SiValue,
+    range_: SiValue,
     lift_to_drag: float = DEFAULT_L_D_CRUISE,
-    cruise_speed_ms: float = DEFAULT_CRUISE_SPEED_MS,
-    thrust_specific_fuel_consumption_si: float = DEFAULT_TSFC_SI,
-) -> float:
+    cruise_speed: SiValue = DEFAULT_CRUISE_SPEED,
+    thrust_specific_fuel_consumption: SiValue = DEFAULT_TSFC,
+) -> SiValue:
     """Calculates burned fuel mass for a given start mass and range [kg].
 
     Formula:
-        m_fuel = m_start - m_end = m_start * (1 - exp(-R * g * TSFC_SI / (v * (L/D))))
+        m_fuel = m_start - m_end = m_start * (1 - exp(-R * g * TSFC / (v * (L/D))))
 
     Args:
-        m_start_kg: Aircraft mass at the start of the segment [kg].
-        range_m: Flight range [m].
+        m_start: Aircraft mass at the start of the segment [kg].
+        range_: Flight range [m].
         lift_to_drag: Lift-to-drag ratio [-].
-        cruise_speed_ms: True airspeed in cruise [m/s].
-        thrust_specific_fuel_consumption_si: Thrust specific fuel consumption [kg/(N*s)].
+        cruise_speed: True airspeed in cruise [m/s].
+        thrust_specific_fuel_consumption: Thrust specific fuel consumption [kg/(N*s)].
 
     Returns:
         Burned fuel mass [kg].
     """
     mass_fraction = calc_breguet_mass_fraction_from_range(
-        range_m, lift_to_drag, cruise_speed_ms, thrust_specific_fuel_consumption_si
+        range_, lift_to_drag, cruise_speed, thrust_specific_fuel_consumption
     )
-    return m_start_kg * (1.0 - mass_fraction)
+    return SiValue(m_start * (1.0 - mass_fraction), "kg")
 
 
 def calc_breguet_lift_to_drag_from_range(
-    range_m: float,
-    m_start_kg: float,
-    m_end_kg: float,
-    cruise_speed_ms: float = DEFAULT_CRUISE_SPEED_MS,
-    thrust_specific_fuel_consumption_si: float = DEFAULT_TSFC_SI,
+    range_: SiValue,
+    m_start: SiValue,
+    m_end: SiValue,
+    cruise_speed: SiValue = DEFAULT_CRUISE_SPEED,
+    thrust_specific_fuel_consumption: SiValue = DEFAULT_TSFC,
 ) -> float:
     """Calculates required lift-to-drag ratio (L/D) from range and masses [-].
 
     Formula:
-        L/D = (R * g * TSFC_SI) / (v * ln(m_start / m_end))
+        L/D = (R * g * TSFC) / (v * ln(m_start / m_end))
 
     Args:
-        range_m: Flight range [m].
-        m_start_kg: Aircraft mass at the start of the segment [kg].
-        m_end_kg: Aircraft mass at the end of the segment [kg].
-        cruise_speed_ms: True airspeed in cruise [m/s].
-        thrust_specific_fuel_consumption_si: Thrust specific fuel consumption [kg/(N*s)].
+        range_: Flight range [m].
+        m_start: Aircraft mass at the start of the segment [kg].
+        m_end: Aircraft mass at the end of the segment [kg].
+        cruise_speed: True airspeed in cruise [m/s].
+        thrust_specific_fuel_consumption: Thrust specific fuel consumption [kg/(N*s)].
 
     Returns:
         Required lift-to-drag ratio [-].
     """
-    return (range_m * GRAVITY * thrust_specific_fuel_consumption_si) / (
-        cruise_speed_ms * math.log(m_start_kg / m_end_kg)
+    return (range_ * GRAVITY * thrust_specific_fuel_consumption) / (
+        cruise_speed * math.log(m_start / m_end)
     )
 
 
@@ -186,160 +193,157 @@ def calc_breguet_lift_to_drag_from_range(
 
 
 def calc_breguet_endurance(
-    m_start_kg: float,
-    m_end_kg: float,
+    m_start: SiValue,
+    m_end: SiValue,
     lift_to_drag: float = DEFAULT_L_D_LOITER,
-    thrust_specific_fuel_consumption_si: float = DEFAULT_TSFC_SI,
-) -> float:
-    """Calculates Breguet endurance (flight time) from start and end mass [h].
+    thrust_specific_fuel_consumption: SiValue = DEFAULT_TSFC,
+) -> SiValue:
+    """Calculates Breguet endurance (flight time) from start and end mass [s].
 
     Formula:
-        t = (1 / (g * TSFC_SI)) * (L/D) * ln(m_start / m_end)
+        t = (1 / (g * TSFC)) * (L/D) * ln(m_start / m_end)
 
     Args:
-        m_start_kg: Aircraft mass at the start of the segment [kg].
-        m_end_kg: Aircraft mass at the end of the segment [kg].
-        lift_to_drag: Lift-to-drag ratio [-]. Defaults to reference loiter L/D.
-        thrust_specific_fuel_consumption_si: Thrust specific fuel consumption [kg/(N*s)].
+        m_start: Aircraft mass at the start of the segment [kg].
+        m_end: Aircraft mass at the end of the segment [kg].
+        lift_to_drag: Lift-to-drag ratio [-].
+        thrust_specific_fuel_consumption: Thrust specific fuel consumption [kg/(N*s)].
 
     Returns:
-        Breguet endurance [h].
+        Breguet endurance [s].
     """
-    endurance_s = (
-        (1.0 / (GRAVITY * thrust_specific_fuel_consumption_si))
+    endurance = (
+        (1.0 / (GRAVITY * thrust_specific_fuel_consumption))
         * lift_to_drag
-        * math.log(m_start_kg / m_end_kg)
+        * math.log(m_start / m_end)
     )
-    return endurance_s / 3600.0
+    return SiValue(endurance, "s")
 
 
 def calc_breguet_mass_fraction_from_endurance(
-    endurance_h: float,
+    endurance: SiValue,
     lift_to_drag: float = DEFAULT_L_D_LOITER,
-    thrust_specific_fuel_consumption_si: float = DEFAULT_TSFC_SI,
+    thrust_specific_fuel_consumption: SiValue = DEFAULT_TSFC,
 ) -> float:
     """Calculates segment mass fraction M_ff = m_end / m_start for a given endurance [-].
 
     Formula:
-        M_ff = m_end / m_start = exp(-t * g * TSFC_SI / (L/D))
+        M_ff = m_end / m_start = exp(-t * g * TSFC / (L/D))
 
     Args:
-        endurance_h: Flight duration (endurance) [h].
-        lift_to_drag: Lift-to-drag ratio [-]. Defaults to reference loiter L/D.
-        thrust_specific_fuel_consumption_si: Thrust specific fuel consumption [kg/(N*s)].
+        endurance: Flight duration (endurance) [s].
+        lift_to_drag: Lift-to-drag ratio [-].
+        thrust_specific_fuel_consumption: Thrust specific fuel consumption [kg/(N*s)].
 
     Returns:
         Mass fraction M_ff = m_end / m_start [-].
     """
-    endurance_s = endurance_h * 3600.0
-    return math.exp(-(endurance_s * GRAVITY * thrust_specific_fuel_consumption_si) / lift_to_drag)
+    return math.exp(-(endurance * GRAVITY * thrust_specific_fuel_consumption) / lift_to_drag)
 
 
 def calc_breguet_end_mass_from_endurance(
-    m_start_kg: float,
-    endurance_h: float,
+    m_start: SiValue,
+    endurance: SiValue,
     lift_to_drag: float = DEFAULT_L_D_LOITER,
-    thrust_specific_fuel_consumption_si: float = DEFAULT_TSFC_SI,
-) -> float:
+    thrust_specific_fuel_consumption: SiValue = DEFAULT_TSFC,
+) -> SiValue:
     """Calculates aircraft end mass after loitering for a given endurance [kg].
 
     Formula:
-        m_end = m_start * exp(-t * g * TSFC_SI / (L/D))
+        m_end = m_start * exp(-t * g * TSFC / (L/D))
 
     Args:
-        m_start_kg: Aircraft mass at the start of the segment [kg].
-        endurance_h: Flight duration (endurance) [h].
-        lift_to_drag: Lift-to-drag ratio [-]. Defaults to reference loiter L/D.
-        thrust_specific_fuel_consumption_si: Thrust specific fuel consumption [kg/(N*s)].
+        m_start: Aircraft mass at the start of the segment [kg].
+        endurance: Flight duration (endurance) [s].
+        lift_to_drag: Lift-to-drag ratio [-].
+        thrust_specific_fuel_consumption: Thrust specific fuel consumption [kg/(N*s)].
 
     Returns:
         Aircraft mass at the end of the segment [kg].
     """
     mass_fraction = calc_breguet_mass_fraction_from_endurance(
-        endurance_h, lift_to_drag, thrust_specific_fuel_consumption_si
+        endurance, lift_to_drag, thrust_specific_fuel_consumption
     )
-    return m_start_kg * mass_fraction
+    return SiValue(m_start * mass_fraction, "kg")
 
 
 def calc_breguet_start_mass_from_endurance(
-    m_end_kg: float,
-    endurance_h: float,
+    m_end: SiValue,
+    endurance: SiValue,
     lift_to_drag: float = DEFAULT_L_D_LOITER,
-    thrust_specific_fuel_consumption_si: float = DEFAULT_TSFC_SI,
-) -> float:
+    thrust_specific_fuel_consumption: SiValue = DEFAULT_TSFC,
+) -> SiValue:
     """Calculates required aircraft start mass for a given end mass and endurance [kg].
 
     Formula:
-        m_start = m_end / exp(-t * g * TSFC_SI / (L/D))
+        m_start = m_end / exp(-t * g * TSFC / (L/D))
 
     Args:
-        m_end_kg: Aircraft mass at the end of the segment [kg].
-        endurance_h: Flight duration (endurance) [h].
-        lift_to_drag: Lift-to-drag ratio [-]. Defaults to reference loiter L/D.
-        thrust_specific_fuel_consumption_si: Thrust specific fuel consumption [kg/(N*s)].
+        m_end: Aircraft mass at the end of the segment [kg].
+        endurance: Flight duration (endurance) [s].
+        lift_to_drag: Lift-to-drag ratio [-].
+        thrust_specific_fuel_consumption: Thrust specific fuel consumption [kg/(N*s)].
 
     Returns:
         Required aircraft mass at the start of the segment [kg].
     """
     mass_fraction = calc_breguet_mass_fraction_from_endurance(
-        endurance_h, lift_to_drag, thrust_specific_fuel_consumption_si
+        endurance, lift_to_drag, thrust_specific_fuel_consumption
     )
-    return m_end_kg / mass_fraction
+    return SiValue(m_end / mass_fraction, "kg")
 
 
 def calc_breguet_fuel_mass_from_endurance(
-    m_start_kg: float,
-    endurance_h: float,
+    m_start: SiValue,
+    endurance: SiValue,
     lift_to_drag: float = DEFAULT_L_D_LOITER,
-    thrust_specific_fuel_consumption_si: float = DEFAULT_TSFC_SI,
-) -> float:
+    thrust_specific_fuel_consumption: SiValue = DEFAULT_TSFC,
+) -> SiValue:
     """Calculates burned fuel mass for a given start mass and endurance [kg].
 
     Formula:
-        m_fuel = m_start - m_end = m_start * (1 - exp(-t * g * TSFC_SI / (L/D)))
+        m_fuel = m_start - m_end = m_start * (1 - exp(-t * g * TSFC / (L/D)))
 
     Args:
-        m_start_kg: Aircraft mass at the start of the segment [kg].
-        endurance_h: Flight duration (endurance) [h].
-        lift_to_drag: Lift-to-drag ratio [-]. Defaults to reference loiter L/D.
-        thrust_specific_fuel_consumption_si: Thrust specific fuel consumption [kg/(N*s)].
+        m_start: Aircraft mass at the start of the segment [kg].
+        endurance: Flight duration (endurance) [s].
+        lift_to_drag: Lift-to-drag ratio [-].
+        thrust_specific_fuel_consumption: Thrust specific fuel consumption [kg/(N*s)].
 
     Returns:
         Burned fuel mass [kg].
     """
     mass_fraction = calc_breguet_mass_fraction_from_endurance(
-        endurance_h, lift_to_drag, thrust_specific_fuel_consumption_si
+        endurance, lift_to_drag, thrust_specific_fuel_consumption
     )
-    return m_start_kg * (1.0 - mass_fraction)
+    return SiValue(m_start * (1.0 - mass_fraction), "kg")
 
 
 def calc_breguet_lift_to_drag_from_endurance(
-    endurance_h: float,
-    m_start_kg: float,
-    m_end_kg: float,
-    thrust_specific_fuel_consumption_si: float = DEFAULT_TSFC_SI,
+    endurance: SiValue,
+    m_start: SiValue,
+    m_end: SiValue,
+    thrust_specific_fuel_consumption: SiValue = DEFAULT_TSFC,
 ) -> float:
     """Calculates required lift-to-drag ratio (L/D) from endurance and masses [-].
 
     Formula:
-        L/D = (t * g * TSFC_SI) / ln(m_start / m_end)
+        L/D = (t * g * TSFC) / ln(m_start / m_end)
 
     Args:
-        endurance_h: Flight duration (endurance) [h].
-        m_start_kg: Aircraft mass at the start of the segment [kg].
-        m_end_kg: Aircraft mass at the end of the segment [kg].
-        thrust_specific_fuel_consumption_si: Thrust specific fuel consumption [kg/(N*s)].
+        endurance: Flight duration (endurance) [s].
+        m_start: Aircraft mass at the start of the segment [kg].
+        m_end: Aircraft mass at the end of the segment [kg].
+        thrust_specific_fuel_consumption: Thrust specific fuel consumption [kg/(N*s)].
 
     Returns:
         Required lift-to-drag ratio [-].
     """
-    endurance_s = endurance_h * 3600.0
-    return (endurance_s * GRAVITY * thrust_specific_fuel_consumption_si) / math.log(m_start_kg / m_end_kg)
+    return (endurance * GRAVITY * thrust_specific_fuel_consumption) / math.log(m_start / m_end)
 
 
 if __name__ == "__main__":
-    print("Cruise fuel mass (100NM):", calc_breguet_fuel_mass_from_range(5950 - 24 - 36, 185200))
-    print("Cruise fuel mass (50NM):", calc_breguet_fuel_mass_from_range(5950 - 24 - 36 - 78 - 9, 185200 / 2))
-    print("Loiter fuel mass (30min):", calc_breguet_fuel_mass_from_endurance(5950 - 24 - 36 - 78 - 9, 0.5))
-    print("Cruise range (78kg):", calc_breguet_range(5950 - 24 - 36, 5950 - 24 - 36 - 78))
-
+    print("Cruise fuel mass (100NM):", calc_breguet_fuel_mass_from_range(SiValue(5950 - 24 - 36, "kg"), SiValue(100, "nm")))
+    print("Cruise fuel mass (50NM):", calc_breguet_fuel_mass_from_range(SiValue(5950 - 24 - 36 - 78 - 9, "kg"), SiValue(50, "nm")))
+    print("Loiter fuel mass (30min):", calc_breguet_fuel_mass_from_endurance(SiValue(5950 - 24 - 36 - 78 - 9, "kg"), SiValue(0.5, "h")))
+    print("Cruise range (78kg):", calc_breguet_range(SiValue(5950 - 24 - 36, "kg"), SiValue(5950 - 24 - 36 - 78, "kg")))

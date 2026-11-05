@@ -3,12 +3,13 @@
 from data.loader import load_parameters, load_reference_aircraft
 from data.parameters_data import Parameters
 from data.reference_aircraft_data import ReferenceAircraft
-from data.unit_value import UnitValue
+from data.unit_value import SiValue, UnitValue
 
 __all__ = [
     "load_parameters",
     "load_reference_aircraft",
     "Parameters",
     "ReferenceAircraft",
+    "SiValue",
     "UnitValue",
 ]

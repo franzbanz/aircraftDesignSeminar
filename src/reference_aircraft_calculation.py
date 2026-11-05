@@ -3,6 +3,7 @@
 Computes derived aerodynamic/geometric properties and calibration factors for the
 reference aircraft (Dornier 228) from its datasheet parameters.
 """
+from data import SiValue
 
 import math
 
@@ -37,8 +38,8 @@ def calc_reference_aircraft_values(
     performance: ReferencePerformanceParameters,
     assumptions: ReferenceAssumptionsParameters,
     propulsion: ReferencePropulsionParameters,
-    r_H: float = 8.8,
-    r_V: float = 8.8,
+    r_H: SiValue = SiValue(8.8, "m"),
+    r_V: SiValue = SiValue(8.8, "m"),
     delta_m_F: float = 0.07,
 ) -> ReferenceCalculatedValues:
     """Computes derived geometry, tail volume coefficients, and calibration factors.
@@ -56,36 +57,38 @@ def calc_reference_aircraft_values(
     Returns:
         Populated ``ReferenceCalculatedValues`` instance.
     """
-    s_w = dimensions.wingArea
-    b_w = dimensions.wingspan
+    s_w = dimensions.wingArea.si
+    b_w = dimensions.wingspan.si
     aspect_ratio = (b_w ** 2) / s_w
     c_mu = calc_mean_aerodynamic_chord(s_w, b_w)
     b_s = b_w / math.cos(math.radians(assumptions.wingSweepHalfChord))
+    b_s = SiValue(b_s, "m")
 
-    b_r = dimensions.fuselageWidth
-    h_r = dimensions.fuselageHeight
-    l_r = dimensions.fuselageLength
+    b_r = dimensions.fuselageWidth.si
+    h_r = dimensions.fuselageHeight.si
+    l_r = dimensions.fuselageLength.si
     # Approximate wetted fuselage surface area S_O [m^2] as the lateral surface of an elliptical cylinder
     s_o = math.pi * ((b_r + h_r) / 2.0) * l_r
+    s_o = SiValue(s_o, "m^2")
 
-    s_htp = dimensions.horizontalTailArea
-    s_vtp = dimensions.verticalTailArea
+    s_htp = dimensions.horizontalTailArea.si
+    s_vtp = dimensions.verticalTailArea.si
 
     c_ht = calc_horizontal_tail_volume_coefficient(s_htp, r_H, s_w, c_mu)
     c_vt = calc_vertical_tail_volume_coefficient(s_vtp, r_V, s_w, b_w)
 
     # Component mass estimations using uncalibrated formulas
-    mtom_ref = mass.takeOffMassMax
-    mzfm_ref = mass.zeroFuelMassMax
-    n_ult = 1.5 * assumptions.limitLoad
+    mtom_ref = mass.takeOffMassMax.si
+    mzfm_ref = mass.zeroFuelMassMax.si
+    n_ult = 1.5 * assumptions.limitLoad.si
     # Design diving speed v_D = 1.25 * v_cruise converted from kts to m/s
-    v_D = 1.25 * performance.cruiseSpeedTAS.to("m/s")
+    v_D = 1.25 * performance.cruiseSpeedTAS.si
 
     m_wing_calc = calc_wing_mass(
         mzfm=mzfm_ref,
         b_s=b_s,
         n_ult=n_ult,
-        d_root=assumptions.wingRootThickness,
+        d_root=assumptions.wingRootThickness.si,
         s_w=s_w,
         delta_m_F=assumptions.wingMassPenaltyFactor,
     )
@@ -100,7 +103,7 @@ def calc_reference_aircraft_values(
     m_emp_calc = calc_empennage_mass(n_ult, s_htp, s_vtp)
     k_emp = mass.empennage / m_emp_calc
 
-    m_pyl_calc = calc_pylons_mass(propulsion.totalTakeOffPower)
+    m_pyl_calc = calc_pylons_mass(propulsion.totalTakeOffPower.si)
     k_pyl = mass.pylons / m_pyl_calc
 
     m_sys_calc = calc_systems_mass(mtom_ref)
