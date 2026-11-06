@@ -31,7 +31,8 @@
   "aerodynamics": {
     "liftToDragRatioCruise": [12.1, ""],
     "liftToDragRatioLoiter": [15.7, ""],
-    "maxLandingLiftCoefficient": [2.6, ""]
+    "maxLandingLiftCoefficient": [2.6, ""],
+    "oswaldFactor": [0.80, ""]
   },
   "propulsion": {
     "engineTakeOffPower": [580, "kW"],

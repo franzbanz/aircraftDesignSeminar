@@ -222,6 +222,8 @@ def load_reference_aircraft(
         mission=mission,
         assumptions=assumptions,
         propulsion=propulsion,
+        aerodynamics=aerodynamics,
+        fuel=fuel,
     )
 
     return ReferenceAircraft(

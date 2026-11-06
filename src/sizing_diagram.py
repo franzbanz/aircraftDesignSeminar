@@ -174,6 +174,7 @@ def get_design_point(should_plot: bool = False) -> tuple[float, float]:
     thrust_ratio = design.propulsion.maxThrustOverCruiseThrustRatio
 
     # Aerodynamics and atmosphere
+    # l_d_cruise is not necessarily the best L/D
     c_w0 = np.pi * aspect_ratio * oswald_factor / (4.0 * l_d_cruise**2)
     eps = 1.0 / l_d_cruise
     rho_takeoff = isa_density(field_elevation)

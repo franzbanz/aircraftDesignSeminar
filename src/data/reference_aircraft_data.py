@@ -80,6 +80,7 @@ class ReferenceAerodynamicParameters:
     liftToDragRatioCruise: UnitValue
     liftToDragRatioLoiter: UnitValue
     maxLandingLiftCoefficient: UnitValue
+    oswaldFactor: UnitValue
 
 
 @dataclass(frozen=True)
@@ -150,6 +151,11 @@ class ReferenceCalculatedValues:
     verticalTailLeverArm: UnitValue
     horizontalTailVolumeCoefficient: UnitValue
     verticalTailVolumeCoefficient: UnitValue
+
+    cruiseLiftCoefficient: UnitValue
+    zeroLiftDragCoefficient: UnitValue
+    wingZeroLiftDragCoefficient: UnitValue
+    inducedDragCoefficient: UnitValue
 
     wingEstimatedMass: UnitValue
     wingCalibrationFactor: UnitValue

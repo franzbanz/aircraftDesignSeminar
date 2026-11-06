@@ -1,5 +1,20 @@
-"""Formulas package exporting active mass, geometry, Breguet, and propulsion functions."""
+"""Formulas package exporting active aerodynamics, mass, geometry, Breguet, and propulsion functions."""
 
+from formulas.aerodynamics import (
+    AerodynamicComponent,
+    InterferenceFactor,
+    calc_cf_flat_plate_laminar,
+    calc_cf_flat_plate_turbulent,
+    calc_component_drag_area,
+    calc_delta_cf_body_laminar,
+    calc_delta_cf_body_turbulent,
+    calc_effective_reynolds_number,
+    calc_form_factor_fuselage,
+    calc_form_factor_wing,
+    calc_re_cutoff_compressible,
+    calc_re_cutoff_incompressible,
+    calc_zero_lift_drag_coefficient,
+)
 from formulas.breguet import (
     calc_breguet_fuel_mass_from_endurance,
     calc_breguet_fuel_mass_from_range,
@@ -34,6 +49,20 @@ from formulas.propulsion import (
 )
 
 __all__ = [
+    # Aerodynamics
+    "AerodynamicComponent",
+    "InterferenceFactor",
+    "calc_cf_flat_plate_laminar",
+    "calc_cf_flat_plate_turbulent",
+    "calc_delta_cf_body_laminar",
+    "calc_delta_cf_body_turbulent",
+    "calc_re_cutoff_incompressible",
+    "calc_re_cutoff_compressible",
+    "calc_effective_reynolds_number",
+    "calc_form_factor_wing",
+    "calc_form_factor_fuselage",
+    "calc_component_drag_area",
+    "calc_zero_lift_drag_coefficient",
     # Mass estimation
     "calc_wing_mass",
     "calc_landing_gear_mass",

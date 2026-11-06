@@ -7,15 +7,26 @@ from data import SiValue
 
 import math
 
+from constants import GRAVITY, isa_density
 from data.unit_value import UnitValue
 from data.reference_aircraft_data import (
+    ReferenceAerodynamicParameters,
     ReferenceAircraft,
     ReferenceAssumptionsParameters,
     ReferenceCalculatedValues,
     ReferenceDimensionsParameters,
+    ReferenceFuelParameters,
     ReferenceMassParameters,
     ReferenceMissionParameters,
     ReferencePropulsionParameters,
+)
+from formulas.aerodynamics import (
+    InterferenceFactor,
+    calc_cf_flat_plate_turbulent,
+    calc_effective_reynolds_number,
+    calc_form_factor_wing,
+    calc_re_cutoff_compressible,
+    calc_re_cutoff_incompressible,
 )
 from formulas.geometry import (
     calc_horizontal_tail_volume_coefficient,
@@ -38,8 +49,10 @@ def calc_reference_aircraft_values(
     mission: ReferenceMissionParameters,
     assumptions: ReferenceAssumptionsParameters,
     propulsion: ReferencePropulsionParameters,
+    aerodynamics: ReferenceAerodynamicParameters,
+    fuel: ReferenceFuelParameters | None = None,
 ) -> ReferenceCalculatedValues:
-    """Computes derived geometry, tail volume coefficients, and calibration factors.
+    """Computes derived geometry, tail volume coefficients, aerodynamics, and calibration factors.
 
     Args:
         mass: Reference aircraft mass breakdown parameters.
@@ -47,6 +60,8 @@ def calc_reference_aircraft_values(
         mission: Reference aircraft cruise and mission parameters.
         assumptions: Reference aircraft assumed parameters.
         propulsion: Reference aircraft propulsion parameters.
+        aerodynamics: Reference aircraft aerodynamic parameters.
+        fuel: Reference aircraft fuel and mission mass parameters.
 
     Returns:
         Populated ``ReferenceCalculatedValues`` instance.
@@ -68,13 +83,57 @@ def calc_reference_aircraft_values(
     # Approximate wetted fuselage surface area S_O [m^2] as the lateral surface of an elliptical cylinder
     s_o = math.pi * ((b_r + h_r) / 2.0) * l_r
     s_o = SiValue(s_o, "m^2")
-    print(f"Wetted fuselage surface area S_O: {s_o}")
 
     s_htp = dimensions.horizontalTailArea.si
     s_vtp = dimensions.verticalTailArea.si
 
     c_ht = calc_horizontal_tail_volume_coefficient(s_htp, r_h, s_w, c_mu)
     c_vt = calc_vertical_tail_volume_coefficient(s_vtp, r_v, s_w, b_w)
+
+    # Cruise flight condition and aerodynamics
+    m_ref = fuel.referenceMass.si if fuel else mass.takeOffMassMax.si
+    h_cruise = mission.cruiseAltitude.si
+    v_cruise = mission.cruiseSpeedTAS.si
+    rho_cruise = isa_density(h_cruise).si
+    q_cruise = 0.5 * rho_cruise * (v_cruise ** 2)
+
+    # Cruise lift coefficient c_A,cruise [-] (stationary horizontal flight: L = W = m_ref * g)
+    c_a_cruise = (m_ref * GRAVITY.si) / (q_cruise * s_w)
+
+    # Induced drag coefficient c_Wi [-] (lift-dependent drag: c_Wi = c_A^2 / (pi * AR * e))
+    oswald_factor = aerodynamics.oswaldFactor
+    c_wi = (c_a_cruise ** 2) / (math.pi * aspect_ratio * oswald_factor)
+
+    # Total zero-lift drag coefficient c_W0 [-] at cruise operating point: c_W0 = c_W - c_Wi = (c_A / E) - c_Wi
+    l_d_cruise = aerodynamics.liftToDragRatioCruise
+    c_w_cruise = c_a_cruise / l_d_cruise
+    c_w0 = c_w_cruise - c_wi
+
+    # Wing zero-lift drag coefficient c_W0,wing [-] via formulas.aerodynamics
+    t_cruise = 288.15 - 0.0065 * h_cruise
+    a_cruise = math.sqrt(1.4 * 287.05 * t_cruise)
+    mach_cruise = v_cruise / a_cruise
+    mu_cruise = 1.789e-5 * ((t_cruise / 288.15) ** 1.5) * ((288.15 + 110.4) / (t_cruise + 110.4))
+    re_wing = (rho_cruise * v_cruise * c_mu) / mu_cruise
+
+    k_roughness = 6.34e-6  # smooth paint roughness [m]
+    if mach_cruise > 0.3:
+        re_cutoff = calc_re_cutoff_compressible(c_mu, k_roughness, mach_cruise)
+    else:
+        re_cutoff = calc_re_cutoff_incompressible(c_mu, k_roughness)
+    re_eff = calc_effective_reynolds_number(re_wing, re_cutoff)
+
+    cf_wing = calc_cf_flat_plate_turbulent(re_eff, mach_cruise)
+    t_over_c = assumptions.wingRootThickness.si / c_mu
+    sweep_deg = assumptions.wingSweepHalfChord
+    ff_wing = calc_form_factor_wing(
+        d_over_l=t_over_c,
+        x_d_over_l=0.35,
+        mach=mach_cruise,
+        sweep_d_max_deg=sweep_deg,
+    )
+    if_wing = InterferenceFactor.HIGH_MID_WING_FAIRING
+    c_w0_wing = 2.0 * cf_wing * ff_wing * if_wing
 
     # Component mass estimations using uncalibrated formulas
     mtom_ref = mass.takeOffMassMax.si
@@ -118,6 +177,10 @@ def calc_reference_aircraft_values(
         verticalTailLeverArm=assumptions.verticalTailLeverArm,
         horizontalTailVolumeCoefficient=UnitValue(c_ht, ""),
         verticalTailVolumeCoefficient=UnitValue(c_vt, ""),
+        cruiseLiftCoefficient=UnitValue(c_a_cruise, ""),
+        zeroLiftDragCoefficient=UnitValue(c_w0, ""),
+        wingZeroLiftDragCoefficient=UnitValue(c_w0_wing, ""),
+        inducedDragCoefficient=UnitValue(c_wi, ""),
         wingEstimatedMass=UnitValue(m_wing_calc, "kg"),
         wingCalibrationFactor=UnitValue(k_wing, ""),
         landingGearEstimatedMass=UnitValue(m_lg_calc, "kg"),
@@ -161,6 +224,10 @@ def print_reference_aircraft(ref: ReferenceAircraft) -> None:
     print(f"Horizontal tail volume coeff (c_HT): {calc.horizontalTailVolumeCoefficient.value:.4f}")
     print(f"Vertical tail arm (r_V):         {calc.verticalTailLeverArm}")
     print(f"Vertical tail volume coeff (c_VT):   {calc.verticalTailVolumeCoefficient.value:.4f}")
+    print(f"Cruise lift coefficient (c_A):   {calc.cruiseLiftCoefficient.value:.4f}")
+    print(f"Total zero-lift drag (c_W0):     {calc.zeroLiftDragCoefficient.value:.4f}")
+    print(f"Induced drag coeff (c_Wi):       {calc.inducedDragCoefficient.value:.4f}")
+    print(f"Wing zero-lift drag (c_W0,wing): {calc.wingZeroLiftDragCoefficient.value:.4f}")
 
     print("\n--- FORMULA MASS ESTIMATIONS & CALIBRATION FACTORS ---")
     print(f"Wing:         Catalog: {ref.mass.wing!s:>7} | Formula: {calc.wingEstimatedMass.value:7.2f} kg | Factor: {calc.wingCalibrationFactor.value:.4f}")
