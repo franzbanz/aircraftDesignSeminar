@@ -20,6 +20,7 @@
     "engineMaxContinousPower": [510, "kW"],
     "engineMass": [200, "kg"],
     "numberOfEngines": [2, ""],
+    // TODO: which value do we need?
     "maxThrustOverCruiseThrustRatio": [2.0, ""],
     "etaElectric": [0.9, ""]
   },

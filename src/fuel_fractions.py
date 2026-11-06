@@ -129,7 +129,13 @@ class MissionEnergyCalculator:
             - self.ref.fuel.descent.si,
             "kg",
         )
-        breguet_range = calc_breguet_range(m_start_climb, m_end_descent)
+        breguet_range = calc_breguet_range(
+            m_start=m_start_climb,
+            m_end=m_end_descent,
+            lift_to_drag=float(self.ref.aerodynamics.liftToDragRatioCruise.value),
+            cruise_speed=self.ref.mission.cruiseSpeedTAS.si,
+            thrust_specific_fuel_consumption=self.ref.propulsion.tsfcCruise.si,
+        )
         ref_range = self.ref.fuel.referenceRange.si
         overhead_factor = (breguet_range - ref_range) / ref_range
 
@@ -229,6 +235,8 @@ class MissionEnergyCalculator:
             m_start=m_ref,
             m_end=SiValue(m_ref - fuel_mass, "kg"),
             lift_to_drag=ld,
+            cruise_speed=self.ref.mission.cruiseSpeedTAS.si,
+            thrust_specific_fuel_consumption=self.ref.propulsion.tsfcCruise.si,
         )
 
     def electric_equivalent_range(
@@ -265,14 +273,28 @@ class MissionEnergyCalculator:
         m_start_ref = SiValue(self.ref.fuel.referenceMass.si - self.ref.fuel.tripMass.si, "kg")
         t_loiter = self.constraints.mission.loiterTime.si
         ld_loiter = float(self.ref.aerodynamics.liftToDragRatioLoiter.value)
-        return calc_breguet_fuel_mass_from_endurance(m_start_ref, t_loiter, ld_loiter)
+        tsfc = self.ref.propulsion.tsfcCruise.si
+        return calc_breguet_fuel_mass_from_endurance(
+            m_start=m_start_ref,
+            endurance=t_loiter,
+            lift_to_drag=ld_loiter,
+            thrust_specific_fuel_consumption=tsfc,
+        )
 
     def reference_diversion_fuel_mass(self) -> SiValue:
         """Reference aircraft diversion fuel mass via Breguet range [kg]."""
         m_start_ref = SiValue(self.ref.fuel.referenceMass.si - self.ref.fuel.tripMass.si, "kg")
         d_div = self.constraints.mission.diversionDistance.si
         ld_cruise = float(self.ref.aerodynamics.liftToDragRatioCruise.value)
-        return calc_breguet_fuel_mass_from_range(m_start_ref, d_div, ld_cruise)
+        cruise_speed = self.ref.mission.cruiseSpeedTAS.si
+        tsfc = self.ref.propulsion.tsfcCruise.si
+        return calc_breguet_fuel_mass_from_range(
+            m_start=m_start_ref,
+            range_=d_div,
+            lift_to_drag=ld_cruise,
+            cruise_speed=cruise_speed,
+            thrust_specific_fuel_consumption=tsfc,
+        )
 
     def reference_reserve_fuel_mass(self) -> SiValue:
         """Reference aircraft total reserve fuel mass [kg]."""
