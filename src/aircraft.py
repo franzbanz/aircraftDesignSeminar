@@ -1,5 +1,5 @@
 """Battery-powered electric aircraft model with integrated calibrated mass estimation."""
-from sizing_diagram import get_design_point
+from sizing_diagram import SizingDiagram
 
 import math
 
@@ -83,12 +83,12 @@ class BatteryAircraft:
     @property
     def wing_loading_design(self) -> float:
         """Optimum wing loading from sizing diagram [kg/m^2]."""
-        return get_design_point()[0]
+        return SizingDiagram().design_wing_loading
 
     @property
     def thrust_loading_design(self) -> float:
         """Optimum thrust loading from sizing diagram [-]."""
-        return get_design_point()[1]
+        return SizingDiagram().design_thrust_loading
 
     @property
     def wing_area(self) -> SiValue:

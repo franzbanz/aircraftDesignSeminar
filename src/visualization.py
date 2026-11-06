@@ -8,26 +8,25 @@ from typing import TYPE_CHECKING, Literal
 import matplotlib.pyplot as plt
 import numpy as np
 
-from sizing_diagram import get_design_point
+from sizing_diagram import SizingDiagram
 
 if TYPE_CHECKING:
     from aircraft import BatteryAircraft
     from data import ReferenceAircraftData
 
 
-def plot_sizing_diagram(should_show: bool = True) -> tuple[float, float]:
+def plot_sizing_diagram() -> None:
     """Plots the sizing diagram (matching chart) with design point and feasible region.
 
     Reuses the calculation from sizing_diagram.py to avoid code duplication.
     """
-    return get_design_point(should_plot=should_show)
+    SizingDiagram().plot()
 
 
 def plot_mass_breakdown(
     aircraft: BatteryAircraft,
     ref_aircraft: ReferenceAircraftData,
-    should_show: bool = True,
-) -> plt.Figure:
+) -> None:
     """Plots stacked mass comparison between Dornier 228 reference and the electric aircraft."""
     fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(13, 6.5), gridspec_kw={"width_ratios": [1.2, 1]})
 
@@ -135,17 +134,14 @@ def plot_mass_breakdown(
     ax2.legend(loc="lower right", fontsize=9)
 
     plt.tight_layout()
-    if should_show:
-        plt.show()
-    return fig
+    plt.show()
 
 
 def plot_mission_energy(
     aircraft: BatteryAircraft,
     ref_aircraft: ReferenceAircraftData,
     variant: Literal["simple", "detailed"] = "simple",
-    should_show: bool = True,
-) -> plt.Figure:
+) -> None:
     """Plots energy consumption across mission phases and reserves.
 
     Args:
@@ -153,7 +149,6 @@ def plot_mission_energy(
         ref_aircraft: Reference aircraft data.
         variant: 'simple' uses proportional fuel scaling (matching current MTOM sizing);
                  'detailed' uses analytical segment calculation via MissionEnergyCalculator.
-        should_show: Whether to display the plot interactively.
     """
     if variant == "simple":
         # Simpler approach matching aircraft.calc_required_battery_mass():
@@ -235,15 +230,12 @@ def plot_mission_energy(
     )
 
     plt.tight_layout()
-    if should_show:
-        plt.show()
-    return fig
+    plt.show()
 
 
 def plot_payload_range(
-    aircraft: BatteryAircraft,
-    should_show: bool = True,
-) -> plt.Figure:
+    aircraft: BatteryAircraft
+) -> None:
     """Plots Payload-Range diagram for the electric aircraft."""
     pax_max = 19
     pax_weight = 90.0  # kg
@@ -298,24 +290,20 @@ def plot_payload_range(
 
     ax1.legend(loc="upper right", fontsize=9.5, framealpha=0.95)
     plt.tight_layout()
-
-    if should_show:
-        plt.show()
-    return fig
+    plt.show()
 
 
 def plot_aircraft_geometry(
     aircraft: BatteryAircraft,
     ref_aircraft: ReferenceAircraftData,
-    should_show: bool = True,
-) -> plt.Figure:
+) -> None:
     """Plots 2D top-down geometric comparison between Dornier 228 and the electric aircraft."""
     fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(14, 6.5), gridspec_kw={"width_ratios": [1.4, 1]})
 
     # ------------------ Subplot 1: Top-down Planform Schematic ------------------
     # Fuselage (common 19-pax fuselage geometry)
-    l_f = float(aircraft.fuselage_length)
-    w_f = float(aircraft.fuselage_width)
+    l_f = aircraft.fuselage_length
+    w_f = aircraft.fuselage_width
 
     # Simplified fuselage contour
     fuselage_x = [0, 1.5, l_f - 3.0, l_f, l_f - 3.0, 1.5, 0]
@@ -327,8 +315,8 @@ def plot_aircraft_geometry(
     x_qc = 6.0
 
     # Reference Aircraft (Do 228) Wing
-    b_ref = float(ref_aircraft.dimensions.wingspan.si)
-    c_ref = float(ref_aircraft.calculatedValues.meanAerodynamicChord.si)
+    b_ref = ref_aircraft.dimensions.wingspan.si
+    c_ref = ref_aircraft.calculatedValues.meanAerodynamicChord.si
     x_w_ref_le = x_qc - 0.25 * c_ref
     x_w_ref_te = x_w_ref_le + c_ref
     ax1.fill(
@@ -343,8 +331,8 @@ def plot_aircraft_geometry(
     )
 
     # Electric Aircraft Wing
-    b_el = float(aircraft.wingspan)
-    c_el = float(aircraft.mean_aerodynamic_chord)
+    b_el = aircraft.wingspan
+    c_el = aircraft.mean_aerodynamic_chord
     x_w_el_le = x_qc - 0.25 * c_el
     x_w_el_te = x_w_el_le + c_el
     ax1.fill(
@@ -358,13 +346,13 @@ def plot_aircraft_geometry(
     )
 
     # CS-23 Maximum Wingspan constraint line (24 m)
-    b_max = float(aircraft.design.aerodynamics.maxWingSpan.si)
+    b_max = aircraft.design.aerodynamics.maxWingSpan.si
     ax1.axvline(-b_max / 2, color="red", ls=":", lw=1.5, label=f"CS-23 Max Span ({b_max:.0f} m)")
     ax1.axvline(b_max / 2, color="red", ls=":", lw=1.5)
 
     # Horizontal Tailplane (quarter-chord around x = 15.0 m)
     x_qc_ht = 15.0
-    s_ht_ref = float(ref_aircraft.dimensions.horizontalTailArea.si)
+    s_ht_ref = ref_aircraft.dimensions.horizontalTailArea.si
     b_ht_ref = (s_ht_ref * 4.0) ** 0.5  # assuming AR ~ 4.0
     c_ht_ref = s_ht_ref / b_ht_ref
     ax1.fill(
@@ -377,7 +365,7 @@ def plot_aircraft_geometry(
         ls="--",
     )
 
-    s_ht_el = float(aircraft.horizontal_tail_area)
+    s_ht_el = aircraft.horizontal_tail_area
     b_ht_el = (s_ht_el * 4.0) ** 0.5
     c_ht_el = s_ht_el / b_ht_el
     ax1.fill(
@@ -408,20 +396,20 @@ def plot_aircraft_geometry(
         "VTP Area [m²]",
     ]
     ref_vals = [
-        float(ref_aircraft.dimensions.wingArea.si),
-        float(ref_aircraft.dimensions.wingspan.si),
-        float(ref_aircraft.calculatedValues.aspectRatio.value),
-        float(ref_aircraft.calculatedValues.meanAerodynamicChord.si),
-        float(ref_aircraft.dimensions.horizontalTailArea.si),
-        float(ref_aircraft.dimensions.verticalTailArea.si),
+        ref_aircraft.dimensions.wingArea.si,
+        ref_aircraft.dimensions.wingspan.si,
+        ref_aircraft.calculatedValues.aspectRatio.value,
+        ref_aircraft.calculatedValues.meanAerodynamicChord.si,
+        ref_aircraft.dimensions.horizontalTailArea.si,
+        ref_aircraft.dimensions.verticalTailArea.si,
     ]
     el_vals = [
-        float(aircraft.wing_area),
-        float(aircraft.wingspan),
-        float(aircraft.aspect_ratio),
-        float(aircraft.mean_aerodynamic_chord),
-        float(aircraft.horizontal_tail_area),
-        float(aircraft.vertical_tail_area),
+        aircraft.wing_area,
+        aircraft.wingspan,
+        aircraft.aspect_ratio,
+        aircraft.mean_aerodynamic_chord,
+        aircraft.horizontal_tail_area,
+        aircraft.vertical_tail_area,
     ]
 
     y = np.arange(len(labels))
@@ -452,9 +440,7 @@ def plot_aircraft_geometry(
     ax2.legend(loc="lower right", fontsize=9.5)
 
     plt.tight_layout()
-    if should_show:
-        plt.show()
-    return fig
+    plt.show()
 
 
 def interactive_plot_menu(aircraft: BatteryAircraft, ref_aircraft: ReferenceAircraftData) -> None:
@@ -486,29 +472,29 @@ def interactive_plot_menu(aircraft: BatteryAircraft, ref_aircraft: ReferenceAirc
             break
         elif choice in ("1", "s", "sizing"):
             print("Opening Sizing Diagram...")
-            plot_sizing_diagram(should_show=True)
+            plot_sizing_diagram()
         elif choice in ("2", "m", "mass"):
             print("Opening Mass Breakdown Comparison...")
-            plot_mass_breakdown(aircraft, ref_aircraft, should_show=True)
+            plot_mass_breakdown(aircraft, ref_aircraft)
         elif choice in ("3", "e", "energy", "simple"):
             print("Opening Mission Energy Breakdown (Simple Variant)...")
-            plot_mission_energy(aircraft, ref_aircraft, variant="simple", should_show=True)
+            plot_mission_energy(aircraft, ref_aircraft, variant="simple")
         elif choice in ("3d", "detailed"):
             print("Opening Mission Energy Breakdown (Detailed Variant)...")
-            plot_mission_energy(aircraft, ref_aircraft, variant="detailed", should_show=True)
+            plot_mission_energy(aircraft, ref_aircraft, variant="detailed")
         elif choice in ("4", "p", "payload", "range"):
             print("Opening Payload-Range Diagram...")
-            plot_payload_range(aircraft, should_show=True)
+            plot_payload_range(aircraft)
         elif choice in ("5", "g", "geom", "geometry", "dimensions"):
             print("Opening Aircraft Dimensions & Geometry Comparison...")
-            plot_aircraft_geometry(aircraft, ref_aircraft, should_show=True)
+            plot_aircraft_geometry(aircraft, ref_aircraft)
         elif choice in ("a", "all"):
             print("Opening all diagrams sequentially...")
-            plot_sizing_diagram(should_show=True)
-            plot_mass_breakdown(aircraft, ref_aircraft, should_show=True)
-            plot_mission_energy(aircraft, ref_aircraft, variant="simple", should_show=True)
-            plot_payload_range(aircraft, should_show=True)
-            plot_aircraft_geometry(aircraft, ref_aircraft, should_show=True)
+            plot_sizing_diagram()
+            plot_mass_breakdown(aircraft, ref_aircraft)
+            plot_mission_energy(aircraft, ref_aircraft, variant="simple")
+            plot_payload_range(aircraft)
+            plot_aircraft_geometry(aircraft, ref_aircraft)
         else:
             print(f"Unknown option '{choice}'. Please choose 1, 2, 3, 3d, 4, 5, A or Q.")
 
