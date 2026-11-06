@@ -13,14 +13,6 @@ class DesignInitialSizingParameters:
 
 
 @dataclass(frozen=True)
-class DesignPerformanceParameters:
-    """Flight performance parameters (cruise speed, altitude)."""
-
-    cruiseSpeedTAS: UnitValue
-    cruiseAltitude: UnitValue
-
-
-@dataclass(frozen=True)
 class DesignAerodynamicParameters:
     """Aerodynamic parameters and lift coefficients."""
 
@@ -31,6 +23,7 @@ class DesignAerodynamicParameters:
     oswaldFactor: UnitValue
     maxWingSpan: UnitValue
     relWingThickness: UnitValue
+    maxHorizontalVolumeCoefficient: UnitValue
 
 
 @dataclass(frozen=True)
@@ -47,9 +40,12 @@ class DesignPropulsionParameters:
 
 @dataclass(frozen=True)
 class DesignMissionParameters:
-    """Mission distance parameters."""
+    """Mission distance and cruise profile parameters."""
 
     range: UnitValue
+    cruiseSpeedTAS: UnitValue
+    cruiseAltitude: UnitValue
+    numberOfPassengers: UnitValue
 
 
 @dataclass(frozen=True)
@@ -67,7 +63,6 @@ class DesignParameters:
     """Top-level container for all battery-powered aircraft design parameters."""
 
     initialSizing: DesignInitialSizingParameters
-    performance: DesignPerformanceParameters
     aerodynamics: DesignAerodynamicParameters
     propulsion: DesignPropulsionParameters
     mission: DesignMissionParameters

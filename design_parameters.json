@@ -2,13 +2,6 @@
   "initialSizing": {
     "maximumTakeOffMass": [8618, "kg"]
   },
-  "payload": {
-    "numberOfPassengers": [19, ""]
-  },
-  "performance": {
-    "cruiseSpeedTAS": [200, "kts"],
-    "cruiseAltitude": [10000, "ft"]
-  },
   "aerodynamics": {
     "liftToDragRatioCruise": [12.1, ""],
     "liftToDragRatioLoiter": [15.7, ""],
@@ -17,7 +10,9 @@
     "aspectRatio": [10.5, ""],
     "oswaldFactor": [0.85, ""],
     "maxWingSpan": [24, "m"],
-    "relWingThickness": [0.16, ""]
+    "relWingThickness": [0.16, ""],
+    // the reference aircraft has a very high coefficient, the reference table [Strohmayer I | p. 213] has a maximum value of 1.0
+    "maxHorizontalVolumeCoefficient": [1.0, ""]
   },
   "propulsion": {
     // assumption of engine magni 650 -> to be determined
@@ -26,10 +21,13 @@
     "engineMass": [200, "kg"],
     "numberOfEngines": [2, ""],
     "maxThrustOverCruiseThrustRatio": [2.0, ""],
-    "etaElectric": [0.85, ""]
+    "etaElectric": [0.9, ""]
   },
   "mission": {
-    "range": [100, "nm"]
+    "range": [100, "nm"],
+    "cruiseSpeedTAS": [170, "kts"],
+    "cruiseAltitude": [10000, "ft"],
+    "numberOfPassengers": [19, ""]
   },
   "assumptions": {
     "limitLoad": [3.0, ""],

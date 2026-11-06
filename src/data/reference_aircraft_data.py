@@ -51,8 +51,8 @@ class ReferenceDimensionsParameters:
 
 
 @dataclass(frozen=True)
-class ReferencePerformanceParameters:
-    """Cruise performance parameters of the reference aircraft."""
+class ReferenceMissionParameters:
+    """Cruise and mission parameters of the reference aircraft."""
 
     cruiseSpeedTAS: UnitValue
     cruiseAltitude: UnitValue
@@ -67,6 +67,10 @@ class ReferenceAssumptionsParameters:
     wingRootThickness: UnitValue
     wingSweepHalfChord: UnitValue
     wingMassPenaltyFactor: UnitValue
+    fuselageMassPenaltyFactor: UnitValue
+    horizontalTailLeverArm: UnitValue
+    verticalTailLeverArm: UnitValue
+    wettedSurface: UnitValue
 
 
 @dataclass(frozen=True)
@@ -172,7 +176,7 @@ class ReferenceAircraft:
 
     mass: ReferenceMassParameters
     dimensions: ReferenceDimensionsParameters
-    performance: ReferencePerformanceParameters
+    mission: ReferenceMissionParameters
     assumptions: ReferenceAssumptionsParameters
     aerodynamics: ReferenceAerodynamicParameters
     propulsion: ReferencePropulsionParameters

@@ -163,10 +163,10 @@ def get_design_point(should_plot: bool = False) -> tuple[float, float]:
     # Electric aircraft design parameters and flight conditions
     n_engines = int(design.propulsion.numberOfEngines)
     l_d_cruise = design.aerodynamics.liftToDragRatioCruise
-    h_cruise = design.performance.cruiseAltitude.si
+    h_cruise = design.mission.cruiseAltitude.si
     c_a_max_to = design.assumptions.maxTakeOffLiftCoefficient
     c_a_max_l = design.aerodynamics.maxLandingLiftCoefficient
-    v_cruise = design.performance.cruiseSpeedTAS.si
+    v_cruise = design.mission.cruiseSpeedTAS.si
 
     # Design parameters of the electric aircraft
     aspect_ratio = design.aerodynamics.aspectRatio

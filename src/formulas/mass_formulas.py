@@ -87,7 +87,7 @@ def calc_fuselage_mass(
     b_R: SiValue,
     h_R: SiValue,
     s_o: SiValue,
-    delta_m_F: float = 0.07,
+    delta_m_F: float,
 ) -> SiValue:
     """Calculates fuselage mass based on diving speed, tail arm, and dimensions [kg].
 

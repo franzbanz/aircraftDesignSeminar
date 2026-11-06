@@ -14,7 +14,7 @@ from data.reference_aircraft_data import (
     ReferenceCalculatedValues,
     ReferenceDimensionsParameters,
     ReferenceMassParameters,
-    ReferencePerformanceParameters,
+    ReferenceMissionParameters,
     ReferencePropulsionParameters,
 )
 from formulas.geometry import (
@@ -35,28 +35,26 @@ from formulas.mass_formulas import (
 def calc_reference_aircraft_values(
     mass: ReferenceMassParameters,
     dimensions: ReferenceDimensionsParameters,
-    performance: ReferencePerformanceParameters,
+    mission: ReferenceMissionParameters,
     assumptions: ReferenceAssumptionsParameters,
     propulsion: ReferencePropulsionParameters,
-    r_H: SiValue = SiValue(8.8, "m"),
-    r_V: SiValue = SiValue(8.8, "m"),
-    delta_m_F: float = 0.07,
 ) -> ReferenceCalculatedValues:
     """Computes derived geometry, tail volume coefficients, and calibration factors.
 
     Args:
         mass: Reference aircraft mass breakdown parameters.
         dimensions: Reference aircraft geometric dimensions.
-        performance: Reference aircraft cruise performance parameters.
+        mission: Reference aircraft cruise and mission parameters.
         assumptions: Reference aircraft assumed parameters.
         propulsion: Reference aircraft propulsion parameters.
-        r_H: Horizontal tail lever arm [m].
-        r_V: Vertical tail lever arm [m].
-        delta_m_F: Fuselage mass penalty factor [-].
 
     Returns:
         Populated ``ReferenceCalculatedValues`` instance.
     """
+    r_h = assumptions.horizontalTailLeverArm.si
+    r_v = assumptions.verticalTailLeverArm.si
+    delta_m_f = assumptions.fuselageMassPenaltyFactor
+
     s_w = dimensions.wingArea.si
     b_w = dimensions.wingspan.si
     aspect_ratio = (b_w ** 2) / s_w
@@ -70,19 +68,20 @@ def calc_reference_aircraft_values(
     # Approximate wetted fuselage surface area S_O [m^2] as the lateral surface of an elliptical cylinder
     s_o = math.pi * ((b_r + h_r) / 2.0) * l_r
     s_o = SiValue(s_o, "m^2")
+    print(f"Wetted fuselage surface area S_O: {s_o}")
 
     s_htp = dimensions.horizontalTailArea.si
     s_vtp = dimensions.verticalTailArea.si
 
-    c_ht = calc_horizontal_tail_volume_coefficient(s_htp, r_H, s_w, c_mu)
-    c_vt = calc_vertical_tail_volume_coefficient(s_vtp, r_V, s_w, b_w)
+    c_ht = calc_horizontal_tail_volume_coefficient(s_htp, r_h, s_w, c_mu)
+    c_vt = calc_vertical_tail_volume_coefficient(s_vtp, r_v, s_w, b_w)
 
     # Component mass estimations using uncalibrated formulas
     mtom_ref = mass.takeOffMassMax.si
     mzfm_ref = mass.zeroFuelMassMax.si
     n_ult = 1.5 * assumptions.limitLoad.si
     # Design diving speed v_D = 1.25 * v_cruise converted from kts to m/s
-    v_D = 1.25 * performance.cruiseSpeedTAS.si
+    v_D = SiValue(1.25 * mission.cruiseSpeedTAS.si, "m/s")
 
     m_wing_calc = calc_wing_mass(
         mzfm=mzfm_ref,
@@ -97,7 +96,7 @@ def calc_reference_aircraft_values(
     m_lg_calc = calc_landing_gear_mass(mtom_ref)
     k_lg = mass.landingGear / m_lg_calc
 
-    m_fus_calc = calc_fuselage_mass(v_D, r_H, b_r, h_r, s_o, delta_m_F)
+    m_fus_calc = calc_fuselage_mass(v_D, r_h, b_r, h_r, s_o, delta_m_f)
     k_fus = mass.fuselage / m_fus_calc
 
     m_emp_calc = calc_empennage_mass(n_ult, s_htp, s_vtp)
@@ -115,8 +114,8 @@ def calc_reference_aircraft_values(
         structuralWingspan=UnitValue(b_s, "m"),
         designDivingSpeed=UnitValue(v_D, "m/s"),
         ultimateLoadFactor=UnitValue(n_ult, ""),
-        horizontalTailLeverArm=UnitValue(r_H, "m"),
-        verticalTailLeverArm=UnitValue(r_V, "m"),
+        horizontalTailLeverArm=assumptions.horizontalTailLeverArm,
+        verticalTailLeverArm=assumptions.verticalTailLeverArm,
         horizontalTailVolumeCoefficient=UnitValue(c_ht, ""),
         verticalTailVolumeCoefficient=UnitValue(c_vt, ""),
         wingEstimatedMass=UnitValue(m_wing_calc, "kg"),

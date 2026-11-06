@@ -27,7 +27,6 @@ from data.design_parameters_data import (
     DesignInitialSizingParameters,
     DesignMissionParameters,
     DesignParameters,
-    DesignPerformanceParameters,
     DesignPropulsionParameters,
 )
 from data.reference_aircraft_data import (
@@ -37,7 +36,7 @@ from data.reference_aircraft_data import (
     ReferenceDimensionsParameters,
     ReferenceFuelParameters,
     ReferenceMassParameters,
-    ReferencePerformanceParameters,
+    ReferenceMissionParameters,
     ReferencePropulsionParameters,
 )
 from data.unit_value import UnitValue
@@ -186,7 +185,6 @@ def load_design_parameters(path: Path | str | None = None) -> DesignParameters:
 
     return DesignParameters(
         initialSizing=instantiate_dataclass_with_extra_warning(DesignInitialSizingParameters, _parameter_group(data["initialSizing"])),
-        performance=instantiate_dataclass_with_extra_warning(DesignPerformanceParameters, _parameter_group(data["performance"])),
         aerodynamics=instantiate_dataclass_with_extra_warning(DesignAerodynamicParameters, _parameter_group(data["aerodynamics"])),
         propulsion=instantiate_dataclass_with_extra_warning(DesignPropulsionParameters, _parameter_group(data["propulsion"])),
         mission=instantiate_dataclass_with_extra_warning(DesignMissionParameters, _parameter_group(data["mission"])),
@@ -196,17 +194,11 @@ def load_design_parameters(path: Path | str | None = None) -> DesignParameters:
 
 def load_reference_aircraft(
     path: Path | str | None = None,
-    r_H: float = 8.8,
-    r_V: float = 8.8,
-    delta_m_F: float = 0.07,
 ) -> ReferenceAircraft:
     """Loads reference aircraft parameters from JSON and computes derived ``calculatedValues``.
 
     Args:
         path: Optional explicit path to the reference aircraft JSON file.
-        r_H: Horizontal tail lever arm [m].
-        r_V: Vertical tail lever arm [m].
-        delta_m_F: Fuselage mass penalty factor [-].
 
     Returns:
         Populated ``ReferenceAircraft`` instance.
@@ -216,7 +208,7 @@ def load_reference_aircraft(
 
     mass = instantiate_dataclass_with_extra_warning(ReferenceMassParameters, _parameter_group(data["mass"]))
     dimensions = instantiate_dataclass_with_extra_warning(ReferenceDimensionsParameters, _parameter_group(data["dimensions"]))
-    performance = instantiate_dataclass_with_extra_warning(ReferencePerformanceParameters, _parameter_group(data["performance"]))
+    mission = instantiate_dataclass_with_extra_warning(ReferenceMissionParameters, _parameter_group(data["mission"]))
     assumptions = instantiate_dataclass_with_extra_warning(ReferenceAssumptionsParameters, _parameter_group(data["assumptions"]))
     aerodynamics = instantiate_dataclass_with_extra_warning(ReferenceAerodynamicParameters, _parameter_group(data["aerodynamics"]))
     propulsion = instantiate_dataclass_with_extra_warning(ReferencePropulsionParameters, _parameter_group(data["propulsion"]))
@@ -227,18 +219,15 @@ def load_reference_aircraft(
     calculatedValues = calc_reference_aircraft_values(
         mass=mass,
         dimensions=dimensions,
-        performance=performance,
+        mission=mission,
         assumptions=assumptions,
         propulsion=propulsion,
-        r_H=r_H,
-        r_V=r_V,
-        delta_m_F=delta_m_F,
     )
 
     return ReferenceAircraft(
         mass=mass,
         dimensions=dimensions,
-        performance=performance,
+        mission=mission,
         assumptions=assumptions,
         aerodynamics=aerodynamics,
         propulsion=propulsion,

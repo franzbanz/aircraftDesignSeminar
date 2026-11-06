@@ -24,7 +24,7 @@
     "horizontalTailArea": [8.3, "m^2"],
     "verticalTailArea": [6.0, "m^2"]
   },
-  "performance": {
+  "mission": {
     "cruiseSpeedTAS": [200, "kts"],
     "cruiseAltitude": [10000, "ft"]
   },
@@ -58,6 +58,14 @@
     // rectangular wing
     "wingSweepHalfChord": [0.0, "deg"],
     // 2 engines (-5%) and no landing gear on wing (-5%)
-    "wingMassPenaltyFactor": [-0.10, ""]
+    "wingMassPenaltyFactor": [-0.10, ""],
+    // fuselage-mounted landing gear (+7%)
+    "fuselageMassPenaltyFactor": [0.07, ""],
+    // from 25% MAC to 25% MAC horizontal stabilizer
+    "horizontalTailLeverArm": [9.15, "m"],
+    // from 25% MAC to 25% vertical stabilizer
+    "verticalTailLeverArm": [8.5, "m"],
+    // sideview ~ 2*27.50m^2 + topview ~ 2*21.0mm^2
+    "wettedSurface": [97, "m^2"]
   }
 }

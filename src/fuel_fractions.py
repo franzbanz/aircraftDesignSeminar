@@ -72,7 +72,7 @@ class MissionEnergyCalculator:
     @property
     def reference_propulsion_efficiency(self) -> float:
         """Overall cruise propulsion efficiency of the reference turboprop aircraft [-]."""
-        cruise_speed = self.ref.performance.cruiseSpeedTAS.si
+        cruise_speed = self.ref.mission.cruiseSpeedTAS.si
         tsfc = self.ref.propulsion.tsfcCruise.si
         fuel_energy_density = self.ref.fuel.energyDensity.si
         return cruise_speed / (tsfc * fuel_energy_density)

@@ -54,7 +54,7 @@ class BatteryAircraft:
         """Passenger and luggage payload mass [kg]."""
         return SiValue(
             self.constraints.payload.weightPerPassenger.si
-            * self.constraints.payload.numberOfPassengers.value,
+            * self.design.mission.numberOfPassengers,
             "kg",
         )
 
@@ -101,8 +101,7 @@ class BatteryAircraft:
     def wingspan(self) -> SiValue:
         """Wingspan b_W [m], constrained to maximum allowable span."""
         b_s = wing_span(self.wing_area, self.design.aerodynamics.aspectRatio)
-        max_span = self.design.aerodynamics.maxWingSpan.si
-        return b_s if b_s <= max_span else max_span
+        return SiValue(min(b_s, self.design.aerodynamics.maxWingSpan.si), "m")
 
     @property
     def aspect_ratio(self) -> float:
@@ -140,6 +139,7 @@ class BatteryAircraft:
         """Horizontal tailplane area S_HTP scaled via volume coefficient [m^2]."""
         c_ht = self.ref.calculatedValues.horizontalTailVolumeCoefficient
         r_h = self.ref.calculatedValues.horizontalTailLeverArm.si
+        c_ht = min(c_ht, self.design.aerodynamics.maxHorizontalVolumeCoefficient)
         return calc_horizontal_tail_area(c_ht, r_h, self.wing_area, self.mean_aerodynamic_chord)
 
     @property
@@ -179,12 +179,12 @@ class BatteryAircraft:
     @property
     def m_fuselage(self) -> SiValue:
         """Calibrated fuselage mass [kg]."""
-        v_D = SiValue(1.25 * self.constraints.performance.cruiseSpeedMin.si, "m/s")
+        v_D = SiValue(1.25 * self.design.mission.cruiseSpeedTAS.si, "m/s")
         r_H = self.ref.calculatedValues.horizontalTailLeverArm.si
         b_R = self.ref.dimensions.fuselageWidth.si
         h_R = self.ref.dimensions.fuselageHeight.si
         l_R = self.ref.dimensions.fuselageLength.si
-        delta_m_F = 0.07  # Fuselage-mounted landing gear (+7%)
+        delta_m_F = self.ref.assumptions.fuselageMassPenaltyFactor
         s_o = SiValue(math.pi * ((b_R + h_R) / 2.0) * l_R, "m^2")
         raw = calc_fuselage_mass(v_D, r_H, b_R, h_R, s_o, delta_m_F)
         return SiValue(raw * self.ref.calculatedValues.fuselageCalibrationFactor, "kg")
