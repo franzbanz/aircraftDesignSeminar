@@ -67,4 +67,3 @@ class DesignParameters:
     propulsion: DesignPropulsionParameters
     mission: DesignMissionParameters
     assumptions: DesignAssumptionsParameters
-

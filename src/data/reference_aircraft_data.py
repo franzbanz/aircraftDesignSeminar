@@ -188,4 +188,3 @@ class ReferenceAircraft:
     propulsion: ReferencePropulsionParameters
     fuel: ReferenceFuelParameters
     calculatedValues: ReferenceCalculatedValues
-

@@ -3,12 +3,11 @@
 Computes derived aerodynamic/geometric properties and calibration factors for the
 reference aircraft (Dornier 228) from its datasheet parameters.
 """
-from data import SiValue
 
 import math
 
 from constants import GRAVITY, isa_density
-from data.unit_value import UnitValue
+from data import SiValue
 from data.reference_aircraft_data import (
     ReferenceAerodynamicParameters,
     ReferenceAircraft,
@@ -20,6 +19,7 @@ from data.reference_aircraft_data import (
     ReferenceMissionParameters,
     ReferencePropulsionParameters,
 )
+from data.unit_value import UnitValue
 from formulas.aerodynamics import (
     InterferenceFactor,
     calc_cf_flat_plate_turbulent,
@@ -72,7 +72,7 @@ def calc_reference_aircraft_values(
 
     s_w = dimensions.wingArea.si
     b_w = dimensions.wingspan.si
-    aspect_ratio = (b_w ** 2) / s_w
+    aspect_ratio = (b_w**2) / s_w
     c_mu = calc_mean_aerodynamic_chord(s_w, b_w)
     b_s = b_w / math.cos(math.radians(assumptions.wingSweepHalfChord))
     b_s = SiValue(b_s, "m")
@@ -95,14 +95,14 @@ def calc_reference_aircraft_values(
     h_cruise = mission.cruiseAltitude.si
     v_cruise = mission.cruiseSpeedTAS.si
     rho_cruise = isa_density(h_cruise).si
-    q_cruise = 0.5 * rho_cruise * (v_cruise ** 2)
+    q_cruise = 0.5 * rho_cruise * (v_cruise**2)
 
     # Cruise lift coefficient c_A,cruise [-] (stationary horizontal flight: L = W = m_ref * g)
     c_a_cruise = (m_ref * GRAVITY.si) / (q_cruise * s_w)
 
     # Induced drag coefficient c_Wi [-] (lift-dependent drag: c_Wi = c_A^2 / (pi * AR * e))
     oswald_factor = aerodynamics.oswaldFactor
-    c_wi = (c_a_cruise ** 2) / (math.pi * aspect_ratio * oswald_factor)
+    c_wi = (c_a_cruise**2) / (math.pi * aspect_ratio * oswald_factor)
 
     # Total zero-lift drag coefficient c_W0 [-] at cruise operating point: c_W0 = c_W - c_Wi = (c_A / E) - c_Wi
     l_d_cruise = aerodynamics.liftToDragRatioCruise
@@ -113,10 +113,14 @@ def calc_reference_aircraft_values(
     t_cruise = 288.15 - 0.0065 * h_cruise
     a_cruise = math.sqrt(1.4 * 287.05 * t_cruise)
     mach_cruise = v_cruise / a_cruise
-    mu_cruise = 1.789e-5 * ((t_cruise / 288.15) ** 1.5) * ((288.15 + 110.4) / (t_cruise + 110.4))
+    mu_cruise = (
+        1.789e-5
+        * ((t_cruise / 288.15) ** 1.5)
+        * ((288.15 + 110.4) / (t_cruise + 110.4))
+    )
     re_wing = (rho_cruise * v_cruise * c_mu) / mu_cruise
 
-    k_roughness = 6.34e-6  # smooth paint roughness [m]
+    k_roughness = SiValue(6.34e-6, "m")  # smooth paint roughness
     if mach_cruise > 0.3:
         re_cutoff = calc_re_cutoff_compressible(c_mu, k_roughness, mach_cruise)
     else:
@@ -221,21 +225,39 @@ def print_reference_aircraft(ref: ReferenceAircraft) -> None:
     print(f"Mean aerodynamic chord (c_mu):   {calc.meanAerodynamicChord.value:.3f} m")
     print(f"Ultimate load factor (n_ult):    {calc.ultimateLoadFactor.value:.2f}")
     print(f"Horizontal tail arm (r_H):       {calc.horizontalTailLeverArm}")
-    print(f"Horizontal tail volume coeff (c_HT): {calc.horizontalTailVolumeCoefficient.value:.4f}")
+    print(
+        f"Horizontal tail volume coeff (c_HT): {calc.horizontalTailVolumeCoefficient.value:.4f}"
+    )
     print(f"Vertical tail arm (r_V):         {calc.verticalTailLeverArm}")
-    print(f"Vertical tail volume coeff (c_VT):   {calc.verticalTailVolumeCoefficient.value:.4f}")
+    print(
+        f"Vertical tail volume coeff (c_VT):   {calc.verticalTailVolumeCoefficient.value:.4f}"
+    )
     print(f"Cruise lift coefficient (c_A):   {calc.cruiseLiftCoefficient.value:.4f}")
     print(f"Total zero-lift drag (c_W0):     {calc.zeroLiftDragCoefficient.value:.4f}")
     print(f"Induced drag coeff (c_Wi):       {calc.inducedDragCoefficient.value:.4f}")
-    print(f"Wing zero-lift drag (c_W0,wing): {calc.wingZeroLiftDragCoefficient.value:.4f}")
+    print(
+        f"Wing zero-lift drag (c_W0,wing): {calc.wingZeroLiftDragCoefficient.value:.4f}"
+    )
 
     print("\n--- FORMULA MASS ESTIMATIONS & CALIBRATION FACTORS ---")
-    print(f"Wing:         Catalog: {ref.mass.wing!s:>7} | Formula: {calc.wingEstimatedMass.value:7.2f} kg | Factor: {calc.wingCalibrationFactor.value:.4f}")
-    print(f"Fuselage:     Catalog: {ref.mass.fuselage!s:>7} | Formula: {calc.fuselageEstimatedMass.value:7.2f} kg | Factor: {calc.fuselageCalibrationFactor.value:.4f}")
-    print(f"Empennage:    Catalog: {ref.mass.empennage!s:>7} | Formula: {calc.empennageEstimatedMass.value:7.2f} kg | Factor: {calc.empennageCalibrationFactor.value:.4f}")
-    print(f"Landing gear: Catalog: {ref.mass.landingGear!s:>7} | Formula: {calc.landingGearEstimatedMass.value:7.2f} kg | Factor: {calc.landingGearCalibrationFactor.value:.4f}")
-    print(f"Pylons:       Catalog: {ref.mass.pylons!s:>7} | Formula: {calc.pylonsEstimatedMass.value:7.2f} kg | Factor: {calc.pylonsCalibrationFactor.value:.4f}")
-    print(f"Systems:      Catalog: {ref.mass.systems!s:>7} | Formula: {calc.systemsEstimatedMass.value:7.2f} kg | Factor: {calc.systemsCalibrationFactor.value:.4f}")
+    print(
+        f"Wing:         Catalog: {ref.mass.wing!s:>7} | Formula: {calc.wingEstimatedMass.value:7.2f} kg | Factor: {calc.wingCalibrationFactor.value:.4f}"
+    )
+    print(
+        f"Fuselage:     Catalog: {ref.mass.fuselage!s:>7} | Formula: {calc.fuselageEstimatedMass.value:7.2f} kg | Factor: {calc.fuselageCalibrationFactor.value:.4f}"
+    )
+    print(
+        f"Empennage:    Catalog: {ref.mass.empennage!s:>7} | Formula: {calc.empennageEstimatedMass.value:7.2f} kg | Factor: {calc.empennageCalibrationFactor.value:.4f}"
+    )
+    print(
+        f"Landing gear: Catalog: {ref.mass.landingGear!s:>7} | Formula: {calc.landingGearEstimatedMass.value:7.2f} kg | Factor: {calc.landingGearCalibrationFactor.value:.4f}"
+    )
+    print(
+        f"Pylons:       Catalog: {ref.mass.pylons!s:>7} | Formula: {calc.pylonsEstimatedMass.value:7.2f} kg | Factor: {calc.pylonsCalibrationFactor.value:.4f}"
+    )
+    print(
+        f"Systems:      Catalog: {ref.mass.systems!s:>7} | Formula: {calc.systemsEstimatedMass.value:7.2f} kg | Factor: {calc.systemsCalibrationFactor.value:.4f}"
+    )
     print("=" * 65 + "\n")
 
 
@@ -243,4 +265,3 @@ if __name__ == "__main__":
     from data import load_reference_aircraft
 
     print_reference_aircraft(load_reference_aircraft())
-

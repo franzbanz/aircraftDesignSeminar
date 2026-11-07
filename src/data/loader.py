@@ -6,12 +6,11 @@ Provides ``load_constraints``, ``load_design_parameters``, and ``load_reference_
 
 import dataclasses
 import inspect
+import json
 import re
 import warnings
 from pathlib import Path
-from typing import TypeVar
-
-import json
+from typing import Any, TypeVar, cast
 
 from data.constraints_data import (
     BatteryConstraints,
@@ -46,10 +45,12 @@ T = TypeVar("T")
 _PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent
 
 
-def _parameter_group(raw_group: dict[str, list]) -> dict[str, UnitValue]:
+def _parameter_group(raw_group: dict[str, Any]) -> dict[str, Any]:
     """Converts a JSON dictionary of ``[value, unit]`` pairs into ``UnitValue`` objects."""
     return {
-        key: UnitValue(val[0], val[1]) if isinstance(val, list) and len(val) == 2 else val
+        key: UnitValue(val[0], val[1])
+        if isinstance(val, list) and len(val) == 2
+        else val
         for key, val in raw_group.items()
     }
 
@@ -89,7 +90,9 @@ def _sync_dataclass_fields_in_source(cls: type, json_keys: list[str]) -> bool:
     return False
 
 
-def instantiate_dataclass_with_extra_warning(cls: type[T], data: dict[str, UnitValue]) -> T:
+def instantiate_dataclass_with_extra_warning(
+    cls: type[T], data: dict[str, UnitValue]
+) -> T:
     """Instantiates a frozen dataclass and auto-syncs its source definition if JSON keys changed.
 
     If the JSON keys differ from the fields declared on ``cls`` (fields added, removed,
@@ -104,14 +107,18 @@ def instantiate_dataclass_with_extra_warning(cls: type[T], data: dict[str, UnitV
     Returns:
         Instantiated dataclass of type ``cls``.
     """
-    declared_fields = [f.name for f in dataclasses.fields(cls)]
+    declared_fields = [f.name for f in dataclasses.fields(cast(Any, cls))]
     json_keys = list(data.keys())
 
     if declared_fields != json_keys:
         added = [k for k in json_keys if k not in declared_fields]
         removed = [k for k in declared_fields if k not in json_keys]
         synced = _sync_dataclass_fields_in_source(cls, json_keys)
-        sync_note = "Python dataclass source file updated automatically." if synced else "Attached dynamically."
+        sync_note = (
+            "Python dataclass source file updated automatically."
+            if synced
+            else "Attached dynamically."
+        )
         warnings.warn(
             f"{cls.__name__}: JSON keys changed (added={added}, removed={removed}). {sync_note}",
             UserWarning,
@@ -163,11 +170,21 @@ def load_constraints(path: Path | str | None = None) -> Constraints:
     data = _load_json_with_comments(file_path)
 
     return Constraints(
-        payload=instantiate_dataclass_with_extra_warning(PayloadConstraints, _parameter_group(data["payload"])),
-        mission=instantiate_dataclass_with_extra_warning(MissionConstraints, _parameter_group(data["mission"])),
-        performance=instantiate_dataclass_with_extra_warning(PerformanceConstraints, _parameter_group(data["performance"])),
-        battery=instantiate_dataclass_with_extra_warning(BatteryConstraints, _parameter_group(data["battery"])),
-        cs23=instantiate_dataclass_with_extra_warning(Cs23Constraints, _parameter_group(data["cs23"])),
+        payload=instantiate_dataclass_with_extra_warning(
+            PayloadConstraints, _parameter_group(data["payload"])
+        ),
+        mission=instantiate_dataclass_with_extra_warning(
+            MissionConstraints, _parameter_group(data["mission"])
+        ),
+        performance=instantiate_dataclass_with_extra_warning(
+            PerformanceConstraints, _parameter_group(data["performance"])
+        ),
+        battery=instantiate_dataclass_with_extra_warning(
+            BatteryConstraints, _parameter_group(data["battery"])
+        ),
+        cs23=instantiate_dataclass_with_extra_warning(
+            Cs23Constraints, _parameter_group(data["cs23"])
+        ),
     )
 
 
@@ -184,11 +201,21 @@ def load_design_parameters(path: Path | str | None = None) -> DesignParameters:
     data = _load_json_with_comments(file_path)
 
     return DesignParameters(
-        initialSizing=instantiate_dataclass_with_extra_warning(DesignInitialSizingParameters, _parameter_group(data["initialSizing"])),
-        aerodynamics=instantiate_dataclass_with_extra_warning(DesignAerodynamicParameters, _parameter_group(data["aerodynamics"])),
-        propulsion=instantiate_dataclass_with_extra_warning(DesignPropulsionParameters, _parameter_group(data["propulsion"])),
-        mission=instantiate_dataclass_with_extra_warning(DesignMissionParameters, _parameter_group(data["mission"])),
-        assumptions=instantiate_dataclass_with_extra_warning(DesignAssumptionsParameters, _parameter_group(data["assumptions"])),
+        initialSizing=instantiate_dataclass_with_extra_warning(
+            DesignInitialSizingParameters, _parameter_group(data["initialSizing"])
+        ),
+        aerodynamics=instantiate_dataclass_with_extra_warning(
+            DesignAerodynamicParameters, _parameter_group(data["aerodynamics"])
+        ),
+        propulsion=instantiate_dataclass_with_extra_warning(
+            DesignPropulsionParameters, _parameter_group(data["propulsion"])
+        ),
+        mission=instantiate_dataclass_with_extra_warning(
+            DesignMissionParameters, _parameter_group(data["mission"])
+        ),
+        assumptions=instantiate_dataclass_with_extra_warning(
+            DesignAssumptionsParameters, _parameter_group(data["assumptions"])
+        ),
     )
 
 
@@ -206,13 +233,27 @@ def load_reference_aircraft(
     file_path = Path(path) if path else _find_reference_file()
     data = _load_json_with_comments(file_path)
 
-    mass = instantiate_dataclass_with_extra_warning(ReferenceMassParameters, _parameter_group(data["mass"]))
-    dimensions = instantiate_dataclass_with_extra_warning(ReferenceDimensionsParameters, _parameter_group(data["dimensions"]))
-    mission = instantiate_dataclass_with_extra_warning(ReferenceMissionParameters, _parameter_group(data["mission"]))
-    assumptions = instantiate_dataclass_with_extra_warning(ReferenceAssumptionsParameters, _parameter_group(data["assumptions"]))
-    aerodynamics = instantiate_dataclass_with_extra_warning(ReferenceAerodynamicParameters, _parameter_group(data["aerodynamics"]))
-    propulsion = instantiate_dataclass_with_extra_warning(ReferencePropulsionParameters, _parameter_group(data["propulsion"]))
-    fuel = instantiate_dataclass_with_extra_warning(ReferenceFuelParameters, _parameter_group(data["fuel"]))
+    mass = instantiate_dataclass_with_extra_warning(
+        ReferenceMassParameters, _parameter_group(data["mass"])
+    )
+    dimensions = instantiate_dataclass_with_extra_warning(
+        ReferenceDimensionsParameters, _parameter_group(data["dimensions"])
+    )
+    mission = instantiate_dataclass_with_extra_warning(
+        ReferenceMissionParameters, _parameter_group(data["mission"])
+    )
+    assumptions = instantiate_dataclass_with_extra_warning(
+        ReferenceAssumptionsParameters, _parameter_group(data["assumptions"])
+    )
+    aerodynamics = instantiate_dataclass_with_extra_warning(
+        ReferenceAerodynamicParameters, _parameter_group(data["aerodynamics"])
+    )
+    propulsion = instantiate_dataclass_with_extra_warning(
+        ReferencePropulsionParameters, _parameter_group(data["propulsion"])
+    )
+    fuel = instantiate_dataclass_with_extra_warning(
+        ReferenceFuelParameters, _parameter_group(data["fuel"])
+    )
 
     from reference_aircraft_calculation import calc_reference_aircraft_values
 

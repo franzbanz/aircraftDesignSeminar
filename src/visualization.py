@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import sys
 from typing import TYPE_CHECKING, Literal
 
 import matplotlib.pyplot as plt
@@ -12,7 +11,7 @@ from sizing_diagram import SizingDiagram
 
 if TYPE_CHECKING:
     from aircraft import BatteryAircraft
-    from data import ReferenceAircraftData
+    from data import ReferenceAircraft
 
 
 def plot_sizing_diagram() -> None:
@@ -25,10 +24,12 @@ def plot_sizing_diagram() -> None:
 
 def plot_mass_breakdown(
     aircraft: BatteryAircraft,
-    ref_aircraft: ReferenceAircraftData,
+    ref_aircraft: ReferenceAircraft,
 ) -> None:
     """Plots stacked mass comparison between Dornier 228 reference and the electric aircraft."""
-    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(13, 6.5), gridspec_kw={"width_ratios": [1.2, 1]})
+    _fig, (ax1, ax2) = plt.subplots(
+        1, 2, figsize=(13, 6.5), gridspec_kw={"width_ratios": [1.2, 1]}
+    )
 
     ref_struct = (
         ref_aircraft.mass.wing.si
@@ -77,20 +78,56 @@ def plot_mass_breakdown(
     bottom_ref = 0.0
     bottom_el = 0.0
     for cat, c_color, v_ref, v_el in zip(categories, colors, ref_values, el_values):
-        ax1.bar(x[0], v_ref, width, bottom=bottom_ref, color=c_color, label=cat, edgecolor="white", lw=1)
+        ax1.bar(
+            x[0],
+            v_ref,
+            width,
+            bottom=bottom_ref,
+            color=c_color,
+            label=cat,
+            edgecolor="white",
+            lw=1,
+        )
         if v_ref > 200:
             pct_ref = v_ref / ref_total * 100
-            ax1.text(x[0], bottom_ref + v_ref / 2, f"{v_ref:.0f} kg\n({pct_ref:.1f}%)", ha="center", va="center", color="white", fontsize=8.5, fontweight="bold")
+            ax1.text(
+                x[0],
+                bottom_ref + v_ref / 2,
+                f"{v_ref:.0f} kg\n({pct_ref:.1f}%)",
+                ha="center",
+                va="center",
+                color="white",
+                fontsize=8.5,
+                fontweight="bold",
+            )
         bottom_ref += v_ref
 
-        ax1.bar(x[1], v_el, width, bottom=bottom_el, color=c_color, edgecolor="white", lw=1)
+        ax1.bar(
+            x[1], v_el, width, bottom=bottom_el, color=c_color, edgecolor="white", lw=1
+        )
         if v_el > 200:
             pct_el = v_el / el_total * 100
-            ax1.text(x[1], bottom_el + v_el / 2, f"{v_el:.0f} kg\n({pct_el:.1f}%)", ha="center", va="center", color="white", fontsize=8.5, fontweight="bold")
+            ax1.text(
+                x[1],
+                bottom_el + v_el / 2,
+                f"{v_el:.0f} kg\n({pct_el:.1f}%)",
+                ha="center",
+                va="center",
+                color="white",
+                fontsize=8.5,
+                fontweight="bold",
+            )
         bottom_el += v_el
 
     ax1.set_xticks(x)
-    ax1.set_xticklabels([f"Dornier 228 (Ref)\nMTOM: {ref_total:.0f} kg", f"Electric Aircraft\nMTOM: {el_total:.0f} kg"], fontsize=11, fontweight="bold")
+    ax1.set_xticklabels(
+        [
+            f"Dornier 228 (Ref)\nMTOM: {ref_total:.0f} kg",
+            f"Electric Aircraft\nMTOM: {el_total:.0f} kg",
+        ],
+        fontsize=11,
+        fontweight="bold",
+    )
     ax1.set_ylabel("Mass [kg]", fontsize=11)
     ax1.set_title("Mass Breakdown Comparison", fontsize=12, fontweight="bold")
     ax1.set_ylim(0, max(ref_total, el_total) * 1.08)
@@ -117,18 +154,43 @@ def plot_mass_breakdown(
     y_pos = np.arange(len(struct_parts))
     bar_h = 0.35
 
-    ax2.barh(y_pos + bar_h / 2, ref_parts, bar_h, label="Do 228 (Ref)", color="#7fb3d5", edgecolor="black", lw=0.5)
-    ax2.barh(y_pos - bar_h / 2, el_parts, bar_h, label="Electric Aircraft", color="#2980b9", edgecolor="black", lw=0.5)
+    ax2.barh(
+        y_pos + bar_h / 2,
+        ref_parts,
+        bar_h,
+        label="Do 228 (Ref)",
+        color="#7fb3d5",
+        edgecolor="black",
+        lw=0.5,
+    )
+    ax2.barh(
+        y_pos - bar_h / 2,
+        el_parts,
+        bar_h,
+        label="Electric Aircraft",
+        color="#2980b9",
+        edgecolor="black",
+        lw=0.5,
+    )
 
     for i, (vr, ve) in enumerate(zip(ref_parts, el_parts)):
         ax2.text(vr + 15, i + bar_h / 2, f"{vr:.0f} kg", va="center", fontsize=8)
-        ax2.text(ve + 15, i - bar_h / 2, f"{ve:.0f} kg", va="center", fontsize=8, fontweight="bold")
+        ax2.text(
+            ve + 15,
+            i - bar_h / 2,
+            f"{ve:.0f} kg",
+            va="center",
+            fontsize=8,
+            fontweight="bold",
+        )
 
     ax2.set_yticks(y_pos)
     ax2.set_yticklabels(struct_parts, fontsize=10)
     ax2.invert_yaxis()
     ax2.set_xlabel("Mass [kg]", fontsize=11)
-    ax2.set_title("Structural Mass Details (Class II Breakdown)", fontsize=12, fontweight="bold")
+    ax2.set_title(
+        "Structural Mass Details (Class II Breakdown)", fontsize=12, fontweight="bold"
+    )
     ax2.set_xlim(0, max(max(ref_parts), max(el_parts)) * 1.25)
     ax2.grid(axis="x", linestyle=":", alpha=0.6)
     ax2.legend(loc="lower right", fontsize=9)
@@ -139,7 +201,7 @@ def plot_mass_breakdown(
 
 def plot_mission_energy(
     aircraft: BatteryAircraft,
-    ref_aircraft: ReferenceAircraftData,
+    ref_aircraft: ReferenceAircraft,
     variant: Literal["simple", "detailed"] = "simple",
 ) -> None:
     """Plots energy consumption across mission phases and reserves.
@@ -152,29 +214,90 @@ def plot_mission_energy(
     """
     if variant == "simple":
         # Simpler approach matching aircraft.calc_required_battery_mass():
-        range_fuel = ref_aircraft.fuel.climb.si + ref_aircraft.fuel.cruise.si + ref_aircraft.fuel.descent.si
-        range_energy = aircraft.mission_energy.cruise_energy(aircraft.design.mission.range.si)
+        range_fuel = (
+            ref_aircraft.fuel.climb.si
+            + ref_aircraft.fuel.cruise.si
+            + ref_aircraft.fuel.descent.si
+        )
+        range_energy = aircraft.mission_energy.cruise_energy(
+            aircraft.design.mission.range.si
+        )
         energy_per_kg = range_energy / range_fuel
 
         # Flight phases proportional to reference aircraft fuel breakdown
         phases = [
-            ("Taxi-out & Take-off (24 kg fuel)", (ref_aircraft.fuel.taxiOutAndTakeOff.si * energy_per_kg) / 3.6e6, "#3498db", "Trip"),
-            ("Climb (36 kg fuel)", (ref_aircraft.fuel.climb.si * energy_per_kg) / 3.6e6, "#2980b9", "Trip"),
-            ("Cruise (78 kg fuel, 100 NM)", (ref_aircraft.fuel.cruise.si * energy_per_kg) / 3.6e6, "#1abc9c", "Trip"),
-            ("Descent (9 kg fuel)", (ref_aircraft.fuel.descent.si * energy_per_kg) / 3.6e6, "#16a085", "Trip"),
-            ("Approach & Landing (17 kg fuel)", (ref_aircraft.fuel.approachLandingAndTaxiIn.si * energy_per_kg) / 3.6e6, "#27ae60", "Trip"),
-            ("Mission Reserves (186 kg fuel)", (ref_aircraft.fuel.reserve.si * energy_per_kg) / 3.6e6, "#e67e22", "Reserve"),
+            (
+                "Taxi-out & Take-off (24 kg fuel)",
+                (ref_aircraft.fuel.taxiOutAndTakeOff.si * energy_per_kg) / 3.6e6,
+                "#3498db",
+                "Trip",
+            ),
+            (
+                "Climb (36 kg fuel)",
+                (ref_aircraft.fuel.climb.si * energy_per_kg) / 3.6e6,
+                "#2980b9",
+                "Trip",
+            ),
+            (
+                "Cruise (78 kg fuel, 100 NM)",
+                (ref_aircraft.fuel.cruise.si * energy_per_kg) / 3.6e6,
+                "#1abc9c",
+                "Trip",
+            ),
+            (
+                "Descent (9 kg fuel)",
+                (ref_aircraft.fuel.descent.si * energy_per_kg) / 3.6e6,
+                "#16a085",
+                "Trip",
+            ),
+            (
+                "Approach & Landing (17 kg fuel)",
+                (ref_aircraft.fuel.approachLandingAndTaxiIn.si * energy_per_kg) / 3.6e6,
+                "#27ae60",
+                "Trip",
+            ),
+            (
+                "Mission Reserves (186 kg fuel)",
+                (ref_aircraft.fuel.reserve.si * energy_per_kg) / 3.6e6,
+                "#e67e22",
+                "Reserve",
+            ),
         ]
         title_suffix = "Simple Variant – Proportional Fuel Scaling"
     else:
         # Detailed segment calculation via MissionEnergyCalculator:
         me = aircraft.mission_energy
         phases = [
-            ("Taxi-out & Take-off", me.taxi_and_takeoff_energy() / 3.6e6, "#3498db", "Trip"),
-            ("Climb & Descent", me.climb_and_descent_energy() / 3.6e6, "#2980b9", "Trip"),
-            ("Horizontal Cruise (100 NM)", me.cruise_energy() / 3.6e6, "#1abc9c", "Trip"),
-            ("Approach & Landing", me.approach_and_landing_energy() / 3.6e6, "#16a085", "Trip"),
-            ("Route Reserve (5 %)", me.route_reserve_energy() / 3.6e6, "#f39c12", "Reserve"),
+            (
+                "Taxi-out & Take-off",
+                me.taxi_and_takeoff_energy() / 3.6e6,
+                "#3498db",
+                "Trip",
+            ),
+            (
+                "Climb & Descent",
+                me.climb_and_descent_energy() / 3.6e6,
+                "#2980b9",
+                "Trip",
+            ),
+            (
+                "Horizontal Cruise (100 NM)",
+                me.cruise_energy() / 3.6e6,
+                "#1abc9c",
+                "Trip",
+            ),
+            (
+                "Approach & Landing",
+                me.approach_and_landing_energy() / 3.6e6,
+                "#16a085",
+                "Trip",
+            ),
+            (
+                "Route Reserve (5 %)",
+                me.route_reserve_energy() / 3.6e6,
+                "#f39c12",
+                "Reserve",
+            ),
             ("Loiter Hold (30 min)", me.loiter_energy() / 3.6e6, "#e67e22", "Reserve"),
             ("Diversion (50 NM)", me.diversion_energy() / 3.6e6, "#d35400", "Reserve"),
         ]
@@ -188,7 +311,9 @@ def plot_mission_energy(
     trip_kwh = sum(v for p, v in zip(phases, values_kwh) if p[3] == "Trip")
     reserve_kwh = sum(v for p, v in zip(phases, values_kwh) if p[3] == "Reserve")
 
-    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(13, 6), gridspec_kw={"width_ratios": [1.3, 1]})
+    _fig, (ax1, ax2) = plt.subplots(
+        1, 2, figsize=(13, 6), gridspec_kw={"width_ratios": [1.3, 1]}
+    )
 
     # Horizontal bar chart
     y_pos = np.arange(len(labels))
@@ -209,14 +334,21 @@ def plot_mission_energy(
     ax1.set_yticklabels(labels, fontsize=10)
     ax1.invert_yaxis()
     ax1.set_xlabel("Electric Energy [kWh]", fontsize=11)
-    ax1.set_title(f"Energy Distribution by Flight Phase\n({title_suffix})", fontsize=11, fontweight="bold")
+    ax1.set_title(
+        f"Energy Distribution by Flight Phase\n({title_suffix})",
+        fontsize=11,
+        fontweight="bold",
+    )
     ax1.set_xlim(0, max(values_kwh) * 1.32)
     ax1.grid(axis="x", linestyle=":", alpha=0.6)
 
     # Donut chart for Trip vs Reserve
     ax2.pie(
         [trip_kwh, reserve_kwh],
-        labels=[f"Nominal Flight\n({trip_kwh:.1f} kWh)", f"Mission Reserves\n({reserve_kwh:.1f} kWh)"],
+        labels=[
+            f"Nominal Flight\n({trip_kwh:.1f} kWh)",
+            f"Mission Reserves\n({reserve_kwh:.1f} kWh)",
+        ],
         autopct="%1.1f %%",
         startangle=140,
         colors=["#2980b9", "#e67e22"],
@@ -233,9 +365,7 @@ def plot_mission_energy(
     plt.show()
 
 
-def plot_payload_range(
-    aircraft: BatteryAircraft
-) -> None:
+def plot_payload_range(aircraft: BatteryAircraft) -> None:
     """Plots Payload-Range diagram for the electric aircraft."""
     pax_max = 19
     pax_weight = 90.0  # kg
@@ -250,10 +380,24 @@ def plot_payload_range(
     # Range with fixed battery [NM] (scales inversely with take-off mass)
     ranges_fixed_nm = nominal_range_nm * (mtom / masses)
 
-    fig, ax1 = plt.subplots(figsize=(10, 6))
+    _fig, ax1 = plt.subplots(figsize=(10, 6))
 
-    ax1.plot(ranges_fixed_nm, payload_vals, color="#2980b9", lw=2.5, marker="o", label="Fixed Battery (Reduced weight with fewer passengers)")
-    ax1.plot(nominal_range_nm, nominal_payload, marker="*", markersize=15, color="#d35400", label=f"Design Point ({nominal_range_nm:.1f} NM, {pax_max} PAX)")
+    ax1.plot(
+        ranges_fixed_nm,
+        payload_vals,
+        color="#2980b9",
+        lw=2.5,
+        marker="o",
+        label="Fixed Battery (Reduced weight with fewer passengers)",
+    )
+    ax1.plot(
+        nominal_range_nm,
+        nominal_payload,
+        marker="*",
+        markersize=15,
+        color="#d35400",
+        label=f"Design Point ({nominal_range_nm:.1f} NM, {pax_max} PAX)",
+    )
 
     ax1.annotate(
         f"Design Point:\n{pax_max} PAX ({nominal_payload:.0f} kg)\n{nominal_range_nm:.1f} NM (incl. reserves)",
@@ -295,10 +439,12 @@ def plot_payload_range(
 
 def plot_aircraft_geometry(
     aircraft: BatteryAircraft,
-    ref_aircraft: ReferenceAircraftData,
+    ref_aircraft: ReferenceAircraft,
 ) -> None:
     """Plots 2D top-down geometric comparison between Dornier 228 and the electric aircraft."""
-    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(14, 6.5), gridspec_kw={"width_ratios": [1.4, 1]})
+    _fig, (ax1, ax2) = plt.subplots(
+        1, 2, figsize=(14, 6.5), gridspec_kw={"width_ratios": [1.4, 1]}
+    )
 
     # ------------------ Subplot 1: Top-down Planform Schematic ------------------
     # Fuselage (common 19-pax fuselage geometry)
@@ -347,7 +493,9 @@ def plot_aircraft_geometry(
 
     # CS-23 Maximum Wingspan constraint line (24 m)
     b_max = aircraft.design.aerodynamics.maxWingSpan.si
-    ax1.axvline(-b_max / 2, color="red", ls=":", lw=1.5, label=f"CS-23 Max Span ({b_max:.0f} m)")
+    ax1.axvline(
+        -b_max / 2, color="red", ls=":", lw=1.5, label=f"CS-23 Max Span ({b_max:.0f} m)"
+    )
     ax1.axvline(b_max / 2, color="red", ls=":", lw=1.5)
 
     # Horizontal Tailplane (quarter-chord around x = 15.0 m)
@@ -357,7 +505,12 @@ def plot_aircraft_geometry(
     c_ht_ref = s_ht_ref / b_ht_ref
     ax1.fill(
         [-b_ht_ref / 2, b_ht_ref / 2, b_ht_ref / 2, -b_ht_ref / 2],
-        [x_qc_ht - 0.25 * c_ht_ref, x_qc_ht - 0.25 * c_ht_ref, x_qc_ht + 0.75 * c_ht_ref, x_qc_ht + 0.75 * c_ht_ref],
+        [
+            x_qc_ht - 0.25 * c_ht_ref,
+            x_qc_ht - 0.25 * c_ht_ref,
+            x_qc_ht + 0.75 * c_ht_ref,
+            x_qc_ht + 0.75 * c_ht_ref,
+        ],
         color="#3498db",
         alpha=0.35,
         edgecolor="#2980b9",
@@ -370,7 +523,12 @@ def plot_aircraft_geometry(
     c_ht_el = s_ht_el / b_ht_el
     ax1.fill(
         [-b_ht_el / 2, b_ht_el / 2, b_ht_el / 2, -b_ht_el / 2],
-        [x_qc_ht - 0.25 * c_ht_el, x_qc_ht - 0.25 * c_ht_el, x_qc_ht + 0.75 * c_ht_el, x_qc_ht + 0.75 * c_ht_el],
+        [
+            x_qc_ht - 0.25 * c_ht_el,
+            x_qc_ht - 0.25 * c_ht_el,
+            x_qc_ht + 0.75 * c_ht_el,
+            x_qc_ht + 0.75 * c_ht_el,
+        ],
         color="#27ae60",
         alpha=0.35,
         edgecolor="#1e8449",
@@ -382,7 +540,9 @@ def plot_aircraft_geometry(
     ax1.invert_yaxis()
     ax1.set_xlabel("Lateral Span Position [m]", fontsize=11)
     ax1.set_ylabel("Fuselage Station (Nose to Tail) [m]", fontsize=11)
-    ax1.set_title("Top-Down 2D Planform Schematic Comparison", fontsize=12, fontweight="bold")
+    ax1.set_title(
+        "Top-Down 2D Planform Schematic Comparison", fontsize=12, fontweight="bold"
+    )
     ax1.grid(True, linestyle=":", alpha=0.6)
     ax1.legend(loc="upper left", fontsize=8.5, framealpha=0.95)
 
@@ -415,12 +575,34 @@ def plot_aircraft_geometry(
     y = np.arange(len(labels))
     bar_h = 0.35
 
-    ax2.barh(y + bar_h / 2, ref_vals, bar_h, label="Do 228 (Ref)", color="#7fb3d5", edgecolor="black", lw=0.5)
-    ax2.barh(y - bar_h / 2, el_vals, bar_h, label="Electric Aircraft", color="#27ae60", edgecolor="black", lw=0.5)
+    ax2.barh(
+        y + bar_h / 2,
+        ref_vals,
+        bar_h,
+        label="Do 228 (Ref)",
+        color="#7fb3d5",
+        edgecolor="black",
+        lw=0.5,
+    )
+    ax2.barh(
+        y - bar_h / 2,
+        el_vals,
+        bar_h,
+        label="Electric Aircraft",
+        color="#27ae60",
+        edgecolor="black",
+        lw=0.5,
+    )
 
     for i, (vr, ve) in enumerate(zip(ref_vals, el_vals)):
         pct_delta = ((ve - vr) / vr) * 100
-        ax2.text(vr + max(el_vals) * 0.02, i + bar_h / 2, f"{vr:.2f}", va="center", fontsize=8.5)
+        ax2.text(
+            vr + max(el_vals) * 0.02,
+            i + bar_h / 2,
+            f"{vr:.2f}",
+            va="center",
+            fontsize=8.5,
+        )
         ax2.text(
             ve + max(el_vals) * 0.02,
             i - bar_h / 2,
@@ -443,7 +625,9 @@ def plot_aircraft_geometry(
     plt.show()
 
 
-def interactive_plot_menu(aircraft: BatteryAircraft, ref_aircraft: ReferenceAircraftData) -> None:
+def interactive_plot_menu(
+    aircraft: BatteryAircraft, ref_aircraft: ReferenceAircraft
+) -> None:
     """CLI selection menu allowing the user to select which visualization to display."""
     menu_text = """
 ======================================================================
@@ -451,8 +635,8 @@ def interactive_plot_menu(aircraft: BatteryAircraft, ref_aircraft: ReferenceAirc
 ======================================================================
   [1] Sizing Diagram (Matching Chart & Design Point)
   [2] Mass Breakdown (Comparison with Do 228)
-  [3] Mission Energy Breakdown (Simple Variant – matches active MTOM)
-  [3d] Mission Energy Breakdown (Detailed Variant – analytical segments)
+  [3] Mission Energy Breakdown (Simple Variant - matches active MTOM)
+  [3d] Mission Energy Breakdown (Detailed Variant - analytical segments)
   [4] Payload-Range Diagram
   [5] Aircraft Dimensions & 2D Geometry Comparison
   [A] Show All Plots
@@ -496,7 +680,9 @@ def interactive_plot_menu(aircraft: BatteryAircraft, ref_aircraft: ReferenceAirc
             plot_payload_range(aircraft)
             plot_aircraft_geometry(aircraft, ref_aircraft)
         else:
-            print(f"Unknown option '{choice}'. Please choose 1, 2, 3, 3d, 4, 5, A or Q.")
+            print(
+                f"Unknown option '{choice}'. Please choose 1, 2, 3, 3d, 4, 5, A or Q."
+            )
 
 
 if __name__ == "__main__":

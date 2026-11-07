@@ -1,6 +1,5 @@
 """Mission fuel fractions and kerosene-to-electric energy transfer calculator."""
 
-from constants import GRAVITY
 from data import (
     Constraints,
     DesignParameters,
@@ -121,7 +120,9 @@ class MissionEnergyCalculator:
 
         Uses equivalent Breguet range overhead of reference aircraft (~10.3%).
         """
-        m_start_climb = SiValue(self.ref.fuel.referenceMass.si - self.ref.fuel.taxiOutAndTakeOff.si, "kg")
+        m_start_climb = SiValue(
+            self.ref.fuel.referenceMass.si - self.ref.fuel.taxiOutAndTakeOff.si, "kg"
+        )
         m_end_descent = SiValue(
             m_start_climb
             - self.ref.fuel.climb.si
@@ -209,7 +210,11 @@ class MissionEnergyCalculator:
 
     def battery_cell_mass(self, electric_energy: SiValue | None = None) -> SiValue:
         """Required battery cell mass for a given electric energy [kg]."""
-        energy = electric_energy if electric_energy is not None else self.total_mission_energy()
+        energy = (
+            electric_energy
+            if electric_energy is not None
+            else self.total_mission_energy()
+        )
         density = self.constraints.battery.cellEnergyDensityMax.si
         return SiValue(energy / density, "kg")
 
@@ -229,7 +234,11 @@ class MissionEnergyCalculator:
         lift_to_drag: float | None = None,
     ) -> SiValue:
         """Calculates equivalent Breguet cruise range for kerosene fuel [m]."""
-        ld = lift_to_drag if lift_to_drag is not None else float(self.ref.aerodynamics.liftToDragRatioCruise.value)
+        ld = (
+            lift_to_drag
+            if lift_to_drag is not None
+            else float(self.ref.aerodynamics.liftToDragRatioCruise.value)
+        )
         m_ref = self.ref.fuel.referenceMass.si
         return calc_breguet_range(
             m_start=m_ref,
@@ -266,11 +275,17 @@ class MissionEnergyCalculator:
 
     def reference_route_reserve_fuel_mass(self) -> SiValue:
         """Reference aircraft route reserve fuel mass [kg]."""
-        return SiValue(float(self.constraints.mission.routeReserve.value) * self.ref.fuel.tripMass.si, "kg")
+        return SiValue(
+            float(self.constraints.mission.routeReserve.value)
+            * self.ref.fuel.tripMass.si,
+            "kg",
+        )
 
     def reference_loiter_fuel_mass(self) -> SiValue:
         """Reference aircraft loiter fuel mass via Breguet endurance [kg]."""
-        m_start_ref = SiValue(self.ref.fuel.referenceMass.si - self.ref.fuel.tripMass.si, "kg")
+        m_start_ref = SiValue(
+            self.ref.fuel.referenceMass.si - self.ref.fuel.tripMass.si, "kg"
+        )
         t_loiter = self.constraints.mission.loiterTime.si
         ld_loiter = float(self.ref.aerodynamics.liftToDragRatioLoiter.value)
         tsfc = self.ref.propulsion.tsfcCruise.si
@@ -283,7 +298,9 @@ class MissionEnergyCalculator:
 
     def reference_diversion_fuel_mass(self) -> SiValue:
         """Reference aircraft diversion fuel mass via Breguet range [kg]."""
-        m_start_ref = SiValue(self.ref.fuel.referenceMass.si - self.ref.fuel.tripMass.si, "kg")
+        m_start_ref = SiValue(
+            self.ref.fuel.referenceMass.si - self.ref.fuel.tripMass.si, "kg"
+        )
         d_div = self.constraints.mission.diversionDistance.si
         ld_cruise = float(self.ref.aerodynamics.liftToDragRatioCruise.value)
         cruise_speed = self.ref.mission.cruiseSpeedTAS.si
@@ -317,10 +334,30 @@ class MissionEnergyCalculator:
         e_approach = self.approach_and_landing_energy()
 
         segments = [
-            ("1. Taxi-out & Take-off", self.ref.fuel.taxiOutAndTakeOff.si, e_taxi, None),
-            (f"2. Cruise ({self.range.to('nm'):.0f} nm)", self.ref.fuel.cruise.si, e_cruise, None),
-            ("3. Climb & Descent (+10.3% Ref.)", SiValue(self.ref.fuel.climb.si + self.ref.fuel.descent.si, "kg"), e_climb_descent, None),
-            ("4. Approach, Landing & Taxi-in", self.ref.fuel.approachLandingAndTaxiIn.si, e_approach, None),
+            (
+                "1. Taxi-out & Take-off",
+                self.ref.fuel.taxiOutAndTakeOff.si,
+                e_taxi,
+                None,
+            ),
+            (
+                f"2. Cruise ({self.range.to('nm'):.0f} nm)",
+                self.ref.fuel.cruise.si,
+                e_cruise,
+                None,
+            ),
+            (
+                "3. Climb & Descent (+10.3% Ref.)",
+                SiValue(self.ref.fuel.climb.si + self.ref.fuel.descent.si, "kg"),
+                e_climb_descent,
+                None,
+            ),
+            (
+                "4. Approach, Landing & Taxi-in",
+                self.ref.fuel.approachLandingAndTaxiIn.si,
+                e_approach,
+                None,
+            ),
         ]
 
         fuel_route_res = self.reference_route_reserve_fuel_mass()
@@ -333,7 +370,12 @@ class MissionEnergyCalculator:
 
         reserve_segments = [
             ("  - 5% Route Reserve", fuel_route_res, e_route_res, None),
-            (f"  - 30 min Loiter (L/D = {self.lift_to_drag_loiter:.1f})", fuel_loiter_res, e_loiter_res, self.lift_to_drag_loiter),
+            (
+                f"  - 30 min Loiter (L/D = {self.lift_to_drag_loiter:.1f})",
+                fuel_loiter_res,
+                e_loiter_res,
+                self.lift_to_drag_loiter,
+            ),
             ("  - 50 NM Diversion", fuel_div_res, e_div_res, None),
         ]
 
@@ -343,9 +385,15 @@ class MissionEnergyCalculator:
         fuel_reserve_calc = self.reference_reserve_fuel_mass()
 
         print("----- MISSION ENERGY & BATTERY MASS BREAKDOWN -----")
-        print(f"Reference Turboprop Efficiency (eta_ref): {self.reference_propulsion_efficiency * 100:.2f} %")
-        print(f"Electric Aircraft: MTOM = {self.mtom}, eta_el = {self.eta_electric * 100:.1f} %, Range = {self.range.to('nm'):.0f} nm, L/D = {self.lift_to_drag_cruise:.1f}\n")
-        print(f"{'Segment':<32} | {'Ref Fuel':>9} | {'R (Kero)':>9} | {'E_el [kWh]':>10} | {'m_Cell':>10} | {'m_Pack':>10} | {'R (Bat)':>9}")
+        print(
+            f"Reference Turboprop Efficiency (eta_ref): {self.reference_propulsion_efficiency * 100:.2f} %"
+        )
+        print(
+            f"Electric Aircraft: MTOM = {self.mtom}, eta_el = {self.eta_electric * 100:.1f} %, Range = {self.range.to('nm'):.0f} nm, L/D = {self.lift_to_drag_cruise:.1f}\n"
+        )
+        print(
+            f"{'Segment':<32} | {'Ref Fuel':>9} | {'R (Kero)':>9} | {'E_el [kWh]':>10} | {'m_Cell':>10} | {'m_Pack':>10} | {'R (Bat)':>9}"
+        )
         print("-" * 105)
 
         for name, fuel, e, ld in segments:
@@ -366,7 +414,12 @@ class MissionEnergyCalculator:
         print("-" * 105)
 
         for name, fuel, e, ld in reserve_segments:
-            r_kero = self.kerosene_equivalent_range(fuel, float(self.ref.aerodynamics.liftToDragRatioLoiter.value) if ld else None)
+            r_kero = self.kerosene_equivalent_range(
+                fuel,
+                float(self.ref.aerodynamics.liftToDragRatioLoiter.value)
+                if ld
+                else None,
+            )
             r_bat = self.electric_equivalent_range(e, ld)
             print(
                 f"{name:<32} | {fuel.to('kg'):6.1f} kg | {r_kero.to('nm'):6.1f} NM | {e.to('kWh'):10.1f} | "

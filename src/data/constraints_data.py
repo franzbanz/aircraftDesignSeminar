@@ -62,4 +62,3 @@ class Constraints:
     performance: PerformanceConstraints
     battery: BatteryConstraints
     cs23: Cs23Constraints
-

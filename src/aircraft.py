@@ -1,14 +1,11 @@
 """Battery-powered electric aircraft model with integrated calibrated mass estimation."""
-from sizing_diagram import SizingDiagram
 
 import math
 
 from constants import GRAVITY
 from data import Constraints, DesignParameters, ReferenceAircraft, SiValue
-from fuel_fractions import MissionEnergyCalculator
 from formulas import (
     calc_aspect_ratio,
-    calc_electric_battery_mass_from_range,
     calc_electric_range,
     calc_empennage_mass,
     calc_fuselage_mass,
@@ -21,6 +18,8 @@ from formulas import (
     calc_wing_mass,
     wing_span,
 )
+from fuel_fractions import MissionEnergyCalculator
+from sizing_diagram import SizingDiagram
 
 
 class BatteryAircraft:
@@ -72,7 +71,8 @@ class BatteryAircraft:
     def m_engine(self) -> SiValue:
         """Propulsion engine mass [kg] (scaled by number of engines)."""
         return SiValue(
-            self.design.propulsion.numberOfEngines.value * self.design.propulsion.engineMass.si,
+            self.design.propulsion.numberOfEngines.value
+            * self.design.propulsion.engineMass.si,
             "kg",
         )
 
@@ -140,7 +140,9 @@ class BatteryAircraft:
         c_ht = self.ref.calculatedValues.horizontalTailVolumeCoefficient
         r_h = self.ref.calculatedValues.horizontalTailLeverArm.si
         c_ht = min(c_ht, self.design.aerodynamics.maxHorizontalVolumeCoefficient)
-        return calc_horizontal_tail_area(c_ht, r_h, self.wing_area, self.mean_aerodynamic_chord)
+        return calc_horizontal_tail_area(
+            c_ht, r_h, self.wing_area, self.mean_aerodynamic_chord
+        )
 
     @property
     def vertical_tail_area(self) -> SiValue:
@@ -157,7 +159,11 @@ class BatteryAircraft:
     @property
     def total_takeoff_power(self) -> SiValue:
         """Total required installed take-off power [W]."""
-        return SiValue(self.design.propulsion.engineTakeOffPower.si * self.design.propulsion.numberOfEngines.value, "W")
+        return SiValue(
+            self.design.propulsion.engineTakeOffPower.si
+            * self.design.propulsion.numberOfEngines.value,
+            "W",
+        )
 
     # --------------------------------------------------------------------------
     # Calibrated Structural Component Masses
@@ -193,19 +199,27 @@ class BatteryAircraft:
     def m_landing_gear(self) -> SiValue:
         """Calibrated landing gear mass [kg]."""
         raw = calc_landing_gear_mass(self.mtom)
-        return SiValue(raw * self.ref.calculatedValues.landingGearCalibrationFactor, "kg")
+        return SiValue(
+            raw * self.ref.calculatedValues.landingGearCalibrationFactor, "kg"
+        )
 
     @property
     def m_empennage(self) -> SiValue:
         """Calibrated empennage mass [kg]."""
         n_ult = self.design.assumptions.limitLoad * 1.5
-        raw = calc_empennage_mass(n_ult, self.horizontal_tail_area, self.vertical_tail_area)
+        raw = calc_empennage_mass(
+            n_ult, self.horizontal_tail_area, self.vertical_tail_area
+        )
         return SiValue(raw * self.ref.calculatedValues.empennageCalibrationFactor, "kg")
 
     @property
     def m_pylons(self) -> SiValue:
         """Calibrated engine pylons/cowling mass [kg]."""
-        p_to = SiValue(self.design.propulsion.engineTakeOffPower.si * self.design.propulsion.numberOfEngines, "W")
+        p_to = SiValue(
+            self.design.propulsion.engineTakeOffPower.si
+            * self.design.propulsion.numberOfEngines,
+            "W",
+        )
         raw = calc_pylons_mass(p_to)
         return SiValue(raw * self.ref.calculatedValues.pylonsCalibrationFactor, "kg")
 
@@ -229,16 +243,15 @@ class BatteryAircraft:
     def m_systems(self) -> SiValue:
         """Calibrated aircraft systems mass [kg]."""
         raw = calc_systems_mass(self.mtom)
-        return SiValue(raw * self.ref.calculatedValues.systemsCalibrationFactor.value, "kg")
+        return SiValue(
+            raw * self.ref.calculatedValues.systemsCalibrationFactor.value, "kg"
+        )
 
     @property
     def m_empty(self) -> SiValue:
         """Manufacturer's Empty Weight (MEW) excluding battery [kg]."""
         return SiValue(
-            self.m_structure
-            + self.m_engine
-            + self.m_systems
-            + self.m_furnishings,
+            self.m_structure + self.m_engine + self.m_systems + self.m_furnishings,
             "kg",
         )
 

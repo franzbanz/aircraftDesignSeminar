@@ -7,9 +7,8 @@ from pathlib import Path
 if __package__ in (None, ""):
     sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from data import SiValue
 from constants import GRAVITY
-
+from data import SiValue
 
 # ==============================================================================
 # 1. BREGUET RANGE EQUATION & REARRANGEMENTS
@@ -66,7 +65,9 @@ def calc_breguet_mass_fraction_from_range(
     Returns:
         Mass fraction M_ff = m_end / m_start [-].
     """
-    breguet_factor = (cruise_speed / (GRAVITY * thrust_specific_fuel_consumption)) * lift_to_drag
+    breguet_factor = (
+        cruise_speed / (GRAVITY * thrust_specific_fuel_consumption)
+    ) * lift_to_drag
     return math.exp(-range_ / breguet_factor)
 
 
@@ -121,7 +122,9 @@ def calc_breguet_mass_fraction_from_endurance(
     Returns:
         Mass fraction M_ff = m_end / m_start [-].
     """
-    return math.exp(-(endurance * GRAVITY * thrust_specific_fuel_consumption) / lift_to_drag)
+    return math.exp(
+        -(endurance * GRAVITY * thrust_specific_fuel_consumption) / lift_to_drag
+    )
 
 
 def calc_breguet_fuel_mass_from_endurance(
@@ -276,10 +279,49 @@ if __name__ == "__main__":
     ld_cr = ref.aerodynamics.liftToDragRatioCruise
     ld_loit = ref.aerodynamics.liftToDragRatioLoiter
 
-    print("Cruise fuel mass (100NM):", calc_breguet_fuel_mass_from_range(SiValue(5950 - 24 - 36, "kg"), SiValue(100, "nm"), ld_cr, v_cr, tsfc))
-    print("Cruise fuel mass (50NM):", calc_breguet_fuel_mass_from_range(SiValue(5950 - 24 - 36 - 78 - 9, "kg"), SiValue(50, "nm"), ld_cr, v_cr, tsfc))
-    print("Total mission battery mass (285NM):", calc_electric_battery_mass_from_range(SiValue(285, "nm"), SiValue(420, "Wh/kg"), 0.85, 12.1, SiValue(8618, "kg")))
-    print("Cruise battery mass (100NM):", calc_electric_battery_mass_from_range(SiValue(100, "nm"), SiValue(420, "Wh/kg"), 0.85, 12.1, SiValue(8618, "kg")))
-    print("Cruise battery mass (50NM):", calc_electric_battery_mass_from_range(SiValue(50, "nm"), SiValue(420, "Wh/kg"), 0.85, 12.1, SiValue(8618, "kg")))
-    print("Loiter fuel mass (30min):", calc_breguet_fuel_mass_from_endurance(SiValue(5950 - 24 - 36 - 78 - 9, "kg"), SiValue(0.5, "h"), ld_loit, tsfc))
-    print("Cruise range (78kg):", calc_breguet_range(SiValue(5950 - 24 - 36, "kg"), SiValue(5950 - 24 - 36 - 78, "kg"), ld_cr, v_cr, tsfc).to("nm"))
+    print(
+        "Cruise fuel mass (100NM):",
+        calc_breguet_fuel_mass_from_range(
+            SiValue(5950 - 24 - 36, "kg"), SiValue(100, "nm"), ld_cr, v_cr, tsfc
+        ),
+    )
+    print(
+        "Cruise fuel mass (50NM):",
+        calc_breguet_fuel_mass_from_range(
+            SiValue(5950 - 24 - 36 - 78 - 9, "kg"), SiValue(50, "nm"), ld_cr, v_cr, tsfc
+        ),
+    )
+    print(
+        "Total mission battery mass (285NM):",
+        calc_electric_battery_mass_from_range(
+            SiValue(285, "nm"), SiValue(420, "Wh/kg"), 0.85, 12.1, SiValue(8618, "kg")
+        ),
+    )
+    print(
+        "Cruise battery mass (100NM):",
+        calc_electric_battery_mass_from_range(
+            SiValue(100, "nm"), SiValue(420, "Wh/kg"), 0.85, 12.1, SiValue(8618, "kg")
+        ),
+    )
+    print(
+        "Cruise battery mass (50NM):",
+        calc_electric_battery_mass_from_range(
+            SiValue(50, "nm"), SiValue(420, "Wh/kg"), 0.85, 12.1, SiValue(8618, "kg")
+        ),
+    )
+    print(
+        "Loiter fuel mass (30min):",
+        calc_breguet_fuel_mass_from_endurance(
+            SiValue(5950 - 24 - 36 - 78 - 9, "kg"), SiValue(0.5, "h"), ld_loit, tsfc
+        ),
+    )
+    print(
+        "Cruise range (78kg):",
+        calc_breguet_range(
+            SiValue(5950 - 24 - 36, "kg"),
+            SiValue(5950 - 24 - 36 - 78, "kg"),
+            ld_cr,
+            v_cr,
+            tsfc,
+        ).to("nm"),
+    )

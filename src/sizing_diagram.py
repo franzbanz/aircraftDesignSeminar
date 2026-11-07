@@ -10,7 +10,6 @@ from data import (
     Constraints,
     DesignParameters,
     SiValue,
-    UnitValue,
     load_constraints,
     load_design_parameters,
 )
@@ -114,7 +113,10 @@ def calc_cruise_thrust_loading(
     """
     return thrust_ratio * (
         c_w0 * q_cruise / (wing_loading * GRAVITY)
-        + wing_loading * GRAVITY / (q_cruise * np.pi * aspect_ratio * oswald_factor) * m_cruise_ratio**2
+        + wing_loading
+        * GRAVITY
+        / (q_cruise * np.pi * aspect_ratio * oswald_factor)
+        * m_cruise_ratio**2
     )
 
 
@@ -135,10 +137,16 @@ def calc_landing_wing_loading(
     Returns:
         Maximum allowable wing loading for landing [kg/m^2].
     """
-    l_A = SiValue(183.0, "m")  # CS-23 standard air distance over 50 ft obstacle (600 ft)
-    A = 1.0                    # CS-23 standard braking factor (wheel brakes only)
+    l_A = SiValue(
+        183.0, "m"
+    )  # CS-23 standard air distance over 50 ft obstacle (600 ft)
+    A = 1.0  # CS-23 standard braking factor (wheel brakes only)
     return SiValue(
-        mlw_ratio * (l_ldg - l_A) * (rho_takeoff / RHO_0) * c_a_max_l / (0.51 * A * GRAVITY),
+        mlw_ratio
+        * (l_ldg - l_A)
+        * (rho_takeoff / RHO_0)
+        * c_a_max_l
+        / (0.51 * A * GRAVITY),
         "kg/m^2",
     )
 
@@ -178,7 +186,9 @@ class SizingDiagram:
 
         # Aerodynamics and atmosphere
         # l_d_cruise is not necessarily the best L/D
-        self.c_w0 = np.pi * self.aspect_ratio * self.oswald_factor / (4.0 * self.l_d_cruise**2)
+        self.c_w0 = (
+            np.pi * self.aspect_ratio * self.oswald_factor / (4.0 * self.l_d_cruise**2)
+        )
         self.eps = 1.0 / self.l_d_cruise
         self.rho_takeoff = isa_density(self.field_elevation)
         self.rho_cruise = isa_density(self.h_cruise)
@@ -187,20 +197,46 @@ class SizingDiagram:
         # Performance constraint curves
         self.wing_loadings = np.linspace(5, 600, 800)
         self.x_stall = calc_stall_wing_loading(self.c_a_max_l, RHO_0, self.v_s_max)
-        self.y_takeoff = calc_takeoff_thrust_loading(self.n_engines, self.c_a_max_to, self.rho_takeoff, self.s_tofl, self.wing_loadings)
-        self.y_climb = calc_oei_climb_thrust_loading(self.n_engines, self.gamma_min_oei, self.eps, self.wing_loadings)
-        self.y_cruise = calc_cruise_thrust_loading(self.thrust_ratio, self.c_w0, self.q_cruise, self.aspect_ratio, self.oswald_factor, self.wing_loadings)
-        self.x_landing = calc_landing_wing_loading(self.l_ldg, self.rho_takeoff, self.c_a_max_l)
+        self.y_takeoff = calc_takeoff_thrust_loading(
+            self.n_engines,
+            self.c_a_max_to,
+            self.rho_takeoff,
+            self.s_tofl,
+            self.wing_loadings,
+        )
+        self.y_climb = calc_oei_climb_thrust_loading(
+            self.n_engines, self.gamma_min_oei, self.eps, self.wing_loadings
+        )
+        self.y_cruise = calc_cruise_thrust_loading(
+            self.thrust_ratio,
+            self.c_w0,
+            self.q_cruise,
+            self.aspect_ratio,
+            self.oswald_factor,
+            self.wing_loadings,
+        )
+        self.x_landing = calc_landing_wing_loading(
+            self.l_ldg, self.rho_takeoff, self.c_a_max_l
+        )
 
         # Optimum design point determination (minimum thrust loading in feasible region)
-        self.y_req = np.maximum.reduce([self.y_takeoff, self.y_climb, self.y_cruise])
+        self.y_req = np.maximum(np.maximum(self.y_takeoff, self.y_climb), self.y_cruise)
         self.feasible = self.wing_loadings <= min(self.x_stall, self.x_landing)
-        idx = int(np.flatnonzero(self.feasible & (self.y_req <= self.y_req[self.feasible].min() * (1 + 1e-6)))[-1])
+        idx = int(
+            np.flatnonzero(
+                self.feasible
+                & (self.y_req <= self.y_req[self.feasible].min() * (1 + 1e-6))
+            )[-1]
+        )
         self.design_point = (self.wing_loadings[idx], self.y_req[idx])
 
         thrust_constraints = ["take-off", "OEI climb", "cruise"]
-        self.active_thrust_constraint = thrust_constraints[int(np.argmax([self.y_takeoff[idx], self.y_climb[idx], self.y_cruise[idx]]))]
-        self.limiting_wing_loading = "stall" if self.x_stall < self.x_landing else "landing"
+        self.active_thrust_constraint = thrust_constraints[
+            int(np.argmax([self.y_takeoff[idx], self.y_climb[idx], self.y_cruise[idx]]))
+        ]
+        self.limiting_wing_loading = (
+            "stall" if self.x_stall < self.x_landing else "landing"
+        )
 
     @property
     def design_wing_loading(self) -> float:
@@ -272,7 +308,7 @@ class SizingDiagram:
         # Feasible design region shading
         x_lim = min(self.x_stall, self.x_landing)
         mask_feas = self.wing_loadings <= x_lim
-        y_envelope = np.maximum.reduce([self.y_takeoff, self.y_climb, self.y_cruise])
+        y_envelope = np.maximum(np.maximum(self.y_takeoff, self.y_climb), self.y_cruise)
         ax.fill_between(
             self.wing_loadings[mask_feas],
             y_envelope[mask_feas],
@@ -306,7 +342,11 @@ class SizingDiagram:
         ax.set_ylim(0, 0.55)
         ax.set_xlabel(r"Wing Loading $m_0 / S$ [$\mathrm{kg/m}^2$]", fontsize=11)
         ax.set_ylabel(r"Thrust-to-Weight Ratio $T / (m_0 \cdot g)$ [–]", fontsize=11)
-        ax.set_title("Sizing Diagram (Matching Chart) – Electric Aircraft", fontsize=13, fontweight="bold")
+        ax.set_title(
+            "Sizing Diagram (Matching Chart) – Electric Aircraft",
+            fontsize=13,
+            fontweight="bold",
+        )
         ax.grid(True, linestyle=":", alpha=0.6)
         ax.legend(loc="upper left", fontsize=9, framealpha=0.9)
         plt.tight_layout()

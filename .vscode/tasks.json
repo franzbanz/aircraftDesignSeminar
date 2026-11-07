@@ -1,0 +1,90 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "Ruff: Lint",
+      "type": "shell",
+      "command": "uv",
+      "args": ["run", "ruff", "check", "."],
+      "problemMatcher": [],
+      "presentation": {
+        "reveal": "always",
+        "panel": "shared"
+      },
+      "group": "test"
+    },
+    {
+      "label": "Ruff: Lint & Fix",
+      "type": "shell",
+      "command": "uv",
+      "args": ["run", "ruff", "check", "--fix", "."],
+      "problemMatcher": [],
+      "presentation": {
+        "reveal": "always",
+        "panel": "shared"
+      }
+    },
+    {
+      "label": "Ruff: Format",
+      "type": "shell",
+      "command": "uv",
+      "args": ["run", "ruff", "format", "."],
+      "problemMatcher": [],
+      "presentation": {
+        "reveal": "always",
+        "panel": "shared"
+      }
+    },
+    {
+      "label": "Ruff: Format Check",
+      "type": "shell",
+      "command": "uv",
+      "args": ["run", "ruff", "format", "--check", "."],
+      "problemMatcher": [],
+      "presentation": {
+        "reveal": "always",
+        "panel": "shared"
+      },
+      "group": "test"
+    },
+    {
+      "label": "ty: Type Check",
+      "type": "shell",
+      "command": "uv",
+      "args": ["run", "ty", "check"],
+      "problemMatcher": [],
+      "presentation": {
+        "reveal": "always",
+        "panel": "shared"
+      },
+      "group": "test"
+    },
+    {
+      "label": "Check All (Lint, Format, Type)",
+      "dependsOrder": "sequence",
+      "dependsOn": [
+        "Ruff: Lint",
+        "Ruff: Format Check",
+        "ty: Type Check"
+      ],
+      "problemMatcher": [],
+      "group": {
+        "kind": "test",
+        "isDefault": true
+      }
+    },
+    {
+      "label": "Fix & Format All",
+      "dependsOrder": "sequence",
+      "dependsOn": [
+        "Ruff: Lint & Fix",
+        "Ruff: Format"
+      ],
+      "problemMatcher": [],
+      "group": {
+        "kind": "build",
+        "isDefault": true
+      }
+    }
+  ]
+}

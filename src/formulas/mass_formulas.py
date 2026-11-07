@@ -60,7 +60,10 @@ def calc_landing_gear_mass(mtom: SiValue, k_fw: float = 1.08) -> SiValue:
     Returns:
         Total landing gear mass (main gear + nose gear) [kg].
     """
-    def calc_single_landing_gear_mass(k: float, m: float, a: float, b: float, c: float, d: float) -> float:
+
+    def calc_single_landing_gear_mass(
+        k: float, m: float, a: float, b: float, c: float, d: float
+    ) -> float:
         """Calculates the mass of a single landing gear group (main or nose gear) [kg].
 
         Args:
@@ -104,7 +107,7 @@ def calc_fuselage_mass(
     Returns:
         Fuselage mass [kg].
     """
-    base_mass = 0.23 * ((v_D * r_H) / (b_R + h_R)) ** 0.5 * s_o ** 1.2
+    base_mass = 0.23 * ((v_D * r_H) / (b_R + h_R)) ** 0.5 * s_o**1.2
     return SiValue(base_mass * (1.0 + delta_m_F), "kg")
 
 

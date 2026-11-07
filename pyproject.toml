@@ -1,0 +1,53 @@
+[project]
+name = "battery-powered-aircraft"
+version = "0.1.0"
+description = "Preliminary sizing and conceptual design of a 19-passenger battery-powered aircraft"
+requires-python = ">=3.11"
+dependencies = [
+    "numpy",
+    "matplotlib",
+]
+
+[dependency-groups]
+dev = [
+    "ruff",
+    "ty",
+]
+
+[tool.ruff]
+line-length = 88
+target-version = "py311"
+src = ["src"]
+
+[tool.ruff.lint]
+select = [
+    "E",      # pycodestyle errors
+    "W",      # pycodestyle warnings
+    "F",      # pyflakes
+    "I",      # isort
+]
+ignore = [
+    "E501",   # line-too-long (handled by ruff format)
+]
+
+[tool.ruff.lint.isort]
+known-first-party = [
+    "aircraft",
+    "constants",
+    "data",
+    "formulas",
+    "fuel_fractions",
+    "sizing_diagram",
+    "visualization",
+]
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
+
+[tool.ty.environment]
+python-version = "3.11"
+extra-paths = ["src"]
+
+[tool.ty.src]
+include = ["src"]

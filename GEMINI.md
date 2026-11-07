@@ -16,3 +16,9 @@
   - Write concise, English docstrings.
   - When implementing formulas from lecture slides or literature, cite the exact source and page in docstrings: `[Strohmayer - Flugzeugentwurf 2 | p. <page>]`.
 
+## Tooling & Package Management
+- **Always use `uv`**:
+  - Always use `uv` for package management, dependency locking, and running project commands (e.g. `uv run python ...`, `uv run ruff ...`, `uv run ty ...`).
+  - Do not use raw `pip` or maintain a `requirements.txt`. All dependencies and developer tools are declared in `pyproject.toml` with `uv.lock`.
+
+

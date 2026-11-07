@@ -95,6 +95,7 @@ def calc_vertical_tail_area(
     """
     return SiValue(c_vt * wing_area * wingspan / r_v, "m^2")
 
+
 def calc_aspect_ratio(wingspan: SiValue, wing_area: SiValue) -> float:
     """Calculates aspect ratio A = b_W^2 / S_W [-].
 
