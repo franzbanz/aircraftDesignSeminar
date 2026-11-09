@@ -2,7 +2,6 @@
 
 from formulas.aerodynamics import (
     AerodynamicComponent,
-    InterferenceFactor,
     calc_cf_flat_plate_laminar,
     calc_cf_flat_plate_turbulent,
     calc_component_drag_area,
@@ -11,8 +10,8 @@ from formulas.aerodynamics import (
     calc_effective_reynolds_number,
     calc_form_factor_fuselage,
     calc_form_factor_wing,
-    calc_re_cutoff_compressible,
-    calc_re_cutoff_incompressible,
+    calc_mach_number,
+    calc_reynolds_number,
     calc_zero_lift_drag_coefficient,
 )
 from formulas.breguet import (
@@ -51,16 +50,15 @@ from formulas.propulsion import (
 __all__ = [
     # Aerodynamics
     "AerodynamicComponent",
-    "InterferenceFactor",
     "calc_cf_flat_plate_laminar",
     "calc_cf_flat_plate_turbulent",
     "calc_delta_cf_body_laminar",
     "calc_delta_cf_body_turbulent",
-    "calc_re_cutoff_incompressible",
-    "calc_re_cutoff_compressible",
     "calc_effective_reynolds_number",
     "calc_form_factor_wing",
     "calc_form_factor_fuselage",
+    "calc_mach_number",
+    "calc_reynolds_number",
     "calc_component_drag_area",
     "calc_zero_lift_drag_coefficient",
     # Mass estimation

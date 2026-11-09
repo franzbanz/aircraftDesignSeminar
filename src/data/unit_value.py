@@ -82,6 +82,9 @@ class UnitValue(float):
         # Fuel consumption (TSFC) (SI: kg/(N*s))
         "kg/(n*s)": ("kg/(n*s)", 1.0),
         "lb/(h*lbf)": ("kg/(n*s)", 1.0 / (3600.0 * 9.80665)),
+        # Dynamic viscosity (SI: Pa*s)
+        "pa*s": ("pa*s", 1.0),
+        "kg/(m*s)": ("pa*s", 1.0),
         # Dimensionless
         "": ("", 1.0),
     }

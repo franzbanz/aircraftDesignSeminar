@@ -21,12 +21,11 @@ from data.reference_aircraft_data import (
 )
 from data.unit_value import UnitValue
 from formulas.aerodynamics import (
-    InterferenceFactor,
     calc_cf_flat_plate_turbulent,
     calc_effective_reynolds_number,
     calc_form_factor_wing,
-    calc_re_cutoff_compressible,
-    calc_re_cutoff_incompressible,
+    calc_mach_number,
+    calc_reynolds_number,
 )
 from formulas.geometry import (
     calc_horizontal_tail_volume_coefficient,
@@ -110,22 +109,11 @@ def calc_reference_aircraft_values(
     c_w0 = c_w_cruise - c_wi
 
     # Wing zero-lift drag coefficient c_W0,wing [-] via formulas.aerodynamics
-    t_cruise = 288.15 - 0.0065 * h_cruise
-    a_cruise = math.sqrt(1.4 * 287.05 * t_cruise)
-    mach_cruise = v_cruise / a_cruise
-    mu_cruise = (
-        1.789e-5
-        * ((t_cruise / 288.15) ** 1.5)
-        * ((288.15 + 110.4) / (t_cruise + 110.4))
-    )
-    re_wing = (rho_cruise * v_cruise * c_mu) / mu_cruise
+    mach_cruise = calc_mach_number(v_cruise, h_cruise)
+    re_wing = calc_reynolds_number(v_cruise, c_mu, h_cruise)
 
     k_roughness = SiValue(6.34e-6, "m")  # smooth paint roughness
-    if mach_cruise > 0.3:
-        re_cutoff = calc_re_cutoff_compressible(c_mu, k_roughness, mach_cruise)
-    else:
-        re_cutoff = calc_re_cutoff_incompressible(c_mu, k_roughness)
-    re_eff = calc_effective_reynolds_number(re_wing, re_cutoff)
+    re_eff = calc_effective_reynolds_number(re_wing, c_mu, k_roughness, mach_cruise)
 
     cf_wing = calc_cf_flat_plate_turbulent(re_eff, mach_cruise)
     t_over_c = assumptions.wingRootThickness.si / c_mu
@@ -136,7 +124,7 @@ def calc_reference_aircraft_values(
         mach=mach_cruise,
         sweep_d_max_deg=sweep_deg,
     )
-    if_wing = InterferenceFactor.HIGH_MID_WING_FAIRING
+    if_wing = 1.0  # High/mid wing with fairing
     c_w0_wing = 2.0 * cf_wing * ff_wing * if_wing
 
     # Component mass estimations using uncalibrated formulas
