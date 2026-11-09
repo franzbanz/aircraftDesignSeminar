@@ -52,7 +52,8 @@
     "total": [350, "kg"]
   },
   "assumptions": {
-    "limitLoad": [3.0, ""],
+    // from flight manual p. 56
+    "limitLoad": [3.16, ""],
     "maxTakeOffLiftCoefficient": [1.7, ""],
     // 16% maximum thickness
     "wingRootThickness": [0.33, "m"],
