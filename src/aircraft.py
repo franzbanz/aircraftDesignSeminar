@@ -18,7 +18,7 @@ from formulas import (
     calc_wing_mass,
     wing_span,
 )
-from fuel_fractions import MissionEnergyCalculator
+from fuel_fractions import MissionEnergyCalculator, ReferenceMissionCalculator
 from sizing_diagram import SizingDiagram
 
 
@@ -35,6 +35,7 @@ class BatteryAircraft:
         self.constraints = constraints
         self.design = design
         self.ref = ref
+        self.ref_mission = ReferenceMissionCalculator(constraints, ref)
         self.mtom: SiValue = (
             mtom if mtom is not None else design.initialSizing.maximumTakeOffMass.si
         )
@@ -279,7 +280,7 @@ class BatteryAircraft:
         """Gravimetric battery pack energy density [J/kg]."""
         return SiValue(
             self.constraints.battery.cellEnergyDensityMax.si
-            / self.constraints.battery.cellToPackFactorMin.value,
+            / self.constraints.battery.cellToPackFactorMin,
             "J/kg",
         )
 
@@ -287,21 +288,21 @@ class BatteryAircraft:
     def range(self) -> SiValue:
         """Achievable cruise range with available battery mass using pack energy density [m]."""
         return calc_electric_range(
-            battery_energy_density=self.battery_pack_energy_density,
-            eta_electric=self.eta_electric,
-            lift_to_drag=self.design.aerodynamics.liftToDragRatioCruise,
-            battery_mass=self.m_battery,
-            take_off_mass=self.mtom,
+            self.battery_pack_energy_density,
+            self.eta_electric,
+            self.design.aerodynamics.liftToDragRatioCruise,
+            self.m_battery,
+            self.mtom,
         )
 
     @property
     def mission_energy(self) -> MissionEnergyCalculator:
         """Mission energy calculator bound to current aircraft state."""
         return MissionEnergyCalculator(
-            constraints=self.constraints,
-            design=self.design,
-            ref=self.ref,
-            mtom=self.mtom,
+            self.constraints,
+            self.design,
+            self.ref_mission,
+            self.mtom,
         )
 
     def calc_required_battery_mass(self) -> SiValue:

@@ -22,7 +22,7 @@
     "numberOfEngines": [2, ""],
     // TODO: which value do we need?
     "maxThrustOverCruiseThrustRatio": [2.0, ""],
-    "etaElectric": [0.9, ""]
+    "etaElectric": [0.85, ""]
   },
   "mission": {
     "range": [100, "nm"],

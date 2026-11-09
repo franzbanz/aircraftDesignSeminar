@@ -17,10 +17,7 @@ from formulas.aerodynamics import (
 from formulas.breguet import (
     calc_breguet_fuel_mass_from_endurance,
     calc_breguet_fuel_mass_from_range,
-    calc_breguet_mass_fraction_from_endurance,
-    calc_breguet_mass_fraction_from_range,
     calc_breguet_range,
-    calc_electric_battery_mass_from_range,
     calc_electric_cruise_energy,
     calc_electric_loiter_energy,
     calc_electric_range,
@@ -78,12 +75,9 @@ __all__ = [
     "wing_span",
     # Conventional & Electric Breguet
     "calc_breguet_range",
-    "calc_breguet_mass_fraction_from_range",
     "calc_breguet_fuel_mass_from_range",
-    "calc_breguet_mass_fraction_from_endurance",
     "calc_breguet_fuel_mass_from_endurance",
     "calc_electric_range",
-    "calc_electric_battery_mass_from_range",
     "calc_electric_cruise_energy",
     "calc_electric_loiter_energy",
     # Propulsion

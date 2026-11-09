@@ -10,10 +10,6 @@ if __package__ in (None, ""):
 from constants import GRAVITY
 from data import SiValue
 
-# ==============================================================================
-# 1. BREGUET RANGE EQUATION & REARRANGEMENTS
-# ==============================================================================
-
 
 def calc_breguet_range(
     m_start: SiValue,
@@ -37,16 +33,16 @@ def calc_breguet_range(
     Returns:
         Breguet range [m].
     """
-    range_ = (
+    range_m = (
         (cruise_speed / (GRAVITY * thrust_specific_fuel_consumption))
         * lift_to_drag
         * math.log(m_start / m_end)
     )
-    return SiValue(range_, "m")
+    return SiValue(range_m, "m")
 
 
 def calc_breguet_mass_fraction_from_range(
-    range_: SiValue,
+    range_m: SiValue,
     lift_to_drag: float,
     cruise_speed: SiValue,
     thrust_specific_fuel_consumption: SiValue,
@@ -57,7 +53,7 @@ def calc_breguet_mass_fraction_from_range(
         M_ff = m_end / m_start = exp(-R * g * TSFC / (v * (L/D)))
 
     Args:
-        range_: Flight range [m].
+        range_m: Flight range [m].
         lift_to_drag: Lift-to-drag ratio [-].
         cruise_speed: True airspeed in cruise [m/s].
         thrust_specific_fuel_consumption: Thrust specific fuel consumption [kg/(N*s)].
@@ -68,12 +64,12 @@ def calc_breguet_mass_fraction_from_range(
     breguet_factor = (
         cruise_speed / (GRAVITY * thrust_specific_fuel_consumption)
     ) * lift_to_drag
-    return math.exp(-range_ / breguet_factor)
+    return math.exp(-range_m / breguet_factor)
 
 
 def calc_breguet_fuel_mass_from_range(
     m_start: SiValue,
-    range_: SiValue,
+    range_m: SiValue,
     lift_to_drag: float,
     cruise_speed: SiValue,
     thrust_specific_fuel_consumption: SiValue,
@@ -85,7 +81,7 @@ def calc_breguet_fuel_mass_from_range(
 
     Args:
         m_start: Aircraft mass at the start of the segment [kg].
-        range_: Flight range [m].
+        range_m: Flight range [m].
         lift_to_drag: Lift-to-drag ratio [-].
         cruise_speed: True airspeed in cruise [m/s].
         thrust_specific_fuel_consumption: Thrust specific fuel consumption [kg/(N*s)].
@@ -94,14 +90,9 @@ def calc_breguet_fuel_mass_from_range(
         Burned fuel mass [kg].
     """
     mass_fraction = calc_breguet_mass_fraction_from_range(
-        range_, lift_to_drag, cruise_speed, thrust_specific_fuel_consumption
+        range_m, lift_to_drag, cruise_speed, thrust_specific_fuel_consumption
     )
     return SiValue(m_start * (1.0 - mass_fraction), "kg")
-
-
-# ==============================================================================
-# 2. BREGUET ENDURANCE (TIME) EQUATIONS
-# ==============================================================================
 
 
 def calc_breguet_mass_fraction_from_endurance(
@@ -153,11 +144,6 @@ def calc_breguet_fuel_mass_from_endurance(
     return SiValue(m_start * (1.0 - mass_fraction), "kg")
 
 
-# ==============================================================================
-# 3. BATTERY-ELECTRIC RANGE & ENDURANCE EQUATIONS
-# ==============================================================================
-
-
 def calc_electric_range(
     battery_energy_density: SiValue,
     eta_electric: float,
@@ -180,18 +166,18 @@ def calc_electric_range(
     Returns:
         Flight range [m].
     """
-    range_ = (
+    range_m = (
         battery_energy_density
         * eta_electric
         * (1.0 / GRAVITY)
         * lift_to_drag
         * (battery_mass / take_off_mass)
     )
-    return SiValue(range_, "m")
+    return SiValue(range_m, "m")
 
 
 def calc_electric_battery_mass_from_range(
-    range_: SiValue,
+    range_m: SiValue,
     battery_energy_density: SiValue,
     eta_electric: float,
     lift_to_drag: float,
@@ -203,7 +189,7 @@ def calc_electric_battery_mass_from_range(
         m_bat = (R * g * m_0) / (e_bat * eta_el * (L/D))
 
     Args:
-        range_: Target flight range [m].
+        range_m: Target flight range [m].
         battery_energy_density: Gravimetric energy density of battery e_bat [J/kg].
         eta_electric: Total powertrain efficiency eta_el [-].
         lift_to_drag: Lift-to-drag ratio L/D [-].
@@ -212,14 +198,14 @@ def calc_electric_battery_mass_from_range(
     Returns:
         Required battery mass [kg].
     """
-    m_bat = (range_ * GRAVITY * take_off_mass) / (
+    m_bat = (range_m * GRAVITY * take_off_mass) / (
         battery_energy_density * eta_electric * lift_to_drag
     )
     return SiValue(m_bat, "kg")
 
 
 def calc_electric_cruise_energy(
-    range_: SiValue,
+    range_m: SiValue,
     take_off_mass: SiValue,
     lift_to_drag: float,
     eta_electric: float,
@@ -230,7 +216,7 @@ def calc_electric_cruise_energy(
         E_el = (R * g * m_0) / (eta_el * (L/D))
 
     Args:
-        range_: Target cruise range [m].
+        range_m: Target cruise range [m].
         take_off_mass: Aircraft take-off mass m_0 [kg].
         lift_to_drag: Cruise lift-to-drag ratio L/D [-].
         eta_electric: Powertrain efficiency eta_el [-].
@@ -238,7 +224,7 @@ def calc_electric_cruise_energy(
     Returns:
         Required electrical energy [J].
     """
-    energy_j = (range_ * GRAVITY * take_off_mass) / (eta_electric * lift_to_drag)
+    energy_j = (range_m * GRAVITY * take_off_mass) / (eta_electric * lift_to_drag)
     return SiValue(energy_j, "J")
 
 
@@ -271,57 +257,84 @@ def calc_electric_loiter_energy(
 
 
 if __name__ == "__main__":
-    from data import load_reference_aircraft
+    from data import load_constraints, load_design_parameters, load_reference_aircraft
 
     ref = load_reference_aircraft()
-    v_cr = ref.mission.cruiseSpeedTAS.si
-    tsfc = ref.propulsion.tsfcCruise.si
-    ld_cr = ref.aerodynamics.liftToDragRatioCruise
-    ld_loit = ref.aerodynamics.liftToDragRatioLoiter
+    des = load_design_parameters()
+    con = load_constraints()
 
+    v_cr_ref = ref.mission.cruiseSpeedTAS.si
+    tsfc_ref = ref.propulsion.tsfcCruise.si
+    ld_cr_ref = ref.aerodynamics.liftToDragRatioCruise
+    ld_loit_ref = ref.aerodynamics.liftToDragRatioLoiter
+
+    m_start_cr_ref = SiValue(
+        ref.fuel.referenceMass.si - ref.fuel.taxiOutAndTakeOff.si - ref.fuel.climb.si,
+        "kg",
+    )
+    m_end_cr_ref = SiValue(m_start_cr_ref - ref.fuel.cruise.si, "kg")
+    m_start_div_ref = SiValue(m_end_cr_ref - ref.fuel.descent.si, "kg")
+
+    mtom_el = des.initialSizing.maximumTakeOffMass.si
+    ld_cr_el = des.aerodynamics.liftToDragRatioCruise
+    ld_loit_el = des.aerodynamics.liftToDragRatioLoiter
+    eta_el = des.propulsion.etaElectric
+    e_pack = SiValue(
+        con.battery.cellEnergyDensityMax.si / con.battery.cellToPackFactorMin,
+        "J/kg",
+    )
+    v_cr_el = des.mission.cruiseSpeedTAS.si
+
+    print("Reference Aircraft (Kerosene / Breguet):")
     print(
-        "Cruise fuel mass (100NM):",
-        calc_breguet_fuel_mass_from_range(
-            SiValue(5950 - 24 - 36, "kg"), SiValue(100, "nm"), ld_cr, v_cr, tsfc
-        ),
+        f"  Cruise fuel mass ({ref.fuel.referenceRange}): "
+        f"{calc_breguet_fuel_mass_from_range(m_start_cr_ref, ref.fuel.referenceRange.si, ld_cr_ref, v_cr_ref, tsfc_ref):.1f} kg"
     )
     print(
-        "Cruise fuel mass (50NM):",
-        calc_breguet_fuel_mass_from_range(
-            SiValue(5950 - 24 - 36 - 78 - 9, "kg"), SiValue(50, "nm"), ld_cr, v_cr, tsfc
-        ),
+        f"  Diversion fuel mass ({con.mission.diversionDistance}): "
+        f"{calc_breguet_fuel_mass_from_range(m_start_div_ref, con.mission.diversionDistance.si, ld_cr_ref, v_cr_ref, tsfc_ref):.1f} kg"
     )
     print(
-        "Total mission battery mass (285NM):",
-        calc_electric_battery_mass_from_range(
-            SiValue(285, "nm"), SiValue(420, "Wh/kg"), 0.85, 12.1, SiValue(8618, "kg")
-        ),
+        f"  Loiter fuel mass ({con.mission.loiterTime}): "
+        f"{calc_breguet_fuel_mass_from_endurance(m_start_div_ref, con.mission.loiterTime.si, ld_loit_ref, tsfc_ref):.1f} kg"
+    )
+    r_cr_ref = calc_breguet_range(
+        m_start_cr_ref, m_end_cr_ref, ld_cr_ref, v_cr_ref, tsfc_ref
+    ).to("nm")
+    print(
+        f"  Cruise range (for {ref.fuel.cruise} fuel): {r_cr_ref:.1f} {r_cr_ref.unit}"
+    )
+
+    print("\nBattery-Electric Aircraft (Breguet Electric):")
+    m_bat_cr = calc_electric_battery_mass_from_range(
+        des.mission.range.si, e_pack, eta_el, ld_cr_el, mtom_el
     )
     print(
-        "Cruise battery mass (100NM):",
-        calc_electric_battery_mass_from_range(
-            SiValue(100, "nm"), SiValue(420, "Wh/kg"), 0.85, 12.1, SiValue(8618, "kg")
-        ),
+        f"  Cruise battery pack mass ({des.mission.range}): "
+        f"{m_bat_cr:.1f} {m_bat_cr.unit}"
+    )
+    m_bat_div = calc_electric_battery_mass_from_range(
+        con.mission.diversionDistance.si, e_pack, eta_el, ld_cr_el, mtom_el
     )
     print(
-        "Cruise battery mass (50NM):",
-        calc_electric_battery_mass_from_range(
-            SiValue(50, "nm"), SiValue(420, "Wh/kg"), 0.85, 12.1, SiValue(8618, "kg")
-        ),
+        f"  Diversion battery pack mass ({con.mission.diversionDistance}): "
+        f"{m_bat_div:.1f} {m_bat_div.unit}"
+    )
+    e_cr = calc_electric_cruise_energy(
+        des.mission.range.si, mtom_el, ld_cr_el, eta_el
+    ).to("kWh")
+    print(f"  Cruise electric energy ({des.mission.range}): {e_cr:.1f} {e_cr.unit}")
+    e_loit = calc_electric_loiter_energy(
+        con.mission.loiterTime.si, v_cr_el, mtom_el, ld_loit_el, eta_el
+    ).to("kWh")
+    print(
+        f"  Loiter electric energy ({con.mission.loiterTime}): "
+        f"{e_loit:.1f} {e_loit.unit}"
+    )
+    r_achieved = calc_electric_range(e_pack, eta_el, ld_cr_el, m_bat_cr, mtom_el).to(
+        "nm"
     )
     print(
-        "Loiter fuel mass (30min):",
-        calc_breguet_fuel_mass_from_endurance(
-            SiValue(5950 - 24 - 36 - 78 - 9, "kg"), SiValue(0.5, "h"), ld_loit, tsfc
-        ),
-    )
-    print(
-        "Cruise range (78kg):",
-        calc_breguet_range(
-            SiValue(5950 - 24 - 36, "kg"),
-            SiValue(5950 - 24 - 36 - 78, "kg"),
-            ld_cr,
-            v_cr,
-            tsfc,
-        ).to("nm"),
+        f"  Cruise range achieved ({m_bat_cr:.1f} kg pack): "
+        f"{r_achieved:.1f} {r_achieved.unit}"
     )
