@@ -7,12 +7,12 @@ tail volume coefficients, cruise aerodynamics, and component mass calibration fa
 import math
 from pathlib import Path
 
-from constants import GRAVITY, isa_density
 from data import SiValue
 from data.loader import load_reference_aircraft_data
 from data.reference_aircraft_data import ReferenceAircraftData
 from formulas.aerodynamics import (
     calc_cf_flat_plate_turbulent,
+    calc_cruise_lift_coefficient,
     calc_effective_reynolds_number,
     calc_form_factor_wing,
     calc_mach_number,
@@ -109,33 +109,40 @@ class ReferenceAircraft:
         return SiValue(1.25 * self.data.mission.cruiseSpeedTAS.si, "m/s")
 
     @property
-    def cruise_dynamic_pressure(self) -> float:
-        """Cruise dynamic pressure q [N/m^2]."""
-        rho_cruise = isa_density(self.data.mission.cruiseAltitude.si).si
-        v_cruise = self.data.mission.cruiseSpeedTAS.si
-        return 0.5 * rho_cruise * (v_cruise**2)
-
-    @property
     def cruise_lift_coefficient(self) -> float:
         """Cruise lift coefficient c_A,cruise [-] (stationary horizontal flight: L = W = m_ref * g)."""
-        m_ref = self.data.fuel.referenceMass.si
-        s_w = self.data.dimensions.wingArea.si
-        return (m_ref * GRAVITY.si) / (self.cruise_dynamic_pressure * s_w)
+        wing_loading = (
+            self.data.fuel.referenceMass.si / self.data.dimensions.wingArea.si
+        )
+        return calc_cruise_lift_coefficient(
+            wing_loading,
+            self.data.mission.cruiseSpeedTAS.si,
+            self.data.mission.cruiseAltitude.si,
+        )
 
     @property
     def induced_drag_coefficient(self) -> float:
         """Induced drag coefficient c_Wi [-] (c_Wi = c_A^2 / (pi * AR * e))."""
         return (self.cruise_lift_coefficient**2) / (
-            math.pi * self.aspect_ratio * self.data.aerodynamics.oswaldFactor
+            math.pi * self.aspect_ratio * self.data.assumptions.oswaldFactor
         )
 
     @property
     def zero_lift_drag_coefficient(self) -> float:
-        """Total zero-lift drag coefficient c_W0 [-] (c_W0 = (c_A / E) - c_Wi)."""
-        c_w_cruise = (
-            self.cruise_lift_coefficient / self.data.aerodynamics.liftToDragRatioCruise
+        """Total zero-lift drag coefficient c_W0 [-] from reference polar at C_L = 0."""
+        return self.data.aerodynamics.zeroLiftDragCoefficient
+
+    def drag_coefficient_from_polar(self, c_l: float) -> float:
+        """Calculates drag coefficient C_D(C_L) = C_D0 + C_L^2 / (pi * AR * e) [-]."""
+        return self.zero_lift_drag_coefficient + (c_l**2) / (
+            math.pi * self.aspect_ratio * self.data.assumptions.oswaldFactor
         )
-        return c_w_cruise - self.induced_drag_coefficient
+
+    def lift_to_drag_from_polar(self, c_l: float) -> float:
+        """Calculates lift-to-drag ratio L/D = C_L / C_D(C_L) for a given lift coefficient C_L [-]."""
+        if c_l <= 0.0:
+            return 0.0
+        return c_l / self.drag_coefficient_from_polar(c_l)
 
     @property
     def wing_zero_lift_drag_coefficient(self) -> float:

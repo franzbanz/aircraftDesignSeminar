@@ -17,7 +17,7 @@ def print_sizing_diagram(diagram: SizingDiagram) -> None:
     print(f"Cruise lift to drag ratio:         {diagram.l_d_cruise:.2f}")
     print(f"Cruise speed:                      {diagram.v_cruise:.2f}")
     print(f"Cruise air density:                {diagram.rho_cruise:.4f}")
-    print(f"Cruise dynamic pressure:           {diagram.q_cruise:.2f} Pa")
+    print(f"Cruise dynamic pressure:           {diagram.q_cruise:.2f}")
     print(f"Max. wing loading (stall):         {diagram.x_stall:.2f}")
     print(f"Max. wing loading (landing):       {diagram.x_landing:.2f}")
     print(f"Active thrust constraint:          {diagram.active_thrust_constraint}")

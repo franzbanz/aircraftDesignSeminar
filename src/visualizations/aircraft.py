@@ -56,6 +56,10 @@ def print_aircraft_summary(
 
     print(f"Range: {aircraft.range.to('km')}")
     print(f"Range: {aircraft.range.to('NM')}")
+    print(
+        f"Cruise L/D (from polar at {aircraft.design.mission.cruiseSpeedTAS}): "
+        f"{aircraft.lift_to_drag_cruise:.2f} (C_L = {aircraft.cruise_lift_coefficient:.3f}, C_D = {aircraft.cruise_drag_coefficient:.4f})"
+    )
 
     print("\n----- AIRCRAFT DIMENSIONS & GEOMETRY -----")
     print(

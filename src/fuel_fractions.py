@@ -123,12 +123,18 @@ class MissionEnergyCalculator:
         design: DesignParameters,
         ref_mission: ReferenceMissionCalculator,
         mtom: SiValue | None = None,
+        lift_to_drag_cruise: float | None = None,
     ) -> None:
         self.constraints = constraints
         self.design = design
         self.ref_mission = ref_mission
         self.mtom: SiValue = (
             mtom if mtom is not None else design.initialSizing.maximumTakeOffMass.si
+        )
+        self.lift_to_drag_cruise: float = (
+            lift_to_drag_cruise
+            if lift_to_drag_cruise is not None
+            else ref_mission.ref.aerodynamics.liftToDragRatioCruise
         )
 
     @property
@@ -159,7 +165,7 @@ class MissionEnergyCalculator:
         return calc_electric_cruise_energy(
             dist,
             self.mtom,
-            self.design.aerodynamics.liftToDragRatioCruise,
+            self.lift_to_drag_cruise,
             self.design.propulsion.etaElectric,
         )
 
@@ -245,11 +251,7 @@ class MissionEnergyCalculator:
         self, electric_energy: SiValue, lift_to_drag: float | None = None
     ) -> SiValue:
         """Calculates achievable Breguet cruise range for electric battery energy [m]."""
-        ld = (
-            lift_to_drag
-            if lift_to_drag is not None
-            else self.design.aerodynamics.liftToDragRatioCruise
-        )
+        ld = lift_to_drag if lift_to_drag is not None else self.lift_to_drag_cruise
         e_pack = SiValue(
             self.constraints.battery.cellEnergyDensityMax.si
             / self.constraints.battery.cellToPackFactorMin,

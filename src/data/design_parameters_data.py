@@ -16,7 +16,6 @@ class DesignInitialSizingParameters:
 class DesignAerodynamicParameters:
     """Aerodynamic parameters and lift coefficients."""
 
-    liftToDragRatioCruise: UnitValue
     liftToDragRatioLoiter: UnitValue
     maxLandingLiftCoefficient: UnitValue
     aspectRatio: UnitValue

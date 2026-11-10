@@ -65,6 +65,7 @@ class ReferenceAssumptionsParameters:
 
     limitLoad: UnitValue
     maxTakeOffLiftCoefficient: UnitValue
+    oswaldFactor: UnitValue
     wingRootThickness: UnitValue
     wingSweepHalfChord: UnitValue
     wingMassPenaltyFactor: UnitValue
@@ -81,7 +82,7 @@ class ReferenceAerodynamicParameters:
     liftToDragRatioCruise: UnitValue
     liftToDragRatioLoiter: UnitValue
     maxLandingLiftCoefficient: UnitValue
-    oswaldFactor: UnitValue
+    zeroLiftDragCoefficient: UnitValue
 
 
 @dataclass(frozen=True)

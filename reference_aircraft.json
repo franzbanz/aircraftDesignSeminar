@@ -33,7 +33,7 @@
     "liftToDragRatioCruise": [12.1, ""],
     "liftToDragRatioLoiter": [15.7, ""],
     "maxLandingLiftCoefficient": [2.6, ""],
-    "oswaldFactor": [0.80, ""]
+    "zeroLiftDragCoefficient": [0.0260, ""]
   },
   "propulsion": {
     "engineTakeOffPower": [580, "kW"],
@@ -56,6 +56,8 @@
     // from flight manual p. 56
     "limitLoad": [3.16, ""],
     "maxTakeOffLiftCoefficient": [1.7, ""],
+    // fitted from reference drag polar (see src/verification/polar_oswald.py)
+    "oswaldFactor": [0.9087, ""],
     // 16% maximum thickness
     "wingRootThickness": [0.33, "m"],
     // rectangular wing

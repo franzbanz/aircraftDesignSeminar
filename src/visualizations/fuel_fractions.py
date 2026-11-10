@@ -39,7 +39,7 @@ def print_mission_energy_breakdown(calc: MissionEnergyCalculator) -> None:
     )
     print(
         f"Electric Aircraft: MTOM = {calc.mtom}, eta_el = {calc.design.propulsion.etaElectric * 100:.1f} %, "
-        f"Range = {calc.range.to('nm'):.0f}, L/D = {calc.design.aerodynamics.liftToDragRatioCruise:.1f}\n"
+        f"Range = {calc.range.to('nm'):.0f}, L/D = {calc.lift_to_drag_cruise:.2f}\n"
     )
     print(
         f"{'Segment':<32} | {'Ref Fuel':>9} | {'R (Kero)':>9} | {'E_el [kWh]':>10} | {'m_Cell':>10} | {'m_Pack':>10} | {'R (Bat)':>9}"

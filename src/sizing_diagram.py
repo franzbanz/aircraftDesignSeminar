@@ -12,6 +12,8 @@ from data import (
     load_constraints,
     load_design_parameters,
 )
+from formulas.aerodynamics import calc_cruise_lift_coefficient, calc_dynamic_pressure
+from reference_aircraft import ReferenceAircraft, load_reference_aircraft
 
 
 def calc_stall_wing_loading(
@@ -157,10 +159,12 @@ class SizingDiagram:
         self,
         constraints: Constraints | None = None,
         design: DesignParameters | None = None,
+        ref: ReferenceAircraft | None = None,
     ) -> None:
         # TODO remove inline loader
         self.constraints = constraints or load_constraints()
         self.design = design or load_design_parameters()
+        self.ref = ref or load_reference_aircraft()
 
         # Constraints
         self.s_tofl = self.constraints.performance.takeOffFieldLengthMax.si
@@ -172,7 +176,6 @@ class SizingDiagram:
 
         # Electric aircraft design parameters and flight conditions
         self.n_engines = int(self.design.propulsion.numberOfEngines)
-        self.l_d_cruise = self.design.aerodynamics.liftToDragRatioCruise
         self.h_cruise = self.design.mission.cruiseAltitude.si
         self.c_a_max_to = self.design.assumptions.maxTakeOffLiftCoefficient
         self.c_a_max_l = self.design.aerodynamics.maxLandingLiftCoefficient
@@ -184,18 +187,24 @@ class SizingDiagram:
         self.thrust_ratio = self.design.propulsion.maxThrustOverCruiseThrustRatio
 
         # Aerodynamics and atmosphere
-        # l_d_cruise is not necessarily the best L/D
-        self.c_w0 = (
-            np.pi * self.aspect_ratio * self.oswald_factor / (4.0 * self.l_d_cruise**2)
-        )
-        self.eps = 1.0 / self.l_d_cruise
+        self.c_w0 = self.ref.zero_lift_drag_coefficient
         self.rho_takeoff = isa_density(self.field_elevation)
         self.rho_cruise = isa_density(self.h_cruise)
-        self.q_cruise = 0.5 * self.rho_cruise * (self.v_cruise**2)
+        self.q_cruise = calc_dynamic_pressure(self.v_cruise, self.h_cruise)
 
         # Performance constraint curves
         self.wing_loadings = np.linspace(5, 600, 800)
         self.x_stall = calc_stall_wing_loading(self.c_a_max_l, RHO_0, self.v_s_max)
+        self.x_landing = calc_landing_wing_loading(
+            self.l_ldg, self.rho_takeoff, self.c_a_max_l
+        )
+
+        # Evaluate cruise L/D from polar at limiting wing loading
+        x_lim = float(min(self.x_stall, self.x_landing))
+        c_l_cruise = calc_cruise_lift_coefficient(x_lim, self.v_cruise, self.h_cruise)
+        self.l_d_cruise = self.ref.lift_to_drag_from_polar(c_l_cruise)
+        self.eps = 1.0 / self.l_d_cruise
+
         self.y_takeoff = calc_takeoff_thrust_loading(
             self.n_engines,
             self.c_a_max_to,
@@ -214,9 +223,6 @@ class SizingDiagram:
             self.oswald_factor,
             self.wing_loadings,
         )
-        self.x_landing = calc_landing_wing_loading(
-            self.l_ldg, self.rho_takeoff, self.c_a_max_l
-        )
 
         # Optimum design point determination (minimum thrust loading in feasible region)
         self.y_req = np.maximum(np.maximum(self.y_takeoff, self.y_climb), self.y_cruise)
@@ -228,6 +234,12 @@ class SizingDiagram:
             )[-1]
         )
         self.design_point = (self.wing_loadings[idx], self.y_req[idx])
+
+        # Evaluate cruise L/D from polar at the determined design point
+        c_l_cruise = calc_cruise_lift_coefficient(
+            self.design_point[0], self.v_cruise, self.h_cruise
+        )
+        self.l_d_cruise = self.ref.lift_to_drag_from_polar(c_l_cruise)
 
         thrust_constraints = ["take-off", "OEI climb", "cruise"]
         self.active_thrust_constraint = thrust_constraints[

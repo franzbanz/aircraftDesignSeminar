@@ -6,6 +6,7 @@ from constants import GRAVITY
 from data import Constraints, DesignParameters, SiValue
 from formulas import (
     calc_aspect_ratio,
+    calc_cruise_lift_coefficient,
     calc_electric_range,
     calc_empennage_mass,
     calc_fuselage_mass,
@@ -46,6 +47,25 @@ class BatteryAircraft:
         """Overall electric powertrain efficiency [-]."""
         return self.design.propulsion.etaElectric
 
+    @property
+    def cruise_lift_coefficient(self) -> float:
+        """Cruise lift coefficient C_L = (m_0 / S) * g / q [-]."""
+        return calc_cruise_lift_coefficient(
+            self.wing_loading_design,
+            self.design.mission.cruiseSpeedTAS.si,
+            self.design.mission.cruiseAltitude.si,
+        )
+
+    @property
+    def cruise_drag_coefficient(self) -> float:
+        """Cruise drag coefficient C_D interpolated from the polar [-]."""
+        return self.ref.drag_coefficient_from_polar(self.cruise_lift_coefficient)
+
+    @property
+    def lift_to_drag_cruise(self) -> float:
+        """Cruise lift-to-drag ratio L/D evaluated from the polar at current cruise speed [-]."""
+        return self.ref.lift_to_drag_from_polar(self.cruise_lift_coefficient)
+
     # --------------------------------------------------------------------------
     # Fixed Operational & Payload Masses
     # --------------------------------------------------------------------------
@@ -85,12 +105,16 @@ class BatteryAircraft:
     @property
     def wing_loading_design(self) -> float:
         """Optimum wing loading from sizing diagram [kg/m^2]."""
-        return SizingDiagram().design_wing_loading
+        return SizingDiagram(
+            self.constraints, self.design, self.ref
+        ).design_wing_loading
 
     @property
     def thrust_loading_design(self) -> float:
         """Optimum thrust loading from sizing diagram [-]."""
-        return SizingDiagram().design_thrust_loading
+        return SizingDiagram(
+            self.constraints, self.design, self.ref
+        ).design_thrust_loading
 
     @property
     def wing_area(self) -> SiValue:
@@ -289,7 +313,7 @@ class BatteryAircraft:
         return calc_electric_range(
             self.battery_pack_energy_density,
             self.eta_electric,
-            self.design.aerodynamics.liftToDragRatioCruise,
+            self.lift_to_drag_cruise,
             self.m_battery,
             self.mtom,
         )
@@ -302,6 +326,7 @@ class BatteryAircraft:
             self.design,
             self.ref_mission,
             self.mtom,
+            lift_to_drag_cruise=self.lift_to_drag_cruise,
         )
 
     def calc_required_battery_mass(self) -> SiValue:

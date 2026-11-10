@@ -8,8 +8,41 @@ from pathlib import Path
 if __package__ in (None, ""):
     sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from constants import isa_density, isa_dynamic_viscosity, isa_speed_of_sound
+from constants import GRAVITY, isa_density, isa_dynamic_viscosity, isa_speed_of_sound
 from data import SiValue
+
+
+def calc_dynamic_pressure(velocity: SiValue, altitude: SiValue) -> SiValue:
+    """Calculates dynamic pressure q = 0.5 * rho(h) * v^2 from true airspeed and ISA altitude [Pa].
+
+    Args:
+        velocity: True airspeed (TAS) [m/s].
+        altitude: Flight altitude [m].
+
+    Returns:
+        Dynamic pressure q [Pa].
+    """
+    rho = isa_density(altitude)
+    return SiValue(0.5 * rho * (velocity**2), "Pa")
+
+
+def calc_cruise_lift_coefficient(
+    wing_loading: float,
+    velocity: SiValue,
+    altitude: SiValue,
+) -> float:
+    """Calculates lift coefficient in steady horizontal flight c_A = (m / S) * g / q [-].
+
+    Args:
+        wing_loading: Wing loading m / S [kg/m^2].
+        velocity: True airspeed (TAS) [m/s].
+        altitude: Flight altitude [m].
+
+    Returns:
+        Cruise lift coefficient c_A [-].
+    """
+    q = calc_dynamic_pressure(velocity, altitude)
+    return (wing_loading * GRAVITY) / q
 
 
 def calc_mach_number(velocity: SiValue, altitude: SiValue) -> float:

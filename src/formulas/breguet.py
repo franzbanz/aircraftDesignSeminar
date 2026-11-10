@@ -280,7 +280,7 @@ if __name__ == "__main__":
     m_start_div_ref = SiValue(m_end_cr_ref - ref.fuel.descent.si, "kg")
 
     mtom_el = des.initialSizing.maximumTakeOffMass.si
-    ld_cr_el = des.aerodynamics.liftToDragRatioCruise
+    ld_cr_el = ref.aerodynamics.liftToDragRatioCruise
     ld_loit_el = des.aerodynamics.liftToDragRatioLoiter
     eta_el = des.propulsion.etaElectric
     e_pack = SiValue(

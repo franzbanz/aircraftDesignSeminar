@@ -3,7 +3,6 @@
     "maximumTakeOffMass": [8618, "kg"]
   },
   "aerodynamics": {
-    "liftToDragRatioCruise": [12.1, ""],
     "liftToDragRatioLoiter": [15.7, ""],
     "maxLandingLiftCoefficient": [2.6, ""],
     // maximum 10.63 if wingspan should be lower than 24m with 54.15m^2 wing area
@@ -21,12 +20,12 @@
     "engineMass": [200, "kg"],
     "numberOfEngines": [2, ""],
     // TODO: which value do we need?
-    "maxThrustOverCruiseThrustRatio": [2.0, ""],
+    "maxThrustOverCruiseThrustRatio": [4.0, ""],
     "etaElectric": [0.85, ""]
   },
   "mission": {
     "range": [100, "nm"],
-    "cruiseSpeedTAS": [170, "kts"],
+    "cruiseSpeedTAS": [184.4, "kts"],
     "cruiseAltitude": [10000, "ft"],
     "numberOfPassengers": [19, ""]
   },

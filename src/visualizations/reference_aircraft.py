@@ -27,6 +27,9 @@ def print_reference_aircraft(ref: ReferenceAircraft) -> None:
     print(f"Horizontal tail area (S_HTP):    {ref.data.dimensions.horizontalTailArea}")
     print(f"Vertical tail area (S_VTP):      {ref.data.dimensions.verticalTailArea}")
     print(f"Limit load factor (n_max):       {ref.data.assumptions.limitLoad}")
+    print(
+        f"Zero-lift drag (c_W0):           {ref.data.aerodynamics.zeroLiftDragCoefficient:.4f}"
+    )
 
     print("\n--- CALCULATED VALUES (DERIVED) ---")
     print(f"Aspect ratio (AR):                   {ref.aspect_ratio:.3f}")
@@ -41,7 +44,6 @@ def print_reference_aircraft(ref: ReferenceAircraft) -> None:
         f"Vertical tail volume coeff (c_VT):   {ref.vertical_tail_volume_coefficient:.4f}"
     )
     print(f"Cruise lift coefficient (c_A):       {ref.cruise_lift_coefficient:.4f}")
-    print(f"Total zero-lift drag (c_W0):         {ref.zero_lift_drag_coefficient:.4f}")
     print(f"Induced drag coeff (c_Wi):           {ref.induced_drag_coefficient:.4f}")
     print(
         f"Wing zero-lift drag (c_W0,wing):     {ref.wing_zero_lift_drag_coefficient:.4f}"
