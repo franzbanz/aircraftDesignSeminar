@@ -57,25 +57,29 @@ def print_aircraft_summary(
     print(f"Range: {aircraft.range.to('km')}")
     print(f"Range: {aircraft.range.to('NM')}")
     print(
-        f"Cruise L/D (from polar at {aircraft.design.mission.cruiseSpeedTAS}): "
-        f"{aircraft.lift_to_drag_cruise:.2f} (C_L = {aircraft.cruise_lift_coefficient:.3f}, C_D = {aircraft.cruise_drag_coefficient:.4f})"
+        f"Cruise L/D (at {aircraft.design.mission.cruiseSpeedTAS}): "
+        f"{aircraft.wing.lift_to_drag_cruise:.2f} "
+        f"(C_L = {aircraft.wing.cruise_lift_coefficient:.3f}, "
+        f"C_D = {aircraft.wing.cruise_drag_coefficient:.4f}, "
+        f"c_W0 = {aircraft.wing.zero_lift_drag_coefficient:.4f}, "
+        f"c_Wi = {aircraft.wing.induced_drag_coefficient:.4f})"
     )
 
     print("\n----- AIRCRAFT DIMENSIONS & GEOMETRY -----")
     print(
-        f"Wing Area (S_W):             {aircraft.wing_area:.2f} (Ref: {ref_aircraft.data.dimensions.wingArea:.2f})"
+        f"Wing Area (S_W):             {aircraft.wing.area:.2f} (Ref: {ref_aircraft.data.dimensions.wingArea:.2f})"
     )
     print(
-        f"Wingspan (b_W):              {aircraft.wingspan:.2f} (Ref: {ref_aircraft.data.dimensions.wingspan:.2f}, Max: {aircraft.design.aerodynamics.maxWingSpan:.2f})"
+        f"Wingspan (b_W):              {aircraft.wing.span:.2f} (Ref: {ref_aircraft.data.dimensions.wingspan:.2f}, Max: {aircraft.design.aerodynamics.maxWingSpan:.2f})"
     )
     print(
-        f"Aspect Ratio (AR):           {aircraft.aspect_ratio:.2f} (Ref: {ref_aircraft.aspect_ratio:.2f})"
+        f"Aspect Ratio (AR):           {aircraft.wing.aspect_ratio:.2f} (Ref: {ref_aircraft.aspect_ratio:.2f})"
     )
     print(
-        f"Mean Aerodynamic Chord:      {aircraft.mean_aerodynamic_chord:.2f} (Ref: {ref_aircraft.mean_aerodynamic_chord:.2f})"
+        f"Mean Aerodynamic Chord:      {aircraft.wing.mean_aerodynamic_chord:.2f} (Ref: {ref_aircraft.mean_aerodynamic_chord:.2f})"
     )
     print(
-        f"Wing Root Thickness (16%):   {aircraft.wing_root_thickness:.2f} (Ref: {ref_aircraft.data.assumptions.wingRootThickness:.2f})"
+        f"Wing Root Thickness (16%):   {aircraft.wing.root_thickness:.2f} (Ref: {ref_aircraft.wing_root_thickness:.2f})"
     )
     print(
         f"Fuselage (L x W x H):        {aircraft.fuselage_length:.2f} x {aircraft.fuselage_width:.2f} x {aircraft.fuselage_height:.2f}"
@@ -308,8 +312,8 @@ def plot_aircraft_geometry(
         label=f"Do 228 Wing (b = {b_ref:.1f}, S = {ref_aircraft.data.dimensions.wingArea:.1f})",
     )
 
-    b_el = aircraft.wingspan
-    c_el = aircraft.mean_aerodynamic_chord
+    b_el = aircraft.wing.span
+    c_el = aircraft.wing.mean_aerodynamic_chord
     x_w_el_le = x_qc - 0.25 * c_el
     x_w_el_te = x_w_el_le + c_el
     ax1.fill(
@@ -319,7 +323,7 @@ def plot_aircraft_geometry(
         alpha=0.35,
         edgecolor="#1e8449",
         lw=2.5,
-        label=f"Electric Wing (b = {b_el:.1f}, S = {aircraft.wing_area:.1f})",
+        label=f"Electric Wing (b = {b_el:.1f}, S = {aircraft.wing.area:.1f})",
     )
 
     b_max = aircraft.design.aerodynamics.maxWingSpan.si
@@ -392,10 +396,10 @@ def plot_aircraft_geometry(
         ref_aircraft.data.dimensions.verticalTailArea.si,
     ]
     el_vals = [
-        aircraft.wing_area,
-        aircraft.wingspan,
-        aircraft.aspect_ratio,
-        aircraft.mean_aerodynamic_chord,
+        aircraft.wing.area,
+        aircraft.wing.span,
+        aircraft.wing.aspect_ratio,
+        aircraft.wing.mean_aerodynamic_chord,
         aircraft.horizontal_tail_area,
         aircraft.vertical_tail_area,
     ]

@@ -289,6 +289,46 @@ def calc_zero_lift_drag_coefficient(
     return (total_drag_area / s_ref) + c_w_misc
 
 
+def calc_wing_zero_lift_drag_coefficient(
+    velocity: SiValue,
+    altitude: SiValue,
+    mean_aerodynamic_chord: SiValue,
+    rel_thickness: float,
+    sweep_deg: float = 0.0,
+    x_d_over_l: float = 0.35,
+    interference_factor: float = 1.0,
+    k_roughness: SiValue = SiValue(6.34e-6, "m"),
+) -> float:
+    """Calculates wing zero-lift drag coefficient c_W0,wing = 2 * c_f * FF_wing * IF_wing [Strohmayer - Flugzeugentwurf 2 | p. 88] [-].
+
+    Args:
+        velocity: True airspeed (TAS) [m/s].
+        altitude: Flight altitude [m].
+        mean_aerodynamic_chord: Mean aerodynamic chord c_mu [m].
+        rel_thickness: Relative airfoil thickness t/c [-].
+        sweep_deg: Sweep angle at maximum thickness / half-chord line [deg]. Defaults to 0.0.
+        x_d_over_l: Chordwise location of maximum thickness (x/c)_tmax [-]. Defaults to 0.35.
+        interference_factor: Wing interference factor IF_wing [-]. Defaults to 1.0.
+        k_roughness: Equivalent sand grain surface roughness [m]. Defaults to 6.34e-6 m (smooth paint).
+
+    Returns:
+        Wing zero-lift drag coefficient c_W0,wing [-].
+    """
+    mach = calc_mach_number(velocity, altitude)
+    re_wing = calc_reynolds_number(velocity, mean_aerodynamic_chord, altitude)
+    re_eff = calc_effective_reynolds_number(
+        re_wing, mean_aerodynamic_chord, k_roughness, mach
+    )
+    cf_wing = calc_cf_flat_plate_turbulent(re_eff, mach)
+    ff_wing = calc_form_factor_wing(
+        d_over_l=rel_thickness,
+        x_d_over_l=x_d_over_l,
+        mach=mach,
+        sweep_d_max_deg=sweep_deg,
+    )
+    return 2.0 * cf_wing * ff_wing * interference_factor
+
+
 if __name__ == "__main__":
     from data import load_reference_aircraft_data
     from formulas.geometry import calc_mean_aerodynamic_chord
@@ -301,7 +341,7 @@ if __name__ == "__main__":
     )
     d_fus = (ref.dimensions.fuselageWidth.si + ref.dimensions.fuselageHeight.si) / 2.0
     l_d_fus = ref.dimensions.fuselageLength.si / d_fus
-    t_over_c = ref.assumptions.wingRootThickness.si / l_ex
+    t_over_c = ref.assumptions.relWingThickness
     sweep_deg = ref.assumptions.wingSweepHalfChord
 
     v_cruise = ref.mission.cruiseSpeedTAS.si

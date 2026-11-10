@@ -5,23 +5,19 @@ import math
 from constants import GRAVITY
 from data import Constraints, DesignParameters, SiValue
 from formulas import (
-    calc_aspect_ratio,
-    calc_cruise_lift_coefficient,
     calc_electric_range,
     calc_empennage_mass,
     calc_fuselage_mass,
     calc_horizontal_tail_area,
     calc_landing_gear_mass,
-    calc_mean_aerodynamic_chord,
     calc_pylons_mass,
     calc_systems_mass,
     calc_vertical_tail_area,
-    calc_wing_mass,
-    calc_wingspan,
 )
 from fuel_fractions import MissionEnergyCalculator, ReferenceMissionCalculator
 from reference_aircraft import ReferenceAircraft
 from sizing_diagram import SizingDiagram
+from wing_design import WingDesign
 
 
 class BatteryAircraft:
@@ -48,23 +44,15 @@ class BatteryAircraft:
         return self.design.propulsion.etaElectric
 
     @property
-    def cruise_lift_coefficient(self) -> float:
-        """Cruise lift coefficient C_L = (m_0 / S) * g / q [-]."""
-        return calc_cruise_lift_coefficient(
+    def wing(self) -> WingDesign:
+        """Wing and aerodynamic design calculator bound to current aircraft state."""
+        return WingDesign(
+            self.constraints,
+            self.design,
+            self.ref,
+            self.mtom,
             self.wing_loading_design,
-            self.design.mission.cruiseSpeedTAS.si,
-            self.design.mission.cruiseAltitude.si,
         )
-
-    @property
-    def cruise_drag_coefficient(self) -> float:
-        """Cruise drag coefficient C_D interpolated from the polar [-]."""
-        return self.ref.drag_coefficient_from_polar(self.cruise_lift_coefficient)
-
-    @property
-    def lift_to_drag_cruise(self) -> float:
-        """Cruise lift-to-drag ratio L/D evaluated from the polar at current cruise speed [-]."""
-        return self.ref.lift_to_drag_from_polar(self.cruise_lift_coefficient)
 
     # --------------------------------------------------------------------------
     # Fixed Operational & Payload Masses
@@ -117,35 +105,6 @@ class BatteryAircraft:
         ).design_thrust_loading
 
     @property
-    def wing_area(self) -> SiValue:
-        """Wing reference area S_W [m^2]."""
-        constraint_mtom = self.constraints.performance.takeOffMassMax.si
-        mtom = self.mtom if self.mtom < constraint_mtom else constraint_mtom
-        return SiValue(mtom / self.wing_loading_design, "m^2")
-
-    @property
-    def wingspan(self) -> SiValue:
-        """Wingspan b_W [m], constrained to maximum allowable span."""
-        b_s = calc_wingspan(self.wing_area, self.design.aerodynamics.aspectRatio)
-        return min(b_s, self.design.aerodynamics.maxWingSpan.si)
-
-    @property
-    def aspect_ratio(self) -> float:
-        """Effective wing aspect ratio b_W^2 / S_W [-]."""
-        return calc_aspect_ratio(self.wingspan, self.wing_area)
-
-    @property
-    def mean_aerodynamic_chord(self) -> SiValue:
-        """Mean aerodynamic chord c_mu [m]."""
-        return calc_mean_aerodynamic_chord(self.wing_area, self.wingspan)
-
-    @property
-    def wing_root_thickness(self) -> SiValue:
-        """Wing thickness at root t_root = c_mu * rel_thickness [m]."""
-        rel_t = self.design.aerodynamics.relWingThickness.value
-        return SiValue(self.mean_aerodynamic_chord * rel_t, "m")
-
-    @property
     def fuselage_length(self) -> SiValue:
         """Fuselage length [m] (adopted from 19-pax reference aircraft)."""
         return self.ref.data.dimensions.fuselageLength.si
@@ -169,7 +128,7 @@ class BatteryAircraft:
         )
         r_h = self.ref.horizontal_tail_lever_arm.si
         return calc_horizontal_tail_area(
-            c_ht, r_h, self.wing_area, self.mean_aerodynamic_chord
+            c_ht, r_h, self.wing.area, self.wing.mean_aerodynamic_chord
         )
 
     @property
@@ -177,7 +136,7 @@ class BatteryAircraft:
         """Vertical tailplane area S_VTP scaled via volume coefficient [m^2]."""
         c_vt = self.ref.vertical_tail_volume_coefficient
         r_v = self.ref.vertical_tail_lever_arm.si
-        return calc_vertical_tail_area(c_vt, r_v, self.wing_area, self.wingspan)
+        return calc_vertical_tail_area(c_vt, r_v, self.wing.area, self.wing.span)
 
     @property
     def total_takeoff_thrust(self) -> SiValue:
@@ -200,15 +159,7 @@ class BatteryAircraft:
     @property
     def m_wing(self) -> SiValue:
         """Calibrated wing mass [kg]."""
-        raw = calc_wing_mass(
-            mzfm=self.mtom,
-            b_s=self.wingspan,
-            n_ult=self.design.assumptions.limitLoad * 1.5,
-            d_root=self.mean_aerodynamic_chord,
-            s_w=self.wing_area,
-            delta_m_F=self.design.assumptions.wingMassPenaltyFactor.value,
-        )
-        return SiValue(raw * self.ref.wing_calibration_factor, "kg")
+        return self.wing.mass
 
     @property
     def m_fuselage(self) -> SiValue:
@@ -313,7 +264,7 @@ class BatteryAircraft:
         return calc_electric_range(
             self.battery_pack_energy_density,
             self.eta_electric,
-            self.lift_to_drag_cruise,
+            self.wing.lift_to_drag_cruise,
             self.m_battery,
             self.mtom,
         )
@@ -326,7 +277,7 @@ class BatteryAircraft:
             self.design,
             self.ref_mission,
             self.mtom,
-            lift_to_drag_cruise=self.lift_to_drag_cruise,
+            lift_to_drag_cruise=self.wing.lift_to_drag_cruise,
         )
 
     def calc_required_battery_mass(self) -> SiValue:

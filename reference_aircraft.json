@@ -59,7 +59,7 @@
     // fitted from reference drag polar (see src/verification/polar_oswald.py)
     "oswaldFactor": [0.9087, ""],
     // 16% maximum thickness
-    "wingRootThickness": [0.33, "m"],
+    "relWingThickness": [0.16, ""],
     // rectangular wing
     "wingSweepHalfChord": [0.0, "deg"],
     // 2 engines (-5%) and no landing gear on wing (-5%)

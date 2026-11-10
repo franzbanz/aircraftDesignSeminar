@@ -66,7 +66,7 @@ class ReferenceAssumptionsParameters:
     limitLoad: UnitValue
     maxTakeOffLiftCoefficient: UnitValue
     oswaldFactor: UnitValue
-    wingRootThickness: UnitValue
+    relWingThickness: UnitValue
     wingSweepHalfChord: UnitValue
     wingMassPenaltyFactor: UnitValue
     fuselageMassPenaltyFactor: UnitValue

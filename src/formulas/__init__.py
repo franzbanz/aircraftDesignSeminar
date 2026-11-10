@@ -14,6 +14,7 @@ from formulas.aerodynamics import (
     calc_form_factor_wing,
     calc_mach_number,
     calc_reynolds_number,
+    calc_wing_zero_lift_drag_coefficient,
     calc_zero_lift_drag_coefficient,
 )
 from formulas.breguet import (
@@ -61,6 +62,7 @@ __all__ = [
     "calc_mach_number",
     "calc_reynolds_number",
     "calc_component_drag_area",
+    "calc_wing_zero_lift_drag_coefficient",
     "calc_zero_lift_drag_coefficient",
     # Mass estimation
     "calc_wing_mass",

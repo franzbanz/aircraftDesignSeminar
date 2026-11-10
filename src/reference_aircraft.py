@@ -11,12 +11,8 @@ from data import SiValue
 from data.loader import load_reference_aircraft_data
 from data.reference_aircraft_data import ReferenceAircraftData
 from formulas.aerodynamics import (
-    calc_cf_flat_plate_turbulent,
     calc_cruise_lift_coefficient,
-    calc_effective_reynolds_number,
-    calc_form_factor_wing,
-    calc_mach_number,
-    calc_reynolds_number,
+    calc_wing_zero_lift_drag_coefficient,
 )
 from formulas.geometry import (
     calc_aspect_ratio,
@@ -52,6 +48,14 @@ class ReferenceAircraft:
         """Mean aerodynamic chord c_mu [m]."""
         return calc_mean_aerodynamic_chord(
             self.data.dimensions.wingArea.si, self.data.dimensions.wingspan.si
+        )
+
+    @property
+    def wing_root_thickness(self) -> SiValue:
+        """Wing thickness at root t_root = c_mu * rel_thickness [m]."""
+        return SiValue(
+            self.mean_aerodynamic_chord * self.data.assumptions.relWingThickness,
+            "m",
         )
 
     @property
@@ -147,24 +151,13 @@ class ReferenceAircraft:
     @property
     def wing_zero_lift_drag_coefficient(self) -> float:
         """Wing zero-lift drag coefficient c_W0,wing [-]."""
-        v_cruise = self.data.mission.cruiseSpeedTAS.si
-        h_cruise = self.data.mission.cruiseAltitude.si
-        c_mu = self.mean_aerodynamic_chord
-        mach_cruise = calc_mach_number(v_cruise, h_cruise)
-        re_wing = calc_reynolds_number(v_cruise, c_mu, h_cruise)
-        k_roughness = SiValue(6.34e-6, "m")
-        re_eff = calc_effective_reynolds_number(re_wing, c_mu, k_roughness, mach_cruise)
-        cf_wing = calc_cf_flat_plate_turbulent(re_eff, mach_cruise)
-        t_over_c = self.data.assumptions.wingRootThickness.si / c_mu
-        sweep_deg = self.data.assumptions.wingSweepHalfChord
-        ff_wing = calc_form_factor_wing(
-            d_over_l=t_over_c,
-            x_d_over_l=0.35,
-            mach=mach_cruise,
-            sweep_d_max_deg=sweep_deg,
+        return calc_wing_zero_lift_drag_coefficient(
+            velocity=self.data.mission.cruiseSpeedTAS.si,
+            altitude=self.data.mission.cruiseAltitude.si,
+            mean_aerodynamic_chord=self.mean_aerodynamic_chord,
+            rel_thickness=self.data.assumptions.relWingThickness,
+            sweep_deg=self.data.assumptions.wingSweepHalfChord,
         )
-        if_wing = 1.0
-        return 2.0 * cf_wing * ff_wing * if_wing
 
     @property
     def wing_estimated_mass(self) -> SiValue:
@@ -173,7 +166,7 @@ class ReferenceAircraft:
             self.data.mass.zeroFuelMassMax.si,
             self.structural_wingspan,
             self.ultimate_load_factor,
-            self.data.assumptions.wingRootThickness.si,
+            self.wing_root_thickness,
             self.data.dimensions.wingArea.si,
             self.data.assumptions.wingMassPenaltyFactor,
         )
