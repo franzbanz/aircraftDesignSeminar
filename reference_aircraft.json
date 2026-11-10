@@ -13,7 +13,8 @@
     "engine": [585, "kg"],
     "systems": [675, "kg"],
     "furnishings": [270, "kg"],
-    "operatorItems": [435, "kg"]
+    "operatorItems": [435, "kg"],
+    "payload": [1710, "kg"]
   },
   "dimensions": {
     "wingArea": [32.0, "m^2"],

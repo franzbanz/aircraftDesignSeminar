@@ -253,6 +253,7 @@ def print_reference_aircraft(ref: ReferenceAircraft) -> None:
     print(f"MTOM:                            {ref.data.mass.takeOffMassMax}")
     print(f"MLM:                             {ref.data.mass.landingMassMax}")
     print(f"MZFM:                            {ref.data.mass.zeroFuelMassMax}")
+    print(f"Payload:                         {ref.data.mass.payload}")
     print(f"Wing area (S_W):                 {ref.data.dimensions.wingArea}")
     print(f"Wingspan (b_W):                  {ref.data.dimensions.wingspan}")
     print(f"Fuselage length (l_R):           {ref.data.dimensions.fuselageLength}")

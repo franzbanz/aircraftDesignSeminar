@@ -27,6 +27,7 @@ class ReferenceMassParameters:
     systems: UnitValue
     furnishings: UnitValue
     operatorItems: UnitValue
+    payload: UnitValue
 
     @property
     def empennage(self) -> UnitValue:

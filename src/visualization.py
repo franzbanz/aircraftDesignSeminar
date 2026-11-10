@@ -54,7 +54,7 @@ def plot_mass_breakdown(
     ref_ops = ref_aircraft.data.mass.operatorItems.si
     el_ops = aircraft.m_operator_items
 
-    ref_pay = 19 * 90.0  # 1710 kg
+    ref_pay = ref_aircraft.data.mass.payload
     el_pay = aircraft.m_payload
 
     ref_energy = ref_aircraft.data.fuel.total.si
@@ -378,7 +378,7 @@ def plot_payload_range(aircraft: BatteryAircraft) -> None:
     """Plots Payload-Range diagram for the electric aircraft."""
     pax_max = 19
     pax_weight = 90.0  # kg
-    nominal_payload = pax_max * pax_weight  # 1710 kg
+    nominal_payload = aircraft.m_payload
     mtom = aircraft.mtom
     nominal_range_nm = aircraft.range.to("NM")
 

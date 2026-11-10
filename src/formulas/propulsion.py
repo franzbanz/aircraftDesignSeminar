@@ -24,7 +24,7 @@ def calc_thrust_loading_from_power(
     Returns:
         Available thrust-to-weight ratio T/G [-].
     """
-    return float((power.si * eta_prop) / (mtom.si * GRAVITY.si * speed.si))
+    return (power * eta_prop) / (mtom * GRAVITY * speed)
 
 
 def calc_cruise_thrust_and_power(
@@ -48,6 +48,6 @@ def calc_cruise_thrust_and_power(
     Returns:
         Tuple of (required cruise thrust [N], required mechanical shaft power [W]).
     """
-    thrust = SiValue((mtom.si * GRAVITY.si) / lift_to_drag, "N")
-    power = SiValue((thrust.si * speed.si) / eta_prop, "W")
+    thrust = SiValue((mtom * GRAVITY) / lift_to_drag, "N")
+    power = SiValue((thrust * speed) / eta_prop, "W")
     return thrust, power

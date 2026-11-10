@@ -29,7 +29,7 @@ from formulas.geometry import (
     calc_mean_aerodynamic_chord,
     calc_vertical_tail_area,
     calc_vertical_tail_volume_coefficient,
-    wing_span,
+    calc_wingspan,
 )
 from formulas.mass_formulas import (
     calc_empennage_mass,
@@ -72,7 +72,7 @@ __all__ = [
     "calc_vertical_tail_area",
     "calc_horizontal_tail_volume_coefficient",
     "calc_vertical_tail_volume_coefficient",
-    "wing_span",
+    "calc_wingspan",
     # Conventional & Electric Breguet
     "calc_breguet_range",
     "calc_breguet_fuel_mass_from_range",

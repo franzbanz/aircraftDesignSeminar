@@ -16,7 +16,7 @@ from formulas import (
     calc_systems_mass,
     calc_vertical_tail_area,
     calc_wing_mass,
-    wing_span,
+    calc_wingspan,
 )
 from fuel_fractions import MissionEnergyCalculator, ReferenceMissionCalculator
 from reference_aircraft import ReferenceAircraft
@@ -102,8 +102,8 @@ class BatteryAircraft:
     @property
     def wingspan(self) -> SiValue:
         """Wingspan b_W [m], constrained to maximum allowable span."""
-        b_s = wing_span(self.wing_area, self.design.aerodynamics.aspectRatio)
-        return SiValue(min(b_s, self.design.aerodynamics.maxWingSpan.si), "m")
+        b_s = calc_wingspan(self.wing_area, self.design.aerodynamics.aspectRatio)
+        return min(b_s, self.design.aerodynamics.maxWingSpan.si)
 
     @property
     def aspect_ratio(self) -> float:
