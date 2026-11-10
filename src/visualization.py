@@ -11,7 +11,7 @@ from sizing_diagram import SizingDiagram
 
 if TYPE_CHECKING:
     from aircraft import BatteryAircraft
-    from data import ReferenceAircraft
+    from reference_aircraft import ReferenceAircraft
 
 
 def plot_sizing_diagram() -> None:
@@ -32,27 +32,27 @@ def plot_mass_breakdown(
     )
 
     ref_struct = (
-        ref_aircraft.mass.wing.si
-        + ref_aircraft.mass.fuselage.si
-        + ref_aircraft.mass.landingGear.si
-        + ref_aircraft.mass.empennage.si
-        + ref_aircraft.mass.pylons.si
+        ref_aircraft.data.mass.wing.si
+        + ref_aircraft.data.mass.fuselage.si
+        + ref_aircraft.data.mass.landingGear.si
+        + ref_aircraft.data.mass.empennage.si
+        + ref_aircraft.data.mass.pylons.si
     )
     el_struct = aircraft.m_structure
 
-    ref_prop = ref_aircraft.mass.engine.si
+    ref_prop = ref_aircraft.data.mass.engine.si
     el_prop = aircraft.m_engine
 
-    ref_sys = ref_aircraft.mass.systems.si + ref_aircraft.mass.furnishings.si
+    ref_sys = ref_aircraft.data.mass.systems.si + ref_aircraft.data.mass.furnishings.si
     el_sys = aircraft.m_systems + aircraft.m_furnishings
 
-    ref_ops = ref_aircraft.mass.operatorItems.si
+    ref_ops = ref_aircraft.data.mass.operatorItems.si
     el_ops = aircraft.m_operator_items
 
     ref_pay = 19 * 90.0  # 1710 kg
     el_pay = aircraft.m_payload
 
-    ref_energy = ref_aircraft.fuel.total.si
+    ref_energy = ref_aircraft.data.fuel.total.si
     el_energy = aircraft.m_battery
 
     ref_total = ref_struct + ref_prop + ref_sys + ref_ops + ref_pay + ref_energy
@@ -137,11 +137,11 @@ def plot_mass_breakdown(
     # Detailed structural breakdown (Subplot 2)
     struct_parts = ["Wing", "Fuselage", "Landing Gear", "Empennage", "Pylons"]
     ref_parts = [
-        ref_aircraft.mass.wing.si,
-        ref_aircraft.mass.fuselage.si,
-        ref_aircraft.mass.landingGear.si,
-        ref_aircraft.mass.empennage.si,
-        ref_aircraft.mass.pylons.si,
+        ref_aircraft.data.mass.wing.si,
+        ref_aircraft.data.mass.fuselage.si,
+        ref_aircraft.data.mass.landingGear.si,
+        ref_aircraft.data.mass.empennage.si,
+        ref_aircraft.data.mass.pylons.si,
     ]
     el_parts = [
         aircraft.m_wing,
@@ -215,9 +215,9 @@ def plot_mission_energy(
     if variant == "simple":
         # Simpler approach matching aircraft.calc_required_battery_mass():
         range_fuel = (
-            ref_aircraft.fuel.climb.si
-            + ref_aircraft.fuel.cruise.si
-            + ref_aircraft.fuel.descent.si
+            ref_aircraft.data.fuel.climb.si
+            + ref_aircraft.data.fuel.cruise.si
+            + ref_aircraft.data.fuel.descent.si
         )
         range_energy = aircraft.mission_energy.cruise_energy(
             aircraft.design.mission.range.si
@@ -228,37 +228,38 @@ def plot_mission_energy(
         phases = [
             (
                 "Taxi-out & Take-off (24 kg fuel)",
-                (ref_aircraft.fuel.taxiOutAndTakeOff.si * energy_per_kg) / 3.6e6,
+                (ref_aircraft.data.fuel.taxiOutAndTakeOff.si * energy_per_kg) / 3.6e6,
                 "#3498db",
                 "Trip",
             ),
             (
                 "Climb (36 kg fuel)",
-                (ref_aircraft.fuel.climb.si * energy_per_kg) / 3.6e6,
+                (ref_aircraft.data.fuel.climb.si * energy_per_kg) / 3.6e6,
                 "#2980b9",
                 "Trip",
             ),
             (
                 "Cruise (78 kg fuel, 100 NM)",
-                (ref_aircraft.fuel.cruise.si * energy_per_kg) / 3.6e6,
+                (ref_aircraft.data.fuel.cruise.si * energy_per_kg) / 3.6e6,
                 "#1abc9c",
                 "Trip",
             ),
             (
                 "Descent (9 kg fuel)",
-                (ref_aircraft.fuel.descent.si * energy_per_kg) / 3.6e6,
+                (ref_aircraft.data.fuel.descent.si * energy_per_kg) / 3.6e6,
                 "#16a085",
                 "Trip",
             ),
             (
                 "Approach & Landing (17 kg fuel)",
-                (ref_aircraft.fuel.approachLandingAndTaxiIn.si * energy_per_kg) / 3.6e6,
+                (ref_aircraft.data.fuel.approachLandingAndTaxiIn.si * energy_per_kg)
+                / 3.6e6,
                 "#27ae60",
                 "Trip",
             ),
             (
                 "Mission Reserves (186 kg fuel)",
-                (ref_aircraft.fuel.reserve.si * energy_per_kg) / 3.6e6,
+                (ref_aircraft.data.fuel.reserve.si * energy_per_kg) / 3.6e6,
                 "#e67e22",
                 "Reserve",
             ),
@@ -461,8 +462,8 @@ def plot_aircraft_geometry(
     x_qc = 6.0
 
     # Reference Aircraft (Do 228) Wing
-    b_ref = ref_aircraft.dimensions.wingspan.si
-    c_ref = ref_aircraft.calculatedValues.meanAerodynamicChord.si
+    b_ref = ref_aircraft.data.dimensions.wingspan.si
+    c_ref = ref_aircraft.mean_aerodynamic_chord.si
     x_w_ref_le = x_qc - 0.25 * c_ref
     x_w_ref_te = x_w_ref_le + c_ref
     ax1.fill(
@@ -473,7 +474,7 @@ def plot_aircraft_geometry(
         edgecolor="#2980b9",
         lw=2,
         ls="--",
-        label=f"Do 228 Wing (b = {b_ref:.1f} m, S = {ref_aircraft.dimensions.wingArea.value:.1f} m²)",
+        label=f"Do 228 Wing (b = {b_ref:.1f} m, S = {ref_aircraft.data.dimensions.wingArea.value:.1f} m²)",
     )
 
     # Electric Aircraft Wing
@@ -500,7 +501,7 @@ def plot_aircraft_geometry(
 
     # Horizontal Tailplane (quarter-chord around x = 15.0 m)
     x_qc_ht = 15.0
-    s_ht_ref = ref_aircraft.dimensions.horizontalTailArea.si
+    s_ht_ref = ref_aircraft.data.dimensions.horizontalTailArea.si
     b_ht_ref = (s_ht_ref * 4.0) ** 0.5  # assuming AR ~ 4.0
     c_ht_ref = s_ht_ref / b_ht_ref
     ax1.fill(
@@ -556,12 +557,12 @@ def plot_aircraft_geometry(
         "VTP Area [m²]",
     ]
     ref_vals = [
-        ref_aircraft.dimensions.wingArea.si,
-        ref_aircraft.dimensions.wingspan.si,
-        ref_aircraft.calculatedValues.aspectRatio.value,
-        ref_aircraft.calculatedValues.meanAerodynamicChord.si,
-        ref_aircraft.dimensions.horizontalTailArea.si,
-        ref_aircraft.dimensions.verticalTailArea.si,
+        ref_aircraft.data.dimensions.wingArea.si,
+        ref_aircraft.data.dimensions.wingspan.si,
+        ref_aircraft.aspect_ratio,
+        ref_aircraft.mean_aerodynamic_chord.si,
+        ref_aircraft.data.dimensions.horizontalTailArea.si,
+        ref_aircraft.data.dimensions.verticalTailArea.si,
     ]
     el_vals = [
         aircraft.wing_area,
@@ -687,7 +688,8 @@ def interactive_plot_menu(
 
 if __name__ == "__main__":
     from aircraft import BatteryAircraft
-    from data import load_constraints, load_design_parameters, load_reference_aircraft
+    from data import load_constraints, load_design_parameters
+    from reference_aircraft import load_reference_aircraft
 
     constraints = load_constraints()
     ref_aircraft = load_reference_aircraft()

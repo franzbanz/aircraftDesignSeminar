@@ -30,7 +30,7 @@ from data.design_parameters_data import (
 )
 from data.reference_aircraft_data import (
     ReferenceAerodynamicParameters,
-    ReferenceAircraft,
+    ReferenceAircraftData,
     ReferenceAssumptionsParameters,
     ReferenceDimensionsParameters,
     ReferenceFuelParameters,
@@ -219,16 +219,16 @@ def load_design_parameters(path: Path | str | None = None) -> DesignParameters:
     )
 
 
-def load_reference_aircraft(
+def load_reference_aircraft_data(
     path: Path | str | None = None,
-) -> ReferenceAircraft:
-    """Loads reference aircraft parameters from JSON and computes derived ``calculatedValues``.
+) -> ReferenceAircraftData:
+    """Loads reference aircraft parameters from JSON into a typed ``ReferenceAircraftData`` dataclass.
 
     Args:
         path: Optional explicit path to the reference aircraft JSON file.
 
     Returns:
-        Populated ``ReferenceAircraft`` instance.
+        Populated ``ReferenceAircraftData`` instance.
     """
     file_path = Path(path) if path else _find_reference_file()
     data = _load_json_with_comments(file_path)
@@ -255,19 +255,7 @@ def load_reference_aircraft(
         ReferenceFuelParameters, _parameter_group(data["fuel"])
     )
 
-    from reference_aircraft_calculation import calc_reference_aircraft_values
-
-    calculatedValues = calc_reference_aircraft_values(
-        mass=mass,
-        dimensions=dimensions,
-        mission=mission,
-        assumptions=assumptions,
-        propulsion=propulsion,
-        aerodynamics=aerodynamics,
-        fuel=fuel,
-    )
-
-    return ReferenceAircraft(
+    return ReferenceAircraftData(
         mass=mass,
         dimensions=dimensions,
         mission=mission,
@@ -275,5 +263,4 @@ def load_reference_aircraft(
         aerodynamics=aerodynamics,
         propulsion=propulsion,
         fuel=fuel,
-        calculatedValues=calculatedValues,
     )

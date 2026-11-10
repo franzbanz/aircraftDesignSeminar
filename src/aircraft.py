@@ -3,7 +3,7 @@
 import math
 
 from constants import GRAVITY
-from data import Constraints, DesignParameters, ReferenceAircraft, SiValue
+from data import Constraints, DesignParameters, SiValue
 from formulas import (
     calc_aspect_ratio,
     calc_electric_range,
@@ -19,6 +19,7 @@ from formulas import (
     wing_span,
 )
 from fuel_fractions import MissionEnergyCalculator, ReferenceMissionCalculator
+from reference_aircraft import ReferenceAircraft
 from sizing_diagram import SizingDiagram
 
 
@@ -35,7 +36,7 @@ class BatteryAircraft:
         self.constraints = constraints
         self.design = design
         self.ref = ref
-        self.ref_mission = ReferenceMissionCalculator(constraints, ref)
+        self.ref_mission = ReferenceMissionCalculator(constraints, ref.data)
         self.mtom: SiValue = (
             mtom if mtom is not None else design.initialSizing.maximumTakeOffMass.si
         )
@@ -61,12 +62,12 @@ class BatteryAircraft:
     @property
     def m_operator_items(self) -> SiValue:
         """Operator items mass [kg] (adopted from reference aircraft)."""
-        return self.ref.mass.operatorItems.si
+        return self.ref.data.mass.operatorItems.si
 
     @property
     def m_furnishings(self) -> SiValue:
         """Cabin furnishings mass [kg] (adopted from reference aircraft)."""
-        return self.ref.mass.furnishings.si
+        return self.ref.data.mass.furnishings.si
 
     @property
     def m_engine(self) -> SiValue:
@@ -123,24 +124,26 @@ class BatteryAircraft:
     @property
     def fuselage_length(self) -> SiValue:
         """Fuselage length [m] (adopted from 19-pax reference aircraft)."""
-        return self.ref.dimensions.fuselageLength.si
+        return self.ref.data.dimensions.fuselageLength.si
 
     @property
     def fuselage_width(self) -> SiValue:
         """Fuselage width [m]."""
-        return self.ref.dimensions.fuselageWidth.si
+        return self.ref.data.dimensions.fuselageWidth.si
 
     @property
     def fuselage_height(self) -> SiValue:
         """Fuselage height [m]."""
-        return self.ref.dimensions.fuselageHeight.si
+        return self.ref.data.dimensions.fuselageHeight.si
 
     @property
     def horizontal_tail_area(self) -> SiValue:
         """Horizontal tailplane area S_HTP scaled via volume coefficient [m^2]."""
-        c_ht = self.ref.calculatedValues.horizontalTailVolumeCoefficient
-        r_h = self.ref.calculatedValues.horizontalTailLeverArm.si
-        c_ht = min(c_ht, self.design.aerodynamics.maxHorizontalVolumeCoefficient)
+        c_ht = min(
+            self.ref.horizontal_tail_volume_coefficient,
+            self.design.aerodynamics.maxHorizontalVolumeCoefficient,
+        )
+        r_h = self.ref.horizontal_tail_lever_arm.si
         return calc_horizontal_tail_area(
             c_ht, r_h, self.wing_area, self.mean_aerodynamic_chord
         )
@@ -148,8 +151,8 @@ class BatteryAircraft:
     @property
     def vertical_tail_area(self) -> SiValue:
         """Vertical tailplane area S_VTP scaled via volume coefficient [m^2]."""
-        c_vt = self.ref.calculatedValues.verticalTailVolumeCoefficient
-        r_v = self.ref.calculatedValues.verticalTailLeverArm.si
+        c_vt = self.ref.vertical_tail_volume_coefficient
+        r_v = self.ref.vertical_tail_lever_arm.si
         return calc_vertical_tail_area(c_vt, r_v, self.wing_area, self.wingspan)
 
     @property
@@ -181,28 +184,26 @@ class BatteryAircraft:
             s_w=self.wing_area,
             delta_m_F=self.design.assumptions.wingMassPenaltyFactor.value,
         )
-        return SiValue(raw * self.ref.calculatedValues.wingCalibrationFactor, "kg")
+        return SiValue(raw * self.ref.wing_calibration_factor, "kg")
 
     @property
     def m_fuselage(self) -> SiValue:
         """Calibrated fuselage mass [kg]."""
         v_D = SiValue(1.25 * self.design.mission.cruiseSpeedTAS.si, "m/s")
-        r_H = self.ref.calculatedValues.horizontalTailLeverArm.si
-        b_R = self.ref.dimensions.fuselageWidth.si
-        h_R = self.ref.dimensions.fuselageHeight.si
-        l_R = self.ref.dimensions.fuselageLength.si
-        delta_m_F = self.ref.assumptions.fuselageMassPenaltyFactor
+        r_H = self.ref.horizontal_tail_lever_arm.si
+        b_R = self.ref.data.dimensions.fuselageWidth.si
+        h_R = self.ref.data.dimensions.fuselageHeight.si
+        l_R = self.ref.data.dimensions.fuselageLength.si
+        delta_m_F = self.ref.data.assumptions.fuselageMassPenaltyFactor
         s_o = SiValue(math.pi * ((b_R + h_R) / 2.0) * l_R, "m^2")
         raw = calc_fuselage_mass(v_D, r_H, b_R, h_R, s_o, delta_m_F)
-        return SiValue(raw * self.ref.calculatedValues.fuselageCalibrationFactor, "kg")
+        return SiValue(raw * self.ref.fuselage_calibration_factor, "kg")
 
     @property
     def m_landing_gear(self) -> SiValue:
         """Calibrated landing gear mass [kg]."""
         raw = calc_landing_gear_mass(self.mtom)
-        return SiValue(
-            raw * self.ref.calculatedValues.landingGearCalibrationFactor, "kg"
-        )
+        return SiValue(raw * self.ref.landing_gear_calibration_factor, "kg")
 
     @property
     def m_empennage(self) -> SiValue:
@@ -211,7 +212,7 @@ class BatteryAircraft:
         raw = calc_empennage_mass(
             n_ult, self.horizontal_tail_area, self.vertical_tail_area
         )
-        return SiValue(raw * self.ref.calculatedValues.empennageCalibrationFactor, "kg")
+        return SiValue(raw * self.ref.empennage_calibration_factor, "kg")
 
     @property
     def m_pylons(self) -> SiValue:
@@ -222,7 +223,7 @@ class BatteryAircraft:
             "W",
         )
         raw = calc_pylons_mass(p_to)
-        return SiValue(raw * self.ref.calculatedValues.pylonsCalibrationFactor, "kg")
+        return SiValue(raw * self.ref.pylons_calibration_factor, "kg")
 
     @property
     def m_structure(self) -> SiValue:
@@ -244,9 +245,7 @@ class BatteryAircraft:
     def m_systems(self) -> SiValue:
         """Calibrated aircraft systems mass [kg]."""
         raw = calc_systems_mass(self.mtom)
-        return SiValue(
-            raw * self.ref.calculatedValues.systemsCalibrationFactor.value, "kg"
-        )
+        return SiValue(raw * self.ref.systems_calibration_factor, "kg")
 
     @property
     def m_empty(self) -> SiValue:
@@ -315,10 +314,14 @@ class BatteryAircraft:
         # return self.mission_energy.battery_pack_mass()
 
         # Simpler approach:
-        range_fuel = self.ref.fuel.climb + self.ref.fuel.cruise + self.ref.fuel.descent
+        range_fuel = (
+            self.ref.data.fuel.climb
+            + self.ref.data.fuel.cruise
+            + self.ref.data.fuel.descent
+        )
         range_energy = self.mission_energy.cruise_energy(self.design.mission.range.si)
         energy_per_kg = range_energy / range_fuel
-        e_mission = SiValue(energy_per_kg * self.ref.fuel.total, "J")
+        e_mission = SiValue(energy_per_kg * self.ref.data.fuel.total, "J")
         return self.mission_energy.battery_pack_mass(e_mission)
 
     def converge_mtom(

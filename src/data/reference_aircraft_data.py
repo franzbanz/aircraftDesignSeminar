@@ -1,7 +1,7 @@
-"""Dataclass definitions for the reference aircraft and its derived properties.
+"""Dataclass definitions for the reference aircraft parameters.
 
-Defines frozen dataclasses representing ``reference_aircraft.json`` sections
-as well as ``ReferenceCalculatedValues`` and the top-level ``ReferenceAircraft``.
+Defines frozen dataclasses representing the sections of ``reference_aircraft.json``
+and the top-level container ``ReferenceAircraft``.
 """
 
 from dataclasses import dataclass
@@ -139,46 +139,8 @@ class ReferenceFuelParameters:
 
 
 @dataclass(frozen=True)
-class ReferenceCalculatedValues:
-    """Values calculated/derived for the reference aircraft (not directly specified in JSON)."""
-
-    aspectRatio: UnitValue
-    meanAerodynamicChord: UnitValue
-    structuralWingspan: UnitValue
-    designDivingSpeed: UnitValue
-    ultimateLoadFactor: UnitValue
-    horizontalTailLeverArm: UnitValue
-    verticalTailLeverArm: UnitValue
-    horizontalTailVolumeCoefficient: UnitValue
-    verticalTailVolumeCoefficient: UnitValue
-
-    cruiseLiftCoefficient: UnitValue
-    zeroLiftDragCoefficient: UnitValue
-    wingZeroLiftDragCoefficient: UnitValue
-    inducedDragCoefficient: UnitValue
-
-    wingEstimatedMass: UnitValue
-    wingCalibrationFactor: UnitValue
-
-    landingGearEstimatedMass: UnitValue
-    landingGearCalibrationFactor: UnitValue
-
-    fuselageEstimatedMass: UnitValue
-    fuselageCalibrationFactor: UnitValue
-
-    empennageEstimatedMass: UnitValue
-    empennageCalibrationFactor: UnitValue
-
-    pylonsEstimatedMass: UnitValue
-    pylonsCalibrationFactor: UnitValue
-
-    systemsEstimatedMass: UnitValue
-    systemsCalibrationFactor: UnitValue
-
-
-@dataclass(frozen=True)
-class ReferenceAircraft:
-    """Top-level container for all reference aircraft data and derived values."""
+class ReferenceAircraftData:
+    """Top-level container for all reference aircraft data loaded from JSON."""
 
     mass: ReferenceMassParameters
     dimensions: ReferenceDimensionsParameters
@@ -187,4 +149,3 @@ class ReferenceAircraft:
     aerodynamics: ReferenceAerodynamicParameters
     propulsion: ReferencePropulsionParameters
     fuel: ReferenceFuelParameters
-    calculatedValues: ReferenceCalculatedValues

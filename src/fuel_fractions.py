@@ -3,11 +3,11 @@
 from data import (
     Constraints,
     DesignParameters,
-    ReferenceAircraft,
+    ReferenceAircraftData,
     SiValue,
     load_constraints,
     load_design_parameters,
-    load_reference_aircraft,
+    load_reference_aircraft_data,
 )
 from formulas import (
     calc_breguet_fuel_mass_from_endurance,
@@ -22,7 +22,7 @@ from formulas import (
 class ReferenceMissionCalculator:
     """Calculates reference turboprop (Do 228) mission energy, propulsion efficiency, and fuel masses."""
 
-    def __init__(self, constraints: Constraints, ref: ReferenceAircraft) -> None:
+    def __init__(self, constraints: Constraints, ref: ReferenceAircraftData) -> None:
         self.constraints = constraints
         self.ref = ref
 
@@ -43,7 +43,8 @@ class ReferenceMissionCalculator:
     def m_start_climb(self) -> SiValue:
         """Aircraft mass at brake-release / climb start after taxi-out [kg]."""
         return SiValue(
-            self.ref.fuel.referenceMass.si - self.ref.fuel.taxiOutAndTakeOff.si, "kg"
+            self.ref.fuel.referenceMass.si - self.ref.fuel.taxiOutAndTakeOff.si,
+            "kg",
         )
 
     @property
@@ -346,7 +347,9 @@ def print_mission_energy_breakdown(calc: MissionEnergyCalculator) -> None:
 
 if __name__ == "__main__":
     constraints = load_constraints()
-    ref_mission = ReferenceMissionCalculator(constraints, load_reference_aircraft())
+    ref_mission = ReferenceMissionCalculator(
+        constraints, load_reference_aircraft_data()
+    )
     calculator = MissionEnergyCalculator(
         constraints,
         load_design_parameters(),

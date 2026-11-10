@@ -5,18 +5,18 @@ from data.design_parameters_data import DesignParameters
 from data.loader import (
     load_constraints,
     load_design_parameters,
-    load_reference_aircraft,
+    load_reference_aircraft_data,
 )
-from data.reference_aircraft_data import ReferenceAircraft
+from data.reference_aircraft_data import ReferenceAircraftData
 from data.unit_value import SiValue, UnitValue
 
 __all__ = [
     "Constraints",
     "DesignParameters",
-    "ReferenceAircraft",
+    "ReferenceAircraftData",
     "SiValue",
     "UnitValue",
     "load_constraints",
     "load_design_parameters",
-    "load_reference_aircraft",
+    "load_reference_aircraft_data",
 ]

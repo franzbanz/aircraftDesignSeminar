@@ -257,9 +257,13 @@ def calc_electric_loiter_energy(
 
 
 if __name__ == "__main__":
-    from data import load_constraints, load_design_parameters, load_reference_aircraft
+    from data import (
+        load_constraints,
+        load_design_parameters,
+        load_reference_aircraft_data,
+    )
 
-    ref = load_reference_aircraft()
+    ref = load_reference_aircraft_data()
     des = load_design_parameters()
     con = load_constraints()
 

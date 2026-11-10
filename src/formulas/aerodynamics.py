@@ -257,12 +257,15 @@ def calc_zero_lift_drag_coefficient(
 
 
 if __name__ == "__main__":
-    from data import load_reference_aircraft
+    from data import load_reference_aircraft_data
+    from formulas.geometry import calc_mean_aerodynamic_chord
 
-    ref = load_reference_aircraft()
+    ref = load_reference_aircraft_data()
 
     s_ref_ex = ref.dimensions.wingArea.si
-    l_ex = ref.calculatedValues.meanAerodynamicChord.si
+    l_ex = calc_mean_aerodynamic_chord(
+        ref.dimensions.wingArea.si, ref.dimensions.wingspan.si
+    )
     d_fus = (ref.dimensions.fuselageWidth.si + ref.dimensions.fuselageHeight.si) / 2.0
     l_d_fus = ref.dimensions.fuselageLength.si / d_fus
     t_over_c = ref.assumptions.wingRootThickness.si / l_ex
