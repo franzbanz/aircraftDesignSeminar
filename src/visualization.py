@@ -7,6 +7,7 @@ from typing import TYPE_CHECKING, Literal
 import matplotlib.pyplot as plt
 import numpy as np
 
+from data import SiValue
 from sizing_diagram import SizingDiagram
 
 if TYPE_CHECKING:
@@ -31,20 +32,24 @@ def plot_mass_breakdown(
         1, 2, figsize=(13, 6.5), gridspec_kw={"width_ratios": [1.2, 1]}
     )
 
-    ref_struct = (
+    ref_struct = SiValue(
         ref_aircraft.data.mass.wing.si
         + ref_aircraft.data.mass.fuselage.si
         + ref_aircraft.data.mass.landingGear.si
         + ref_aircraft.data.mass.empennage.si
-        + ref_aircraft.data.mass.pylons.si
+        + ref_aircraft.data.mass.pylons.si,
+        "kg",
     )
     el_struct = aircraft.m_structure
 
     ref_prop = ref_aircraft.data.mass.engine.si
     el_prop = aircraft.m_engine
 
-    ref_sys = ref_aircraft.data.mass.systems.si + ref_aircraft.data.mass.furnishings.si
-    el_sys = aircraft.m_systems + aircraft.m_furnishings
+    ref_sys = SiValue(
+        ref_aircraft.data.mass.systems.si + ref_aircraft.data.mass.furnishings.si,
+        "kg",
+    )
+    el_sys = SiValue(aircraft.m_systems + aircraft.m_furnishings, "kg")
 
     ref_ops = ref_aircraft.data.mass.operatorItems.si
     el_ops = aircraft.m_operator_items
@@ -55,7 +60,10 @@ def plot_mass_breakdown(
     ref_energy = ref_aircraft.data.fuel.total.si
     el_energy = aircraft.m_battery
 
-    ref_total = ref_struct + ref_prop + ref_sys + ref_ops + ref_pay + ref_energy
+    ref_total = SiValue(
+        ref_struct + ref_prop + ref_sys + ref_ops + ref_pay + ref_energy,
+        "kg",
+    )
     el_total = aircraft.mtom
 
     categories = [
@@ -93,7 +101,7 @@ def plot_mass_breakdown(
             ax1.text(
                 x[0],
                 bottom_ref + v_ref / 2,
-                f"{v_ref:.0f} kg\n({pct_ref:.1f}%)",
+                f"{v_ref:.0f}\n({pct_ref:.1f}%)",
                 ha="center",
                 va="center",
                 color="white",
@@ -110,7 +118,7 @@ def plot_mass_breakdown(
             ax1.text(
                 x[1],
                 bottom_el + v_el / 2,
-                f"{v_el:.0f} kg\n({pct_el:.1f}%)",
+                f"{v_el:.0f}\n({pct_el:.1f}%)",
                 ha="center",
                 va="center",
                 color="white",
@@ -122,8 +130,8 @@ def plot_mass_breakdown(
     ax1.set_xticks(x)
     ax1.set_xticklabels(
         [
-            f"Dornier 228 (Ref)\nMTOM: {ref_total:.0f} kg",
-            f"Electric Aircraft\nMTOM: {el_total:.0f} kg",
+            f"Dornier 228 (Ref)\nMTOM: {ref_total:.0f}",
+            f"Electric Aircraft\nMTOM: {el_total:.0f}",
         ],
         fontsize=11,
         fontweight="bold",
@@ -174,11 +182,11 @@ def plot_mass_breakdown(
     )
 
     for i, (vr, ve) in enumerate(zip(ref_parts, el_parts)):
-        ax2.text(vr + 15, i + bar_h / 2, f"{vr:.0f} kg", va="center", fontsize=8)
+        ax2.text(vr + 15, i + bar_h / 2, f"{vr:.0f}", va="center", fontsize=8)
         ax2.text(
             ve + 15,
             i - bar_h / 2,
-            f"{ve:.0f} kg",
+            f"{ve:.0f}",
             va="center",
             fontsize=8,
             fontweight="bold",
@@ -357,7 +365,7 @@ def plot_mission_energy(
         textprops=dict(fontsize=10, fontweight="bold"),
     )
     ax2.set_title(
-        f"Total Mission Energy: {total_energy_kwh:.1f} kWh\n(Battery Mass: {aircraft.m_battery:.0f} kg)",
+        f"Total Mission Energy: {total_energy_kwh:.1f} kWh\n(Battery Mass: {aircraft.m_battery:.0f})",
         fontsize=11,
         fontweight="bold",
     )
@@ -397,11 +405,11 @@ def plot_payload_range(aircraft: BatteryAircraft) -> None:
         marker="*",
         markersize=15,
         color="#d35400",
-        label=f"Design Point ({nominal_range_nm:.1f} NM, {pax_max} PAX)",
+        label=f"Design Point ({nominal_range_nm:.1f}, {pax_max} PAX)",
     )
 
     ax1.annotate(
-        f"Design Point:\n{pax_max} PAX ({nominal_payload:.0f} kg)\n{nominal_range_nm:.1f} NM (incl. reserves)",
+        f"Design Point:\n{pax_max} PAX ({nominal_payload:.0f})\n{nominal_range_nm:.1f} (incl. reserves)",
         xy=(nominal_range_nm, nominal_payload),
         xytext=(nominal_range_nm - 40, nominal_payload - 450),
         arrowprops=dict(facecolor="#d35400", shrink=0.08, width=1.5, headwidth=7),
@@ -474,7 +482,7 @@ def plot_aircraft_geometry(
         edgecolor="#2980b9",
         lw=2,
         ls="--",
-        label=f"Do 228 Wing (b = {b_ref:.1f} m, S = {ref_aircraft.data.dimensions.wingArea.value:.1f} m²)",
+        label=f"Do 228 Wing (b = {b_ref:.1f}, S = {ref_aircraft.data.dimensions.wingArea:.1f})",
     )
 
     # Electric Aircraft Wing
@@ -489,13 +497,13 @@ def plot_aircraft_geometry(
         alpha=0.35,
         edgecolor="#1e8449",
         lw=2.5,
-        label=f"Electric Wing (b = {b_el:.1f} m, S = {aircraft.wing_area.value:.1f} m²)",
+        label=f"Electric Wing (b = {b_el:.1f}, S = {aircraft.wing_area:.1f})",
     )
 
     # CS-23 Maximum Wingspan constraint line (24 m)
     b_max = aircraft.design.aerodynamics.maxWingSpan.si
     ax1.axvline(
-        -b_max / 2, color="red", ls=":", lw=1.5, label=f"CS-23 Max Span ({b_max:.0f} m)"
+        -b_max / 2, color="red", ls=":", lw=1.5, label=f"CS-23 Max Span ({b_max:.0f})"
     )
     ax1.axvline(b_max / 2, color="red", ls=":", lw=1.5)
 
@@ -534,7 +542,7 @@ def plot_aircraft_geometry(
         alpha=0.35,
         edgecolor="#1e8449",
         lw=2,
-        label=f"Horizontal Tail (Do: {s_ht_ref:.1f} m² vs. El: {s_ht_el:.1f} m²)",
+        label=f"Horizontal Tail (Do: {s_ht_ref:.1f} vs. El: {s_ht_el:.1f})",
     )
 
     ax1.set_aspect("equal", "datalim")

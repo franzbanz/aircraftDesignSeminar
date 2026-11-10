@@ -1,6 +1,11 @@
 """Unit-aware numeric value and SI value types with automatic conversion capabilities."""
 
+import re
 from typing import Self
+
+_FORMAT_SPEC_RE = re.compile(
+    r"^(?P<align>(?:.[<>=^]|[<>=^]))?(?P<sign>[+\- ])?(?P<alt>#)?(?P<zero>0)?(?P<width>\d+)?(?P<grouping>[_,])?(?P<precision>\.\d+)?(?P<type>[a-zA-Z%])?$"
+)
 
 
 class UnitValue(float):
@@ -96,8 +101,11 @@ class UnitValue(float):
             value: Numeric value.
             unit: Physical unit string associated with the value.
         """
-        obj = super().__new__(cls, value)
-        obj._raw = value
+        raw = value._raw if isinstance(value, UnitValue) else value
+        if not unit and isinstance(value, UnitValue):
+            unit = value.unit
+        obj = super().__new__(cls, raw)
+        obj._raw = raw
         obj.unit = unit
         return obj
 
@@ -179,6 +187,38 @@ class UnitValue(float):
         """Returns a formatted string combining the value and unit (e.g., ``'8618 kg'``)."""
         return f"{self._raw} {self.unit}".strip() if self.unit else str(self._raw)
 
+    def __format__(self, format_spec: str) -> str:
+        """Formats the numeric value and appends the unit if present.
+
+        Supports standard float and integer format specifications (e.g. ``.1f``, ``.2f``,
+        ``>10.2f``) while properly appending the physical unit.
+        """
+        if not format_spec:
+            return str(self)
+        match = _FORMAT_SPEC_RE.match(format_spec)
+        if not match:
+            num = format(float(self), format_spec)
+            return f"{num} {self.unit}".strip() if self.unit else num
+        d = match.groupdict()
+        num_parts = [
+            d["sign"],
+            d["alt"],
+            d["zero"],
+            d["grouping"],
+            d["precision"],
+            d["type"],
+        ]
+        num_spec = "".join(p for p in num_parts if p)
+        try:
+            num = format(self._raw, num_spec) if num_spec else str(self._raw)
+        except ValueError:
+            num = format(float(self), num_spec) if num_spec else str(float(self))
+        combined = f"{num} {self.unit}".strip() if self.unit else str(num)
+        if d["width"] or d["align"]:
+            align_spec = f"{d['align'] or ''}{d['width'] or ''}s"
+            return format(combined, align_spec)
+        return combined
+
     def __repr__(self) -> str:
         """Returns the unambiguous developer representation of the UnitValue."""
         return f"{type(self).__name__}({self._raw}, {self.unit!r})"
@@ -195,6 +235,10 @@ class SiValue(UnitValue):
     """
 
     def __new__(cls, value: int | float, unit: str = "") -> Self:
+        if isinstance(value, UnitValue):
+            if not unit:
+                unit = value.unit
+            value = value._raw
         norm = unit.strip().lower()
         if norm:
             if norm in cls._TEMP_UNITS:

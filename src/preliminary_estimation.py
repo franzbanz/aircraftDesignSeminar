@@ -58,33 +58,33 @@ print(f"Range: {aircraft.range.to('NM')}")
 # ------------- Aircraft Dimensions & Geometry ------------------
 print("\n----- AIRCRAFT DIMENSIONS & GEOMETRY -----")
 print(
-    f"Wing Area (S_W):             {aircraft.wing_area:.2f} m^2 (Ref: {float(ref_aircraft.data.dimensions.wingArea):.2f} m^2)"
+    f"Wing Area (S_W):             {aircraft.wing_area:.2f} (Ref: {ref_aircraft.data.dimensions.wingArea:.2f})"
 )
 print(
-    f"Wingspan (b_W):              {aircraft.wingspan:.2f} m (Ref: {float(ref_aircraft.data.dimensions.wingspan):.2f} m, Max: {float(aircraft.design.aerodynamics.maxWingSpan):.2f} m)"
+    f"Wingspan (b_W):              {aircraft.wingspan:.2f} (Ref: {ref_aircraft.data.dimensions.wingspan:.2f}, Max: {aircraft.design.aerodynamics.maxWingSpan:.2f})"
 )
 print(
     f"Aspect Ratio (AR):           {aircraft.aspect_ratio:.2f} (Ref: {ref_aircraft.aspect_ratio:.2f})"
 )
 print(
-    f"Mean Aerodynamic Chord:      {aircraft.mean_aerodynamic_chord:.2f} m (Ref: {ref_aircraft.mean_aerodynamic_chord.si:.2f} m)"
+    f"Mean Aerodynamic Chord:      {aircraft.mean_aerodynamic_chord:.2f} (Ref: {ref_aircraft.mean_aerodynamic_chord:.2f})"
 )
 print(
-    f"Wing Root Thickness (16%):   {aircraft.wing_root_thickness:.2f} m (Ref: {float(ref_aircraft.data.assumptions.wingRootThickness):.2f} m)"
+    f"Wing Root Thickness (16%):   {aircraft.wing_root_thickness:.2f} (Ref: {ref_aircraft.data.assumptions.wingRootThickness:.2f})"
 )
 print(
-    f"Fuselage (L x W x H):        {aircraft.fuselage_length:.2f} m x {float(aircraft.fuselage_width):.2f} m x {float(aircraft.fuselage_height):.2f} m"
+    f"Fuselage (L x W x H):        {aircraft.fuselage_length:.2f} x {aircraft.fuselage_width:.2f} x {aircraft.fuselage_height:.2f}"
 )
 print(
-    f"Horizontal Tail Area (S_HT): {aircraft.horizontal_tail_area:.2f} m^2 (Ref: {float(ref_aircraft.data.dimensions.horizontalTailArea):.2f} m^2)"
+    f"Horizontal Tail Area (S_HT): {aircraft.horizontal_tail_area:.2f} (Ref: {ref_aircraft.data.dimensions.horizontalTailArea:.2f})"
 )
 print(
-    f"Vertical Tail Area (S_VT):   {aircraft.vertical_tail_area:.2f} m^2 (Ref: {float(ref_aircraft.data.dimensions.verticalTailArea):.2f} m^2)"
+    f"Vertical Tail Area (S_VT):   {aircraft.vertical_tail_area:.2f} (Ref: {ref_aircraft.data.dimensions.verticalTailArea:.2f})"
 )
 print(f"Design Wing Loading:         {aircraft.wing_loading_design:.2f} kg/m^2")
 print(f"Design Thrust Loading:       {aircraft.thrust_loading_design:.4f}")
-print(f"Total Take-off Thrust:       {aircraft.total_takeoff_thrust.to('kN'):.2f} kN")
-print(f"Total Installed Power:       {aircraft.total_takeoff_power.to('kW'):.1f} kW")
+print(f"Total Take-off Thrust:       {aircraft.total_takeoff_thrust.to('kN'):.2f}")
+print(f"Total Installed Power:       {aircraft.total_takeoff_power.to('kW'):.1f}")
 
 if __name__ == "__main__":
     from visualization import interactive_plot_menu

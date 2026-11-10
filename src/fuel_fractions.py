@@ -277,8 +277,8 @@ def print_mission_energy_breakdown(calc: MissionEnergyCalculator) -> None:
         r_kero = calc.ref_mission.equivalent_range(fuel, ld_kero)
         r_bat = calc.equivalent_range(energy, ld_bat)
         print(
-            f"{name:<32} | {fuel.to('kg'):6.1f} kg | {r_kero.to('nm'):6.1f} NM | {energy.to('kWh'):10.1f} | "
-            f"{calc.battery_cell_mass(energy):7.1f} kg | {calc.battery_pack_mass(energy):7.1f} kg | {r_bat.to('nm'):6.1f} NM"
+            f"{name:<32} | {fuel.to('kg'):6.1f} | {r_kero.to('nm'):6.1f} | {energy.to('kWh'):10.1f} | "
+            f"{calc.battery_cell_mass(energy):7.1f} | {calc.battery_pack_mass(energy):7.1f} | {r_bat.to('nm'):6.1f}"
         )
 
     ref = calc.ref_mission.ref
@@ -288,7 +288,7 @@ def print_mission_energy_breakdown(calc: MissionEnergyCalculator) -> None:
     )
     print(
         f"Electric Aircraft: MTOM = {calc.mtom}, eta_el = {calc.design.propulsion.etaElectric * 100:.1f} %, "
-        f"Range = {calc.range.to('nm'):.0f} nm, L/D = {calc.design.aerodynamics.liftToDragRatioCruise:.1f}\n"
+        f"Range = {calc.range.to('nm'):.0f}, L/D = {calc.design.aerodynamics.liftToDragRatioCruise:.1f}\n"
     )
     print(
         f"{'Segment':<32} | {'Ref Fuel':>9} | {'R (Kero)':>9} | {'E_el [kWh]':>10} | {'m_Cell':>10} | {'m_Pack':>10} | {'R (Bat)':>9}"
@@ -301,7 +301,7 @@ def print_mission_energy_breakdown(calc: MissionEnergyCalculator) -> None:
         calc.taxi_and_takeoff_energy(),
     )
     _row(
-        f"2. Cruise ({calc.range.to('nm'):.0f} nm)",
+        f"2. Cruise ({calc.range.to('nm'):.0f})",
         ref.fuel.cruise.si,
         calc.cruise_energy(),
     )

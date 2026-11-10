@@ -255,11 +255,11 @@ class SizingDiagram:
         print("=" * 65)
         print(f"Aspect ratio:                      {self.aspect_ratio:.2f}")
         print(f"Cruise lift to drag ratio:         {self.l_d_cruise:.2f}")
-        print(f"Cruise speed:                      {self.v_cruise:.2f} m/s")
-        print(f"Cruise air density:                {self.rho_cruise:.4f} kg/m^3")
+        print(f"Cruise speed:                      {self.v_cruise:.2f}")
+        print(f"Cruise air density:                {self.rho_cruise:.4f}")
         print(f"Cruise dynamic pressure:           {self.q_cruise:.2f} Pa")
-        print(f"Max. wing loading (stall):         {self.x_stall:.2f} kg/m^2")
-        print(f"Max. wing loading (landing):       {self.x_landing:.2f} kg/m^2")
+        print(f"Max. wing loading (stall):         {self.x_stall:.2f}")
+        print(f"Max. wing loading (landing):       {self.x_landing:.2f}")
         print(f"Active thrust constraint:          {self.active_thrust_constraint}")
         print(f"Limiting wing loading:             {self.limiting_wing_loading}")
         print(f"DESIGN WING LOADING:               {self.design_point[0]:.2f} kg/m^2")
@@ -295,14 +295,14 @@ class SizingDiagram:
             color="#d62728",
             lw=2,
             ls="--",
-            label=f"Stall speed $v_S \\leq 61\\,\\mathrm{{kts}}$ ({self.x_stall:.1f} kg/m²)",
+            label=f"Stall speed $v_S \\leq 61\\,\\mathrm{{kts}}$ ({self.x_stall:.1f})",
         )
         ax.axvline(
             self.x_landing,
             color="#9467bd",
             lw=2,
             ls="--",
-            label=f"Landing field length $s_{{\\mathrm{{LDG}}}} \\leq 800\\,\\mathrm{{m}}$ ({self.x_landing:.1f} kg/m²)",
+            label=f"Landing field length $s_{{\\mathrm{{LDG}}}} \\leq 800\\,\\mathrm{{m}}$ ({self.x_landing:.1f})",
         )
 
         # Feasible design region shading

@@ -264,7 +264,7 @@ def print_reference_aircraft(ref: ReferenceAircraft) -> None:
 
     print("\n--- CALCULATED VALUES (DERIVED) ---")
     print(f"Aspect ratio (AR):                   {ref.aspect_ratio:.3f}")
-    print(f"Mean aerodynamic chord (c_mu):       {ref.mean_aerodynamic_chord.si:.3f} m")
+    print(f"Mean aerodynamic chord (c_mu):       {ref.mean_aerodynamic_chord:.3f}")
     print(f"Ultimate load factor (n_ult):        {ref.ultimate_load_factor:.2f}")
     print(f"Horizontal tail arm (r_H):           {ref.horizontal_tail_lever_arm}")
     print(
@@ -283,22 +283,22 @@ def print_reference_aircraft(ref: ReferenceAircraft) -> None:
 
     print("\n--- FORMULA MASS ESTIMATIONS & CALIBRATION FACTORS ---")
     print(
-        f"Wing:         Catalog: {ref.data.mass.wing!s:>7} | Formula: {ref.wing_estimated_mass.si:7.2f} kg | Factor: {ref.wing_calibration_factor:.4f}"
+        f"Wing:         Catalog: {ref.data.mass.wing:>7} | Formula: {ref.wing_estimated_mass:>10.2f} | Factor: {ref.wing_calibration_factor:.4f}"
     )
     print(
-        f"Fuselage:     Catalog: {ref.data.mass.fuselage!s:>7} | Formula: {ref.fuselage_estimated_mass.si:7.2f} kg | Factor: {ref.fuselage_calibration_factor:.4f}"
+        f"Fuselage:     Catalog: {ref.data.mass.fuselage:>7} | Formula: {ref.fuselage_estimated_mass:>10.2f} | Factor: {ref.fuselage_calibration_factor:.4f}"
     )
     print(
-        f"Empennage:    Catalog: {ref.data.mass.empennage!s:>7} | Formula: {ref.empennage_estimated_mass.si:7.2f} kg | Factor: {ref.empennage_calibration_factor:.4f}"
+        f"Empennage:    Catalog: {ref.data.mass.empennage:>7} | Formula: {ref.empennage_estimated_mass:>10.2f} | Factor: {ref.empennage_calibration_factor:.4f}"
     )
     print(
-        f"Landing gear: Catalog: {ref.data.mass.landingGear!s:>7} | Formula: {ref.landing_gear_estimated_mass.si:7.2f} kg | Factor: {ref.landing_gear_calibration_factor:.4f}"
+        f"Landing gear: Catalog: {ref.data.mass.landingGear:>7} | Formula: {ref.landing_gear_estimated_mass:>10.2f} | Factor: {ref.landing_gear_calibration_factor:.4f}"
     )
     print(
-        f"Pylons:       Catalog: {ref.data.mass.pylons!s:>7} | Formula: {ref.pylons_estimated_mass.si:7.2f} kg | Factor: {ref.pylons_calibration_factor:.4f}"
+        f"Pylons:       Catalog: {ref.data.mass.pylons:>7} | Formula: {ref.pylons_estimated_mass:>10.2f} | Factor: {ref.pylons_calibration_factor:.4f}"
     )
     print(
-        f"Systems:      Catalog: {ref.data.mass.systems!s:>7} | Formula: {ref.systems_estimated_mass.si:7.2f} kg | Factor: {ref.systems_calibration_factor:.4f}"
+        f"Systems:      Catalog: {ref.data.mass.systems:>7} | Formula: {ref.systems_estimated_mass:>10.2f} | Factor: {ref.systems_calibration_factor:.4f}"
     )
     print("=" * 65 + "\n")
 

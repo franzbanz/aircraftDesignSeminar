@@ -292,53 +292,41 @@ if __name__ == "__main__":
     print("Reference Aircraft (Kerosene / Breguet):")
     print(
         f"  Cruise fuel mass ({ref.fuel.referenceRange}): "
-        f"{calc_breguet_fuel_mass_from_range(m_start_cr_ref, ref.fuel.referenceRange.si, ld_cr_ref, v_cr_ref, tsfc_ref):.1f} kg"
+        f"{calc_breguet_fuel_mass_from_range(m_start_cr_ref, ref.fuel.referenceRange.si, ld_cr_ref, v_cr_ref, tsfc_ref):.1f}"
     )
     print(
         f"  Diversion fuel mass ({con.mission.diversionDistance}): "
-        f"{calc_breguet_fuel_mass_from_range(m_start_div_ref, con.mission.diversionDistance.si, ld_cr_ref, v_cr_ref, tsfc_ref):.1f} kg"
+        f"{calc_breguet_fuel_mass_from_range(m_start_div_ref, con.mission.diversionDistance.si, ld_cr_ref, v_cr_ref, tsfc_ref):.1f}"
     )
     print(
         f"  Loiter fuel mass ({con.mission.loiterTime}): "
-        f"{calc_breguet_fuel_mass_from_endurance(m_start_div_ref, con.mission.loiterTime.si, ld_loit_ref, tsfc_ref):.1f} kg"
+        f"{calc_breguet_fuel_mass_from_endurance(m_start_div_ref, con.mission.loiterTime.si, ld_loit_ref, tsfc_ref):.1f}"
     )
     r_cr_ref = calc_breguet_range(
         m_start_cr_ref, m_end_cr_ref, ld_cr_ref, v_cr_ref, tsfc_ref
     ).to("nm")
-    print(
-        f"  Cruise range (for {ref.fuel.cruise} fuel): {r_cr_ref:.1f} {r_cr_ref.unit}"
-    )
+    print(f"  Cruise range (for {ref.fuel.cruise} fuel): {r_cr_ref:.1f}")
 
     print("\nBattery-Electric Aircraft (Breguet Electric):")
     m_bat_cr = calc_electric_battery_mass_from_range(
         des.mission.range.si, e_pack, eta_el, ld_cr_el, mtom_el
     )
-    print(
-        f"  Cruise battery pack mass ({des.mission.range}): "
-        f"{m_bat_cr:.1f} {m_bat_cr.unit}"
-    )
+    print(f"  Cruise battery pack mass ({des.mission.range}): {m_bat_cr:.1f}")
     m_bat_div = calc_electric_battery_mass_from_range(
         con.mission.diversionDistance.si, e_pack, eta_el, ld_cr_el, mtom_el
     )
     print(
-        f"  Diversion battery pack mass ({con.mission.diversionDistance}): "
-        f"{m_bat_div:.1f} {m_bat_div.unit}"
+        f"  Diversion battery pack mass ({con.mission.diversionDistance}): {m_bat_div:.1f}"
     )
     e_cr = calc_electric_cruise_energy(
         des.mission.range.si, mtom_el, ld_cr_el, eta_el
     ).to("kWh")
-    print(f"  Cruise electric energy ({des.mission.range}): {e_cr:.1f} {e_cr.unit}")
+    print(f"  Cruise electric energy ({des.mission.range}): {e_cr:.1f}")
     e_loit = calc_electric_loiter_energy(
         con.mission.loiterTime.si, v_cr_el, mtom_el, ld_loit_el, eta_el
     ).to("kWh")
-    print(
-        f"  Loiter electric energy ({con.mission.loiterTime}): "
-        f"{e_loit:.1f} {e_loit.unit}"
-    )
+    print(f"  Loiter electric energy ({con.mission.loiterTime}): {e_loit:.1f}")
     r_achieved = calc_electric_range(e_pack, eta_el, ld_cr_el, m_bat_cr, mtom_el).to(
         "nm"
     )
-    print(
-        f"  Cruise range achieved ({m_bat_cr:.1f} kg pack): "
-        f"{r_achieved:.1f} {r_achieved.unit}"
-    )
+    print(f"  Cruise range achieved ({m_bat_cr:.1f} pack): {r_achieved:.1f}")
