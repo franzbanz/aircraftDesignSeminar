@@ -264,88 +264,9 @@ class MissionEnergyCalculator:
         )
 
 
-def print_mission_energy_breakdown(calc: MissionEnergyCalculator) -> None:
-    """Prints a comprehensive breakdown table comparing reference kerosene and electric battery sizing."""
-
-    def _row(
-        name: str,
-        fuel: SiValue,
-        energy: SiValue,
-        ld_bat: float | None = None,
-        ld_kero: float | None = None,
-    ) -> None:
-        r_kero = calc.ref_mission.equivalent_range(fuel, ld_kero)
-        r_bat = calc.equivalent_range(energy, ld_bat)
-        print(
-            f"{name:<32} | {fuel.to('kg'):6.1f} | {r_kero.to('nm'):6.1f} | {energy.to('kWh'):10.1f} | "
-            f"{calc.battery_cell_mass(energy):7.1f} | {calc.battery_pack_mass(energy):7.1f} | {r_bat.to('nm'):6.1f}"
-        )
-
-    ref = calc.ref_mission.ref
-    print("----- MISSION ENERGY & BATTERY MASS BREAKDOWN -----")
-    print(
-        f"Reference Turboprop Efficiency (eta_ref): {calc.ref_mission.propulsion_efficiency * 100:.2f} %"
-    )
-    print(
-        f"Electric Aircraft: MTOM = {calc.mtom}, eta_el = {calc.design.propulsion.etaElectric * 100:.1f} %, "
-        f"Range = {calc.range.to('nm'):.0f}, L/D = {calc.design.aerodynamics.liftToDragRatioCruise:.1f}\n"
-    )
-    print(
-        f"{'Segment':<32} | {'Ref Fuel':>9} | {'R (Kero)':>9} | {'E_el [kWh]':>10} | {'m_Cell':>10} | {'m_Pack':>10} | {'R (Bat)':>9}"
-    )
-    print("-" * 105)
-
-    _row(
-        "1. Taxi-out & Take-off",
-        ref.fuel.taxiOutAndTakeOff.si,
-        calc.taxi_and_takeoff_energy(),
-    )
-    _row(
-        f"2. Cruise ({calc.range.to('nm'):.0f})",
-        ref.fuel.cruise.si,
-        calc.cruise_energy(),
-    )
-    _row(
-        "3. Climb & Descent (+10.3% Ref.)",
-        SiValue(ref.fuel.climb.si + ref.fuel.descent.si, "kg"),
-        calc.climb_and_descent_energy(),
-    )
-    _row(
-        "4. Approach, Landing & Taxi-in",
-        ref.fuel.approachLandingAndTaxiIn.si,
-        calc.approach_and_landing_energy(),
-    )
-    print("-" * 105)
-    _row("TRIP TOTAL (Phases 1-5)", ref.fuel.tripMass.si, calc.trip_energy())
-    print("-" * 105)
-    _row(
-        "  - 5% Route Reserve",
-        calc.ref_mission.route_reserve_fuel_mass(),
-        calc.route_reserve_energy(),
-    )
-    _row(
-        f"  - 30 min Loiter (L/D = {calc.design.aerodynamics.liftToDragRatioLoiter:.1f})",
-        calc.ref_mission.loiter_fuel_mass(),
-        calc.loiter_energy(),
-        calc.design.aerodynamics.liftToDragRatioLoiter,
-        ref.aerodynamics.liftToDragRatioLoiter,
-    )
-    _row(
-        "  - 50 NM Diversion",
-        calc.ref_mission.diversion_fuel_mass(),
-        calc.diversion_energy(),
-    )
-    res_fuel = calc.ref_mission.reserve_fuel_mass()
-    _row("6. Reserve Total (Ref: 186 kg)", res_fuel, calc.reserve_energy())
-    print("=" * 105)
-    _row(
-        "MISSION TOTAL (Trip + Reserve)",
-        SiValue(ref.fuel.tripMass.si + res_fuel.si, "kg"),
-        calc.total_mission_energy(),
-    )
-
-
 if __name__ == "__main__":
+    from visualizations.fuel_fractions import print_mission_energy_breakdown
+
     constraints = load_constraints()
     ref_mission = ReferenceMissionCalculator(
         constraints, load_reference_aircraft_data()
