@@ -38,6 +38,15 @@ class DesignPropulsionParameters:
 
 
 @dataclass(frozen=True)
+class DesignFuselageParameters:
+    """Fuselage geometric dimension parameters."""
+
+    fuselageLength: UnitValue
+    fuselageWidth: UnitValue
+    fuselageHeight: UnitValue
+
+
+@dataclass(frozen=True)
 class DesignMissionParameters:
     """Mission distance and cruise profile parameters."""
 
@@ -64,5 +73,6 @@ class DesignParameters:
     initialSizing: DesignInitialSizingParameters
     aerodynamics: DesignAerodynamicParameters
     propulsion: DesignPropulsionParameters
+    fuselage: DesignFuselageParameters
     mission: DesignMissionParameters
     assumptions: DesignAssumptionsParameters

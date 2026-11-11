@@ -23,6 +23,7 @@ from data.constraints_data import (
 from data.design_parameters_data import (
     DesignAerodynamicParameters,
     DesignAssumptionsParameters,
+    DesignFuselageParameters,
     DesignInitialSizingParameters,
     DesignMissionParameters,
     DesignParameters,
@@ -209,6 +210,9 @@ def load_design_parameters(path: Path | str | None = None) -> DesignParameters:
         ),
         propulsion=instantiate_dataclass_with_extra_warning(
             DesignPropulsionParameters, _parameter_group(data["propulsion"])
+        ),
+        fuselage=instantiate_dataclass_with_extra_warning(
+            DesignFuselageParameters, _parameter_group(data["fuselage"])
         ),
         mission=instantiate_dataclass_with_extra_warning(
             DesignMissionParameters, _parameter_group(data["mission"])

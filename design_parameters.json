@@ -23,6 +23,11 @@
     "maxThrustOverCruiseThrustRatio": [4.0, ""],
     "etaElectric": [0.85, ""]
   },
+  "fuselage": {
+    "fuselageLength": [17.0, "m"],
+    "fuselageWidth": [1.82, "m"],
+    "fuselageHeight": [2.25, "m"]
+  },
   "mission": {
     "range": [100, "nm"],
     "cruiseSpeedTAS": [184.4, "kts"],

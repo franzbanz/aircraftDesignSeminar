@@ -106,18 +106,18 @@ class BatteryAircraft:
 
     @property
     def fuselage_length(self) -> SiValue:
-        """Fuselage length [m] (adopted from 19-pax reference aircraft)."""
-        return self.ref.data.dimensions.fuselageLength.si
+        """Fuselage length [m]."""
+        return self.design.fuselage.fuselageLength.si
 
     @property
     def fuselage_width(self) -> SiValue:
         """Fuselage width [m]."""
-        return self.ref.data.dimensions.fuselageWidth.si
+        return self.design.fuselage.fuselageWidth.si
 
     @property
     def fuselage_height(self) -> SiValue:
         """Fuselage height [m]."""
-        return self.ref.data.dimensions.fuselageHeight.si
+        return self.design.fuselage.fuselageHeight.si
 
     @property
     def horizontal_tail_area(self) -> SiValue:
@@ -166,9 +166,9 @@ class BatteryAircraft:
         """Calibrated fuselage mass [kg]."""
         v_D = SiValue(1.25 * self.design.mission.cruiseSpeedTAS.si, "m/s")
         r_H = self.ref.horizontal_tail_lever_arm.si
-        b_R = self.ref.data.dimensions.fuselageWidth.si
-        h_R = self.ref.data.dimensions.fuselageHeight.si
-        l_R = self.ref.data.dimensions.fuselageLength.si
+        b_R = self.fuselage_width
+        h_R = self.fuselage_height
+        l_R = self.fuselage_length
         delta_m_F = self.ref.data.assumptions.fuselageMassPenaltyFactor
         s_o = SiValue(math.pi * ((b_R + h_R) / 2.0) * l_R, "m^2")
         raw = calc_fuselage_mass(v_D, r_H, b_R, h_R, s_o, delta_m_F)
