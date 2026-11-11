@@ -39,6 +39,7 @@ class BatteryAircraft:
             mtom if mtom is not None else design.initialSizing.maximumTakeOffMass.si
         )
         self.sizing_mode: SizingMode = sizing_mode
+        self._sizing_diagrams: dict[tuple[SizingMode, float], SizingDiagram] = {}
 
     @property
     def eta_electric(self) -> float:
@@ -93,14 +94,18 @@ class BatteryAircraft:
     # --------------------------------------------------------------------------
 
     def sizing_diagram(self, mode: SizingMode | None = None) -> SizingDiagram:
-        """Builds the sizing diagram using the aircraft's current parameters and MTOM."""
-        return SizingDiagram(
-            self.constraints,
-            self.design,
-            self.ref,
-            mode=mode or self.sizing_mode,
-            mtom=self.mtom,
-        )
+        """Builds or returns a cached sizing diagram for the active mode and MTOM."""
+        active_mode = mode or self.sizing_mode
+        key = (active_mode, self.mtom)
+        if key not in self._sizing_diagrams:
+            self._sizing_diagrams[key] = SizingDiagram(
+                self.constraints,
+                self.design,
+                self.ref,
+                mode=active_mode,
+                mtom=self.mtom,
+            )
+        return self._sizing_diagrams[key]
 
     @property
     def wing_loading_design(self) -> float:

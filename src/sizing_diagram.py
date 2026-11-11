@@ -17,6 +17,8 @@ from formulas.aerodynamics import calc_cruise_lift_coefficient, calc_dynamic_pre
 from reference_aircraft import ReferenceAircraft, load_reference_aircraft
 
 SizingMode = Literal["thrust", "power"]
+_YELLOW = "\033[93m"
+_RESET = "\033[0m"
 
 
 def calc_stall_wing_loading(
@@ -317,6 +319,20 @@ class SizingDiagram:
             * (self.eta_prop_to / self.eta_prop_cruise)
         )
 
+        y_to_power = calc_power_loading_from_thrust_loading(
+            y_to_thrust, v_2, self.eta_prop_to
+        )
+        y_climb_power = calc_power_loading_from_thrust_loading(
+            y_climb_thrust, v_2, self.eta_prop_climb
+        )
+        self._y_cruise_power_req = calc_power_loading_from_thrust_loading(
+            y_cruise_thrust_req, self.v_cruise, self.eta_prop_cruise
+        )
+        y_cruise_power = self.power_ratio * self._y_cruise_power_req
+        self._y_power_req = np.maximum(
+            np.maximum(y_to_power, y_climb_power), y_cruise_power
+        )
+
         if self.mode == "thrust":
             self.y_takeoff = y_to_thrust
             self.y_climb = y_climb_thrust
@@ -325,40 +341,37 @@ class SizingDiagram:
                 self.p_max_loading, v_2, self.eta_prop_to
             )
         else:
-            self.y_takeoff = calc_power_loading_from_thrust_loading(
-                y_to_thrust, v_2, self.eta_prop_to
-            )
-            self.y_climb = calc_power_loading_from_thrust_loading(
-                y_climb_thrust, v_2, self.eta_prop_climb
-            )
-            self.y_cruise = self.power_ratio * calc_power_loading_from_thrust_loading(
-                y_cruise_thrust_req, self.v_cruise, self.eta_prop_cruise
-            )
+            self.y_takeoff = y_to_power
+            self.y_climb = y_climb_power
+            self.y_cruise = y_cruise_power
             self.y_max_power = np.full_like(self.wing_loadings, self.p_max_loading)
 
     def _solve_design_point(self) -> None:
-        """Finds the minimum feasible requirement point and updates cruise L/D."""
+        """Finds the rightmost feasible point, or minimum required power with warning if none exists."""
         self.y_req = np.maximum(np.maximum(self.y_takeoff, self.y_climb), self.y_cruise)
         feasible_wl = self.wing_loadings <= min(self.x_stall, self.x_landing)
-        feasible_power = feasible_wl & (self.y_req <= self.y_max_power)
+        self.feasible = feasible_wl & (self.y_req <= self.y_max_power)
 
-        self.within_max_power = bool(np.any(feasible_power))
+        self.within_max_power = bool(np.any(self.feasible))
         if self.within_max_power:
-            self.feasible = feasible_power
+            idx = int(np.flatnonzero(self.feasible)[-1])
         else:
-            self.feasible = feasible_wl
-            warnings.warn(
-                f"Installed max specific power ({self.p_max_loading:.1f} at MTOM={self.mtom:.1f}) "
-                "is below all performance constraints; upper power limit relaxed.",
-                stacklevel=2,
+            idx = int(
+                np.flatnonzero(
+                    feasible_wl
+                    & (self.y_req <= self.y_req[feasible_wl].min() * (1 + 1e-6))
+                )[-1]
             )
-
-        idx = int(
-            np.flatnonzero(
-                self.feasible
-                & (self.y_req <= self.y_req[self.feasible].min() * (1 + 1e-6))
-            )[-1]
-        )
+            p_to_spec = SiValue(float(self._y_power_req[idx]), "W/kg")
+            p_cruise_spec = SiValue(float(self._y_cruise_power_req[idx]), "W/kg")
+            p_to_req = SiValue(p_to_spec * self.mtom, "W").to("kW")
+            p_cruise_req = SiValue(p_cruise_spec * self.mtom, "W").to("kW")
+            print(
+                f"{_YELLOW}WARNING: Installed max specific power ({self.p_max_loading:.1f} at MTOM={self.mtom:.1f}) "
+                f"is below performance constraints (using minimum required power):\n"
+                f"  - Required take-off power: {p_to_spec:.1f} ({p_to_req:.1f} total | {p_to_req / self.n_engines:.1f} kW/engine)\n"
+                f"  - Required cruise power:   {p_cruise_spec:.1f} ({p_cruise_req:.1f} total | {p_cruise_req / self.n_engines:.1f} kW/engine){_RESET}"
+            )
         self.design_point = (self.wing_loadings[idx], self.y_req[idx])
         self.design_thrust_ratio = float(self.thrust_ratio[idx])
 

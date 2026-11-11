@@ -138,21 +138,18 @@ def plot_sizing_diagram(
         label=max_power_label,
     )
 
-    y_upper = (
-        np.minimum(diag.y_max_power, y_max * 1.1)
-        if diag.within_max_power
-        else np.full_like(diag.wing_loadings, y_max * 1.1)
-    )
-    ax.fill_between(
-        diag.wing_loadings,
-        diag.y_req,
-        y_upper,
-        where=diag.feasible,
-        interpolate=True,
-        color="green",
-        alpha=0.12,
-        label="Feasible Design Region",
-    )
+    if diag.within_max_power:
+        y_upper = np.minimum(diag.y_max_power, y_max * 1.1)
+        ax.fill_between(
+            diag.wing_loadings,
+            diag.y_req,
+            y_upper,
+            where=diag.feasible,
+            interpolate=True,
+            color="green",
+            alpha=0.12,
+            label="Feasible Design Region",
+        )
 
     dp_y_str = f"{format(dp[1], spec.dp_fmt)}{spec.summary_unit}"
     ax.plot(
