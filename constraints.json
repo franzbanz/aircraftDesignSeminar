@@ -16,6 +16,8 @@
     "takeOffFieldLengthMax": [800, "m"],
     "landingFieldLengthMax": [800, "m"],
     "takeOffMassMax": [8618, "kg"],
+    // ICAO Aerodrome Reference Code B (< 24 m)
+    "wingSpanMax": [24, "m"],
     "takeOffAltitude": [0, "m"],
     "cruiseSpeedMin": [170, "kt"]
   },

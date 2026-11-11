@@ -48,7 +48,7 @@ class WingDesign:
     def span(self) -> SiValue:
         """Wingspan b_W [m], constrained to maximum allowable span."""
         b_s = calc_wingspan(self.area, self.design.aerodynamics.aspectRatio)
-        return min(b_s, self.design.aerodynamics.maxWingSpan.si)
+        return min(b_s, self.constraints.performance.wingSpanMax.si)
 
     @property
     def aspect_ratio(self) -> float:

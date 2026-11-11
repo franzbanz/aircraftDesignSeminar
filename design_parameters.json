@@ -8,7 +8,6 @@
     // maximum 10.63 if wingspan should be lower than 24m with 54.15m^2 wing area
     "aspectRatio": [10.5, ""],
     "oswaldFactor": [0.85, ""],
-    "maxWingSpan": [24, "m"],
     "relWingThickness": [0.18, ""],
     // the reference aircraft has a very high coefficient, the reference table [Strohmayer I | p. 213] has a maximum value of 1.0
     "maxHorizontalVolumeCoefficient": [1.0, ""]

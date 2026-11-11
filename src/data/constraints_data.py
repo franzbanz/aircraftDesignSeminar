@@ -33,6 +33,7 @@ class PerformanceConstraints:
     takeOffFieldLengthMax: UnitValue
     landingFieldLengthMax: UnitValue
     takeOffMassMax: UnitValue
+    wingSpanMax: UnitValue
     takeOffAltitude: UnitValue
     cruiseSpeedMin: UnitValue
 

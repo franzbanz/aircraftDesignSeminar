@@ -20,7 +20,6 @@ class DesignAerodynamicParameters:
     maxLandingLiftCoefficient: UnitValue
     aspectRatio: UnitValue
     oswaldFactor: UnitValue
-    maxWingSpan: UnitValue
     relWingThickness: UnitValue
     maxHorizontalVolumeCoefficient: UnitValue
 

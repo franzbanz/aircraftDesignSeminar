@@ -70,7 +70,7 @@ def print_aircraft_summary(
         f"Wing Area (S_W):             {aircraft.wing.area:.2f} (Ref: {ref_aircraft.data.dimensions.wingArea:.2f})"
     )
     print(
-        f"Wingspan (b_W):              {aircraft.wing.span:.2f} (Ref: {ref_aircraft.data.dimensions.wingspan:.2f}, Max: {aircraft.design.aerodynamics.maxWingSpan:.2f})"
+        f"Wingspan (b_W):              {aircraft.wing.span:.2f} (Ref: {ref_aircraft.data.dimensions.wingspan:.2f}, Max: {aircraft.constraints.performance.wingSpanMax:.2f})"
     )
     print(
         f"Aspect Ratio (AR):           {aircraft.wing.aspect_ratio:.2f} (Ref: {ref_aircraft.aspect_ratio:.2f})"
@@ -330,9 +330,13 @@ def plot_aircraft_geometry(
         label=f"Electric Wing (b = {b_el:.1f}, S = {aircraft.wing.area:.1f})",
     )
 
-    b_max = aircraft.design.aerodynamics.maxWingSpan.si
+    b_max = aircraft.constraints.performance.wingSpanMax.si
     ax1.axvline(
-        -b_max / 2, color="red", ls=":", lw=1.5, label=f"CS-23 Max Span ({b_max:.0f})"
+        -b_max / 2,
+        color="red",
+        ls=":",
+        lw=1.5,
+        label=f"ICAO Code B Max Span ({b_max:.0f})",
     )
     ax1.axvline(b_max / 2, color="red", ls=":", lw=1.5)
 

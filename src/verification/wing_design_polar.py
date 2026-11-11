@@ -22,6 +22,13 @@ def verify_wing_design_polar() -> None:
 
     # 1. Exact identity check with ReferenceAircraft parameters
     ref_wing_loading = ref.data.fuel.referenceMass.si / ref.data.dimensions.wingArea.si
+    constraints_as_ref = replace(
+        constraints,
+        performance=replace(
+            constraints.performance,
+            wingSpanMax=ref.data.dimensions.wingspan,
+        ),
+    )
     design_as_ref = replace(
         design,
         aerodynamics=replace(
@@ -29,7 +36,6 @@ def verify_wing_design_polar() -> None:
             aspectRatio=UnitValue(ref.aspect_ratio, ""),
             oswaldFactor=ref.data.assumptions.oswaldFactor,
             relWingThickness=ref.data.assumptions.relWingThickness,
-            maxWingSpan=ref.data.dimensions.wingspan,
         ),
         mission=replace(
             design.mission,
@@ -45,7 +51,7 @@ def verify_wing_design_polar() -> None:
     )
 
     wing_ref_check = WingDesign(
-        constraints=constraints,
+        constraints=constraints_as_ref,
         design=design_as_ref,
         ref=ref,
         mtom=ref.data.fuel.referenceMass.si,
@@ -117,7 +123,11 @@ def verify_wing_design_polar() -> None:
     step0 = wing_ref_check
     step1_design = replace(design_as_ref, mission=design.mission)
     step1 = WingDesign(
-        constraints, step1_design, ref, ref.data.fuel.referenceMass.si, ref_wing_loading
+        constraints_as_ref,
+        step1_design,
+        ref,
+        ref.data.fuel.referenceMass.si,
+        ref_wing_loading,
     )
 
     step2_design = replace(
@@ -126,7 +136,6 @@ def verify_wing_design_polar() -> None:
             step1_design.aerodynamics,
             aspectRatio=design.aerodynamics.aspectRatio,
             oswaldFactor=design.aerodynamics.oswaldFactor,
-            maxWingSpan=design.aerodynamics.maxWingSpan,
         ),
     )
     step2 = WingDesign(
