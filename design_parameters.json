@@ -9,7 +9,7 @@
     "aspectRatio": [10.5, ""],
     "oswaldFactor": [0.85, ""],
     "maxWingSpan": [24, "m"],
-    "relWingThickness": [0.16, ""],
+    "relWingThickness": [0.18, ""],
     // the reference aircraft has a very high coefficient, the reference table [Strohmayer I | p. 213] has a maximum value of 1.0
     "maxHorizontalVolumeCoefficient": [1.0, ""]
   },
