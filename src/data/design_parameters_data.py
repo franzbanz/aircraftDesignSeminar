@@ -33,7 +33,9 @@ class DesignPropulsionParameters:
     engineMaxContinousPower: UnitValue
     engineMass: UnitValue
     numberOfEngines: UnitValue
-    maxThrustOverCruiseThrustRatio: UnitValue
+    etaPropTakeOff: UnitValue
+    etaPropClimb: UnitValue
+    etaPropCruise: UnitValue
     etaElectric: UnitValue
 
 

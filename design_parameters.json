@@ -19,8 +19,9 @@
     "engineMaxContinousPower": [510, "kW"],
     "engineMass": [200, "kg"],
     "numberOfEngines": [2, ""],
-    // TODO: which value do we need?
-    "maxThrustOverCruiseThrustRatio": [4.0, ""],
+    "etaPropTakeOff": [0.75, ""],
+    "etaPropClimb": [0.78, ""],
+    "etaPropCruise": [0.85, ""],
     "etaElectric": [0.85, ""]
   },
   "fuselage": {

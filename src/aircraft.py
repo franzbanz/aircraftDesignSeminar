@@ -16,7 +16,7 @@ from formulas import (
 )
 from fuel_fractions import MissionEnergyCalculator, ReferenceMissionCalculator
 from reference_aircraft import ReferenceAircraft
-from sizing_diagram import SizingDiagram
+from sizing_diagram import SizingDiagram, SizingMode
 from wing_design import WingDesign
 
 
@@ -29,6 +29,7 @@ class BatteryAircraft:
         design: DesignParameters,
         ref: ReferenceAircraft,
         mtom: SiValue | None = None,
+        sizing_mode: SizingMode = "thrust",
     ) -> None:
         self.constraints = constraints
         self.design = design
@@ -37,6 +38,7 @@ class BatteryAircraft:
         self.mtom: SiValue = (
             mtom if mtom is not None else design.initialSizing.maximumTakeOffMass.si
         )
+        self.sizing_mode: SizingMode = sizing_mode
 
     @property
     def eta_electric(self) -> float:
@@ -94,15 +96,22 @@ class BatteryAircraft:
     def wing_loading_design(self) -> float:
         """Optimum wing loading from sizing diagram [kg/m^2]."""
         return SizingDiagram(
-            self.constraints, self.design, self.ref
+            self.constraints, self.design, self.ref, mode=self.sizing_mode
         ).design_wing_loading
 
     @property
     def thrust_loading_design(self) -> float:
-        """Optimum thrust loading from sizing diagram [-]."""
+        """Optimum thrust loading from thrust-based sizing diagram [-]."""
         return SizingDiagram(
-            self.constraints, self.design, self.ref
+            self.constraints, self.design, self.ref, mode="thrust"
         ).design_thrust_loading
+
+    @property
+    def power_loading_design(self) -> SiValue:
+        """Optimum specific take-off shaft power from power-based sizing diagram [W/kg]."""
+        return SizingDiagram(
+            self.constraints, self.design, self.ref, mode="power"
+        ).design_power_loading
 
     @property
     def fuselage_length(self) -> SiValue:
@@ -144,8 +153,13 @@ class BatteryAircraft:
         return SiValue(self.thrust_loading_design * self.mtom * GRAVITY, "N")
 
     @property
+    def required_takeoff_power(self) -> SiValue:
+        """Total required take-off shaft power P_0 from power sizing diagram [W]."""
+        return SiValue(self.power_loading_design * self.mtom, "W")
+
+    @property
     def total_takeoff_power(self) -> SiValue:
-        """Total required installed take-off power [W]."""
+        """Total installed take-off shaft power [W]."""
         return SiValue(
             self.design.propulsion.engineTakeOffPower.si
             * self.design.propulsion.numberOfEngines.value,

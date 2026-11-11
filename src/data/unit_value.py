@@ -56,6 +56,9 @@ class UnitValue(float):
         "kw": ("w", 1e3),
         "mw": ("w", 1e6),
         "hp": ("w", 745.699872),
+        # Specific power / Power-to-mass ratio (SI: W/kg)
+        "w/kg": ("w/kg", 1.0),
+        "kw/kg": ("w/kg", 1e3),
         # Energy (SI: J)
         "j": ("j", 1.0),
         "kj": ("j", 1e3),
@@ -84,6 +87,10 @@ class UnitValue(float):
         "kn": ("n", 1e3),
         "mn": ("n", 1e6),
         "lbf": ("n", 4.4482216152605),
+        # Moment / Torque (SI: N*m)
+        "n*m": ("n*m", 1.0),
+        "kn*m": ("n*m", 1e3),
+        "mn*m": ("n*m", 1e6),
         # Fuel consumption (TSFC) (SI: kg/(N*s))
         "kg/(n*s)": ("kg/(n*s)", 1.0),
         "lb/(h*lbf)": ("kg/(n*s)", 1.0 / (3600.0 * 9.80665)),

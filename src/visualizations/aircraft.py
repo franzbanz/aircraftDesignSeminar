@@ -93,6 +93,10 @@ def print_aircraft_summary(
     print(f"Design Wing Loading:         {aircraft.wing_loading_design:.2f} kg/m^2")
     print(f"Design Thrust Loading:       {aircraft.thrust_loading_design:.4f}")
     print(f"Total Take-off Thrust:       {aircraft.total_takeoff_thrust.to('kN'):.2f}")
+    print(f"Design Specific Power:       {aircraft.power_loading_design:.2f}")
+    print(
+        f"Required Take-off Power:     {aircraft.required_takeoff_power.to('kW'):.1f}"
+    )
     print(f"Total Installed Power:       {aircraft.total_takeoff_power.to('kW'):.1f}")
 
 

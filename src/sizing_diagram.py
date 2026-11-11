@@ -1,6 +1,7 @@
-"""Sizing diagram (Matching Chart) for wing loading and thrust loading determination."""
+"""Sizing diagram (Matching Chart) for wing loading and thrust or specific shaft power determination."""
 
 import warnings
+from typing import Literal
 
 import numpy as np
 
@@ -14,6 +15,8 @@ from data import (
 )
 from formulas.aerodynamics import calc_cruise_lift_coefficient, calc_dynamic_pressure
 from reference_aircraft import ReferenceAircraft, load_reference_aircraft
+
+SizingMode = Literal["thrust", "power"]
 
 
 def calc_stall_wing_loading(
@@ -90,9 +93,9 @@ def calc_oei_climb_thrust_loading(
 
 
 def calc_cruise_thrust_loading(
-    thrust_ratio: float,
+    thrust_ratio: float | np.ndarray,
     c_w0: float,
-    q_cruise: float,
+    q_cruise: SiValue,
     aspect_ratio: float,
     oswald_factor: float,
     wing_loading: np.ndarray,
@@ -101,7 +104,7 @@ def calc_cruise_thrust_loading(
     """Calculates required cruise thrust loading T/G as a function of wing loading [Strohmayer - Flugzeugentwurf 2 | p. 92] [-].
 
     Args:
-        thrust_ratio: Ratio of maximum take-off thrust to cruise thrust F_max / F_cr [-].
+        thrust_ratio: Ratio of maximum take-off thrust to cruise thrust F_max / F_cr [-] (scalar or array).
         c_w0: Zero-lift drag coefficient c_W0 [-].
         q_cruise: Dynamic pressure in cruise [Pa].
         aspect_ratio: Wing aspect ratio Lambda [-].
@@ -119,6 +122,43 @@ def calc_cruise_thrust_loading(
         / (q_cruise * np.pi * aspect_ratio * oswald_factor)
         * m_cruise_ratio**2
     )
+
+
+def calc_takeoff_safety_speed(
+    wing_loading: np.ndarray,
+    rho_takeoff: SiValue,
+    c_a_max_to: float,
+) -> np.ndarray:
+    """Calculates take-off safety speed v_2 = 1.2 * v_S,TO as a function of wing loading [m/s].
+
+    Args:
+        wing_loading: Wing loading array m_0 / S [kg/m^2].
+        rho_takeoff: Air density at take-off conditions [kg/m^3].
+        c_a_max_to: Maximum take-off lift coefficient c_A,max,TO [-].
+
+    Returns:
+        Take-off safety speed array v_2 [m/s].
+    """
+    v_stall_to = np.sqrt(2.0 * wing_loading * GRAVITY / (rho_takeoff * c_a_max_to))
+    return 1.2 * v_stall_to
+
+
+def calc_power_loading_from_thrust_loading(
+    thrust_loading: np.ndarray,
+    speed: np.ndarray | SiValue,
+    eta_prop: float,
+) -> np.ndarray:
+    """Converts thrust loading T/G [-] to specific shaft power P / m_0 [W/kg].
+
+    Args:
+        thrust_loading: Thrust-to-weight ratio T/G [-].
+        speed: True airspeed [m/s] (array or scalar).
+        eta_prop: Propeller efficiency at the given flight condition [-].
+
+    Returns:
+        Specific shaft power array P / m_0 [W/kg].
+    """
+    return thrust_loading * GRAVITY * speed / eta_prop
 
 
 def calc_landing_wing_loading(
@@ -160,43 +200,58 @@ class SizingDiagram:
         constraints: Constraints | None = None,
         design: DesignParameters | None = None,
         ref: ReferenceAircraft | None = None,
+        mode: SizingMode = "thrust",
     ) -> None:
+        if mode not in ("thrust", "power"):
+            raise ValueError(f"Unsupported sizing mode: {mode!r}")
+
         # TODO remove inline loader
         self.constraints = constraints or load_constraints()
         self.design = design or load_design_parameters()
         self.ref = ref or load_reference_aircraft()
+        self.mode: SizingMode = mode
 
-        # Constraints
-        self.s_tofl = self.constraints.performance.takeOffFieldLengthMax.si
-        self.l_ldg = self.constraints.performance.landingFieldLengthMax.si
-        self.field_elevation = self.constraints.performance.takeOffAltitude.si
-        # CS-23 certification requirements
-        self.v_s_max = self.constraints.cs23.maxStallSpeed.si
+        self._load_parameters()
+        self._calc_wing_loading_limits()
+        self._calc_constraint_curves()
+        self._solve_design_point()
+
+    def _load_parameters(self) -> None:
+        """Extracts shared parameters and atmospheric states used across sizing steps."""
+        propulsion = self.design.propulsion
+        mission = self.design.mission
+
         self.gamma_min_oei = self.constraints.cs23.minClimbGradient
-
-        # Electric aircraft design parameters and flight conditions
-        self.n_engines = int(self.design.propulsion.numberOfEngines)
-        self.h_cruise = self.design.mission.cruiseAltitude.si
+        self.n_engines = int(propulsion.numberOfEngines)
+        self.h_cruise = mission.cruiseAltitude.si
+        self.v_cruise = mission.cruiseSpeedTAS.si
         self.c_a_max_to = self.design.assumptions.maxTakeOffLiftCoefficient
         self.c_a_max_l = self.design.aerodynamics.maxLandingLiftCoefficient
-        self.v_cruise = self.design.mission.cruiseSpeedTAS.si
-
-        # Design parameters of the electric aircraft
         self.aspect_ratio = self.design.aerodynamics.aspectRatio
-        self.oswald_factor = self.design.aerodynamics.oswaldFactor
-        self.thrust_ratio = self.design.propulsion.maxThrustOverCruiseThrustRatio
+        self.power_ratio = (
+            propulsion.engineTakeOffPower.si / propulsion.engineMaxContinousPower.si
+        )
+        self.eta_prop_to = propulsion.etaPropTakeOff
+        self.eta_prop_climb = propulsion.etaPropClimb
+        self.eta_prop_cruise = propulsion.etaPropCruise
 
-        # Aerodynamics and atmosphere
-        self.c_w0 = self.ref.zero_lift_drag_coefficient
-        self.rho_takeoff = isa_density(self.field_elevation)
+        self.rho_takeoff = isa_density(self.constraints.performance.takeOffAltitude.si)
         self.rho_cruise = isa_density(self.h_cruise)
         self.q_cruise = calc_dynamic_pressure(self.v_cruise, self.h_cruise)
 
-        # Performance constraint curves
+    def _calc_wing_loading_limits(self) -> None:
+        """Evaluates vertical wing-loading limits and initial climb glide ratio."""
         self.wing_loadings = np.linspace(5, 600, 800)
-        self.x_stall = calc_stall_wing_loading(self.c_a_max_l, RHO_0, self.v_s_max)
+        self.x_stall = calc_stall_wing_loading(
+            self.c_a_max_l, RHO_0, self.constraints.cs23.maxStallSpeed.si
+        )
         self.x_landing = calc_landing_wing_loading(
-            self.l_ldg, self.rho_takeoff, self.c_a_max_l
+            self.constraints.performance.landingFieldLengthMax.si,
+            self.rho_takeoff,
+            self.c_a_max_l,
+        )
+        self.limiting_wing_loading = (
+            "stall" if self.x_stall < self.x_landing else "landing"
         )
 
         # Evaluate cruise L/D from polar at limiting wing loading
@@ -205,26 +260,53 @@ class SizingDiagram:
         self.l_d_cruise = self.ref.lift_to_drag_from_polar(c_l_cruise)
         self.eps = 1.0 / self.l_d_cruise
 
-        self.y_takeoff = calc_takeoff_thrust_loading(
+    def _calc_constraint_curves(self) -> None:
+        """Computes take-off, OEI climb, and cruise constraint curves for the active mode."""
+        y_to_thrust = calc_takeoff_thrust_loading(
             self.n_engines,
             self.c_a_max_to,
             self.rho_takeoff,
-            self.s_tofl,
+            self.constraints.performance.takeOffFieldLengthMax.si,
             self.wing_loadings,
         )
-        self.y_climb = calc_oei_climb_thrust_loading(
+        y_climb_thrust = calc_oei_climb_thrust_loading(
             self.n_engines, self.gamma_min_oei, self.eps, self.wing_loadings
         )
-        self.y_cruise = calc_cruise_thrust_loading(
-            self.thrust_ratio,
-            self.c_w0,
+        y_cruise_thrust_req = calc_cruise_thrust_loading(
+            1.0,
+            self.ref.zero_lift_drag_coefficient,
             self.q_cruise,
             self.aspect_ratio,
-            self.oswald_factor,
+            self.design.aerodynamics.oswaldFactor,
             self.wing_loadings,
         )
 
-        # Optimum design point determination (minimum thrust loading in feasible region)
+        v_2 = calc_takeoff_safety_speed(
+            self.wing_loadings, self.rho_takeoff, self.c_a_max_to
+        )
+        self.thrust_ratio = (
+            self.power_ratio
+            * (self.v_cruise / v_2)
+            * (self.eta_prop_to / self.eta_prop_cruise)
+        )
+
+        if self.mode == "thrust":
+            self.y_takeoff = y_to_thrust
+            self.y_climb = y_climb_thrust
+            self.y_cruise = self.thrust_ratio * y_cruise_thrust_req
+        else:
+            self.y_takeoff = calc_power_loading_from_thrust_loading(
+                y_to_thrust, v_2, self.eta_prop_to
+            )
+            self.y_climb = calc_power_loading_from_thrust_loading(
+                y_climb_thrust, v_2, self.eta_prop_climb
+            )
+            self.y_cruise = self.power_ratio * calc_power_loading_from_thrust_loading(
+                y_cruise_thrust_req, self.v_cruise, self.eta_prop_cruise
+            )
+
+    def _solve_design_point(self) -> None:
+        """Finds the minimum feasible requirement point and updates cruise L/D."""
         self.y_req = np.maximum(np.maximum(self.y_takeoff, self.y_climb), self.y_cruise)
         self.feasible = self.wing_loadings <= min(self.x_stall, self.x_landing)
         idx = int(
@@ -234,20 +316,17 @@ class SizingDiagram:
             )[-1]
         )
         self.design_point = (self.wing_loadings[idx], self.y_req[idx])
+        self.design_thrust_ratio = float(self.thrust_ratio[idx])
 
-        # Evaluate cruise L/D from polar at the determined design point
         c_l_cruise = calc_cruise_lift_coefficient(
             self.design_point[0], self.v_cruise, self.h_cruise
         )
         self.l_d_cruise = self.ref.lift_to_drag_from_polar(c_l_cruise)
 
-        thrust_constraints = ["take-off", "OEI climb", "cruise"]
-        self.active_thrust_constraint = thrust_constraints[
+        constraints_names = ["take-off", "OEI climb", "cruise"]
+        self.active_constraint = constraints_names[
             int(np.argmax([self.y_takeoff[idx], self.y_climb[idx], self.y_cruise[idx]]))
         ]
-        self.limiting_wing_loading = (
-            "stall" if self.x_stall < self.x_landing else "landing"
-        )
 
     @property
     def design_wing_loading(self) -> float:
@@ -257,12 +336,22 @@ class SizingDiagram:
     @property
     def design_thrust_loading(self) -> float:
         """Optimum thrust loading T / (m_0 * g) [-]."""
+        if self.mode != "thrust":
+            raise ValueError("design_thrust_loading is only defined for mode='thrust'.")
         return self.design_point[1]
+
+    @property
+    def design_power_loading(self) -> SiValue:
+        """Optimum specific take-off shaft power P_0 / m_0 [W/kg]."""
+        if self.mode != "power":
+            raise ValueError("design_power_loading is only defined for mode='power'.")
+        return SiValue(float(self.design_point[1]), "W/kg")
 
 
 if __name__ == "__main__":
     from visualizations.sizing_diagram import plot_sizing_diagram, print_sizing_diagram
 
-    diagram = SizingDiagram()
-    print_sizing_diagram(diagram)
-    plot_sizing_diagram(diagram)
+    for sizing_mode in ("thrust", "power"):
+        diag = SizingDiagram(mode=sizing_mode)
+        print_sizing_diagram(diag)
+        plot_sizing_diagram(diag)

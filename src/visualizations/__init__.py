@@ -43,8 +43,9 @@ def interactive_plot_menu(
 ======================================================================
                AIRCRAFT DESIGN - PLOT MENU
 ======================================================================
-  [1] Sizing Diagram (Matching Chart & Design Point)
-  [2] Mass Breakdown (Comparison with Do 228)
+  [1]  Sizing Diagram (Thrust Loading T/G)
+  [1p] Sizing Diagram (Specific Power P_0/m_0)
+  [2]  Mass Breakdown (Comparison with Do 228)
   [3] Mission Energy Breakdown (Simple Variant - matches active MTOM)
   [3d] Mission Energy Breakdown (Detailed Variant - analytical segments)
   [4] Payload-Range Diagram
@@ -64,9 +65,12 @@ def interactive_plot_menu(
         if choice in ("q", "quit", "exit", "0"):
             print("Plot menu exited.")
             break
-        elif choice in ("1", "s", "sizing"):
-            print("Opening Sizing Diagram...")
-            plot_sizing_diagram()
+        elif choice in ("1", "1t", "s", "sizing", "thrust"):
+            print("Opening Sizing Diagram (Thrust Loading)...")
+            plot_sizing_diagram(mode="thrust")
+        elif choice in ("1p", "power"):
+            print("Opening Sizing Diagram (Specific Power)...")
+            plot_sizing_diagram(mode="power")
         elif choice in ("2", "m", "mass"):
             print("Opening Mass Breakdown Comparison...")
             plot_mass_breakdown(aircraft, ref_aircraft)
@@ -84,12 +88,13 @@ def interactive_plot_menu(
             plot_aircraft_geometry(aircraft, ref_aircraft)
         elif choice in ("a", "all"):
             print("Opening all diagrams sequentially...")
-            plot_sizing_diagram()
+            plot_sizing_diagram(mode="thrust")
+            plot_sizing_diagram(mode="power")
             plot_mass_breakdown(aircraft, ref_aircraft)
             plot_mission_energy(aircraft, ref_aircraft, variant="simple")
             plot_payload_range(aircraft)
             plot_aircraft_geometry(aircraft, ref_aircraft)
         else:
             print(
-                f"Unknown option '{choice}'. Please choose 1, 2, 3, 3d, 4, 5, A or Q."
+                f"Unknown option '{choice}'. Please choose 1, 1p, 2, 3, 3d, 4, 5, A or Q."
             )
