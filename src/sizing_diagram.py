@@ -161,6 +161,24 @@ def calc_power_loading_from_thrust_loading(
     return thrust_loading * GRAVITY * speed / eta_prop
 
 
+def calc_thrust_loading_from_power_loading(
+    power_loading: np.ndarray | SiValue | float,
+    speed: np.ndarray | SiValue,
+    eta_prop: float,
+) -> np.ndarray:
+    """Converts specific shaft power P / m_0 [W/kg] to thrust loading T/G [-].
+
+    Args:
+        power_loading: Specific shaft power P / m_0 [W/kg].
+        speed: True airspeed [m/s] (array or scalar).
+        eta_prop: Propeller efficiency at the given flight condition [-].
+
+    Returns:
+        Thrust-to-weight ratio T/G [-].
+    """
+    return np.asarray(power_loading * eta_prop / (GRAVITY * speed))
+
+
 def calc_landing_wing_loading(
     l_ldg: SiValue,
     rho_takeoff: SiValue,
@@ -201,6 +219,7 @@ class SizingDiagram:
         design: DesignParameters | None = None,
         ref: ReferenceAircraft | None = None,
         mode: SizingMode = "thrust",
+        mtom: SiValue | None = None,
     ) -> None:
         if mode not in ("thrust", "power"):
             raise ValueError(f"Unsupported sizing mode: {mode!r}")
@@ -210,6 +229,11 @@ class SizingDiagram:
         self.design = design or load_design_parameters()
         self.ref = ref or load_reference_aircraft()
         self.mode: SizingMode = mode
+        self.mtom: SiValue = (
+            mtom
+            if mtom is not None
+            else self.design.initialSizing.maximumTakeOffMass.si
+        )
 
         self._load_parameters()
         self._calc_wing_loading_limits()
@@ -230,6 +254,9 @@ class SizingDiagram:
         self.aspect_ratio = self.design.aerodynamics.aspectRatio
         self.power_ratio = (
             propulsion.engineTakeOffPower.si / propulsion.engineMaxContinousPower.si
+        )
+        self.p_max_loading = SiValue(
+            self.n_engines * propulsion.engineTakeOffPower.si / self.mtom, "W/kg"
         )
         self.eta_prop_to = propulsion.etaPropTakeOff
         self.eta_prop_climb = propulsion.etaPropClimb
@@ -294,6 +321,9 @@ class SizingDiagram:
             self.y_takeoff = y_to_thrust
             self.y_climb = y_climb_thrust
             self.y_cruise = self.thrust_ratio * y_cruise_thrust_req
+            self.y_max_power = calc_thrust_loading_from_power_loading(
+                self.p_max_loading, v_2, self.eta_prop_to
+            )
         else:
             self.y_takeoff = calc_power_loading_from_thrust_loading(
                 y_to_thrust, v_2, self.eta_prop_to
@@ -304,11 +334,25 @@ class SizingDiagram:
             self.y_cruise = self.power_ratio * calc_power_loading_from_thrust_loading(
                 y_cruise_thrust_req, self.v_cruise, self.eta_prop_cruise
             )
+            self.y_max_power = np.full_like(self.wing_loadings, self.p_max_loading)
 
     def _solve_design_point(self) -> None:
         """Finds the minimum feasible requirement point and updates cruise L/D."""
         self.y_req = np.maximum(np.maximum(self.y_takeoff, self.y_climb), self.y_cruise)
-        self.feasible = self.wing_loadings <= min(self.x_stall, self.x_landing)
+        feasible_wl = self.wing_loadings <= min(self.x_stall, self.x_landing)
+        feasible_power = feasible_wl & (self.y_req <= self.y_max_power)
+
+        self.within_max_power = bool(np.any(feasible_power))
+        if self.within_max_power:
+            self.feasible = feasible_power
+        else:
+            self.feasible = feasible_wl
+            warnings.warn(
+                f"Installed max specific power ({self.p_max_loading:.1f} at MTOM={self.mtom:.1f}) "
+                "is below all performance constraints; upper power limit relaxed.",
+                stacklevel=2,
+            )
+
         idx = int(
             np.flatnonzero(
                 self.feasible

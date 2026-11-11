@@ -92,26 +92,30 @@ class BatteryAircraft:
     # Geometric Dimensions & Sizing
     # --------------------------------------------------------------------------
 
+    def sizing_diagram(self, mode: SizingMode | None = None) -> SizingDiagram:
+        """Builds the sizing diagram using the aircraft's current parameters and MTOM."""
+        return SizingDiagram(
+            self.constraints,
+            self.design,
+            self.ref,
+            mode=mode or self.sizing_mode,
+            mtom=self.mtom,
+        )
+
     @property
     def wing_loading_design(self) -> float:
         """Optimum wing loading from sizing diagram [kg/m^2]."""
-        return SizingDiagram(
-            self.constraints, self.design, self.ref, mode=self.sizing_mode
-        ).design_wing_loading
+        return self.sizing_diagram().design_wing_loading
 
     @property
     def thrust_loading_design(self) -> float:
         """Optimum thrust loading from thrust-based sizing diagram [-]."""
-        return SizingDiagram(
-            self.constraints, self.design, self.ref, mode="thrust"
-        ).design_thrust_loading
+        return self.sizing_diagram(mode="thrust").design_thrust_loading
 
     @property
     def power_loading_design(self) -> SiValue:
         """Optimum specific take-off shaft power from power-based sizing diagram [W/kg]."""
-        return SizingDiagram(
-            self.constraints, self.design, self.ref, mode="power"
-        ).design_power_loading
+        return self.sizing_diagram(mode="power").design_power_loading
 
     @property
     def fuselage_length(self) -> SiValue:

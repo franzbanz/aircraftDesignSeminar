@@ -67,10 +67,10 @@ def interactive_plot_menu(
             break
         elif choice in ("1", "1t", "s", "sizing", "thrust"):
             print("Opening Sizing Diagram (Thrust Loading)...")
-            plot_sizing_diagram(mode="thrust")
+            plot_sizing_diagram(aircraft.sizing_diagram(mode="thrust"))
         elif choice in ("1p", "power"):
             print("Opening Sizing Diagram (Specific Power)...")
-            plot_sizing_diagram(mode="power")
+            plot_sizing_diagram(aircraft.sizing_diagram(mode="power"))
         elif choice in ("2", "m", "mass"):
             print("Opening Mass Breakdown Comparison...")
             plot_mass_breakdown(aircraft, ref_aircraft)
@@ -88,8 +88,8 @@ def interactive_plot_menu(
             plot_aircraft_geometry(aircraft, ref_aircraft)
         elif choice in ("a", "all"):
             print("Opening all diagrams sequentially...")
-            plot_sizing_diagram(mode="thrust")
-            plot_sizing_diagram(mode="power")
+            plot_sizing_diagram(aircraft.sizing_diagram(mode="thrust"))
+            plot_sizing_diagram(aircraft.sizing_diagram(mode="power"))
             plot_mass_breakdown(aircraft, ref_aircraft)
             plot_mission_energy(aircraft, ref_aircraft, variant="simple")
             plot_payload_range(aircraft)

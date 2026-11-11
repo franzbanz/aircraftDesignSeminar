@@ -62,8 +62,12 @@ def print_sizing_diagram(diagram: SizingDiagram) -> None:
             f"Propeller eff. (TO / Climb / Cr):  "
             f"{diagram.eta_prop_to:.2f} / {diagram.eta_prop_climb:.2f} / {diagram.eta_prop_cruise:.2f}"
         )
+    power_status = "" if diagram.within_max_power else " (WARNING: below required!)"
     print(f"Max. wing loading (stall):         {diagram.x_stall:.2f}")
     print(f"Max. wing loading (landing):       {diagram.x_landing:.2f}")
+    print(
+        f"Installed max specific power:      {diagram.p_max_loading:.1f}{power_status}"
+    )
     print(f"Active constraint:                 {diagram.active_constraint}")
     print(f"Limiting wing loading:             {diagram.limiting_wing_loading}")
     print(f"DESIGN WING LOADING:               {diagram.design_point[0]:.2f} kg/m^2")
@@ -120,14 +124,31 @@ def plot_sizing_diagram(
         ls="--",
         label=f"Landing field length $s_{{\\mathrm{{LDG}}}} \\leq {diag.constraints.performance.landingFieldLengthMax:.0f}$ ({diag.x_landing:.1f})",
     )
+    max_power_label = (
+        rf"Installed max power $P_{{\mathrm{{TO,inst}}}} / m_0 = {diag.p_max_loading:.1f}$"
+        if diag.mode == "power"
+        else rf"Installed max power $T_{{\max}}(v_2) / G$ ({diag.p_max_loading:.1f})"
+    )
+    ax.plot(
+        diag.wing_loadings,
+        diag.y_max_power,
+        color="#8c564b",
+        lw=2,
+        ls="--",
+        label=max_power_label,
+    )
 
-    x_lim = min(diag.x_stall, diag.x_landing)
-    mask_feas = diag.wing_loadings <= x_lim
-    y_envelope = np.maximum(np.maximum(diag.y_takeoff, diag.y_climb), diag.y_cruise)
+    y_upper = (
+        np.minimum(diag.y_max_power, y_max * 1.1)
+        if diag.within_max_power
+        else np.full_like(diag.wing_loadings, y_max * 1.1)
+    )
     ax.fill_between(
-        diag.wing_loadings[mask_feas],
-        y_envelope[mask_feas],
-        y_max * 1.1,
+        diag.wing_loadings,
+        diag.y_req,
+        y_upper,
+        where=diag.feasible,
+        interpolate=True,
         color="green",
         alpha=0.12,
         label="Feasible Design Region",
@@ -162,6 +183,6 @@ def plot_sizing_diagram(
         fontweight="bold",
     )
     ax.grid(True, linestyle=":", alpha=0.6)
-    ax.legend(loc="upper left", fontsize=9, framealpha=0.9)
+    ax.legend(loc="upper right", fontsize=9, framealpha=0.9)
     plt.tight_layout()
     plt.show()
