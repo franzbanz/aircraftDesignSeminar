@@ -30,6 +30,7 @@ class DesignWingParameters:
     relWingThickness: UnitValue
     wingSweepHalfChord: UnitValue
     wingMassPenaltyFactor: UnitValue
+    bendingReliefFactor: UnitValue
 
 
 @dataclass(frozen=True)

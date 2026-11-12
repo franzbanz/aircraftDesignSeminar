@@ -149,7 +149,7 @@ def calc_wing_bending_relief(
         WingBendingAnalysisResult with bending moments, effective correction factors, and wing mass.
     """
     half_span = aircraft.wing.span / 2.0
-    y_root = aircraft.fuselage_width / 2.0
+    y_root = aircraft.fuselage.width / 2.0
 
     y_in = max(y_root, eta_in * half_span)
     y_out = max(y_in, eta_out * half_span)
@@ -200,7 +200,7 @@ def calc_wing_bending_relief(
 
     governing_case = "Flight (+4.5g)" if m_b_flight >= m_b_ground else "Ground (-3.0g)"
 
-    delta_m_f_base = aircraft.design.assumptions.wingMassPenaltyFactor
+    delta_m_f_base = aircraft.design.wing.wingMassPenaltyFactor
 
     if physical_engine_relief:
         mzfm_flight_eff = (
@@ -279,7 +279,7 @@ def print_wing_bending_study(
     b_w = aircraft.wing.span
     c_mu = aircraft.wing.mean_aerodynamic_chord
     t_root = aircraft.wing.root_thickness
-    b_r = aircraft.fuselage_width
+    b_r = aircraft.fuselage.width
     eta_root = b_r / b_w
 
     vol_inner = calc_wing_box_battery_volume(b_w, b_r, c_mu, t_root, eta_root, 0.35)

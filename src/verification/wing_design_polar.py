@@ -41,6 +41,7 @@ def verify_wing_design_polar() -> None:
             relWingThickness=ref.data.assumptions.relWingThickness,
             wingSweepHalfChord=ref.data.assumptions.wingSweepHalfChord,
             wingMassPenaltyFactor=ref.data.assumptions.wingMassPenaltyFactor,
+            bendingReliefFactor=UnitValue(0.0, ""),
         ),
         mission=replace(
             design.mission,
