@@ -42,9 +42,6 @@ class DesignPropulsionParameters:
 class DesignFuselageParameters:
     """Fuselage geometric dimension and cabin layout parameters."""
 
-    fuselageLength: UnitValue
-    fuselageWidth: UnitValue
-    fuselageHeight: UnitValue
     seatPitch: UnitValue
     seatWidth: UnitValue
     armrestWidth: UnitValue

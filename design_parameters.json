@@ -24,9 +24,6 @@
     "etaElectric": [0.85, ""]
   },
   "fuselage": {
-    "fuselageLength": [17.0, "m"],
-    "fuselageWidth": [1.82, "m"],
-    "fuselageHeight": [2.25, "m"],
     "seatPitch": [0.8, "m"],
     "seatWidth": [0.5, "m"],
     "armrestWidth": [0.05, "m"],

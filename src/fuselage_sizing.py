@@ -13,21 +13,25 @@ import math
 from typing import TYPE_CHECKING
 
 from data import SiValue
+from formulas import calc_fuselage_mass
 
 if TYPE_CHECKING:
     from data import Constraints, DesignParameters
+    from reference_aircraft import ReferenceAircraft
 
 
 class FuselageDesign:
-    """Encapsulates cabin seating, cross-section, and longitudinal fuselage sizing."""
+    """Encapsulates cabin seating, cross-section, longitudinal sizing, and mass."""
 
     def __init__(
         self,
         constraints: Constraints,
         design: DesignParameters,
+        ref: ReferenceAircraft,
     ) -> None:
         self.constraints = constraints
         self.design = design
+        self.ref = ref
         self.n_pax: int = int(self.design.mission.numberOfPassengers.value)
         if self.n_pax < 5:
             raise ValueError(f"Passenger count must be at least 5, got {self.n_pax}.")
@@ -202,14 +206,35 @@ class FuselageDesign:
             "m^2",
         )
 
+    @property
+    def mass(self) -> SiValue:
+        """Calibrated fuselage mass [kg]."""
+        v_d = SiValue(1.25 * self.design.mission.cruiseSpeedTAS.si, "m/s")
+        r_h = self.ref.horizontal_tail_lever_arm.si
+        delta_m_f = self.ref.data.assumptions.fuselageMassPenaltyFactor
+        raw = calc_fuselage_mass(
+            v_d,
+            r_h,
+            self.width,
+            self.height,
+            self.wetted_area,
+            delta_m_f,
+        )
+        return SiValue(raw * self.ref.fuselage_calibration_factor, "kg")
+
 
 if __name__ == "__main__":
     from data import load_constraints, load_design_parameters
+    from reference_aircraft import load_reference_aircraft
     from visualizations.fuselage_sizing import (
         plot_fuselage_sizing,
         print_fuselage_summary,
     )
 
-    fuselage = FuselageDesign(load_constraints(), load_design_parameters())
+    fuselage = FuselageDesign(
+        load_constraints(),
+        load_design_parameters(),
+        load_reference_aircraft(),
+    )
     print_fuselage_summary(fuselage)
     plot_fuselage_sizing(fuselage)

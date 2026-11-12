@@ -4,7 +4,6 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from fuselage_sizing import FuselageDesign
 from visualizations.aircraft import (
     plot_aircraft_geometry,
     plot_mass_breakdown,
@@ -96,7 +95,7 @@ def interactive_plot_menu(
             plot_aircraft_geometry(aircraft, ref_aircraft)
         elif choice in ("6", "f", "fuse", "fuselage", "cabin"):
             print("Opening Fuselage Sizing & Cabin Layout (1+1)...")
-            plot_fuselage_sizing(FuselageDesign(aircraft.constraints, aircraft.design))
+            plot_fuselage_sizing(aircraft.fuselage)
         elif choice in ("a", "all"):
             print("Opening all diagrams sequentially...")
             plot_sizing_diagram(aircraft.sizing_diagram(mode="thrust"))
@@ -105,7 +104,7 @@ def interactive_plot_menu(
             plot_mission_energy(aircraft, ref_aircraft, variant="simple")
             plot_payload_range(aircraft)
             plot_aircraft_geometry(aircraft, ref_aircraft)
-            plot_fuselage_sizing(FuselageDesign(aircraft.constraints, aircraft.design))
+            plot_fuselage_sizing(aircraft.fuselage)
         else:
             print(
                 f"Unknown option '{choice}'. Please choose 1, 1p, 2, 3, 3d, 4, 5, 6, A or Q."
