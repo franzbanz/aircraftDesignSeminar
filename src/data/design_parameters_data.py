@@ -56,6 +56,8 @@ class DesignFuselageParameters:
     noseLength: UnitValue
     frontBulkheadClearance: UnitValue
     minBaggageLength: UnitValue
+    usableBaggageFactor: UnitValue
+    underfloorBaggageHeight: UnitValue
 
 
 @dataclass(frozen=True)

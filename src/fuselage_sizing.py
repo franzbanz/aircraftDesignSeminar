@@ -56,8 +56,14 @@ class FuselageDesign:
         """External fuselage height [m]."""
         fuse = self.design.fuselage
         roof_structure = 0.12  # frames + skin + ceiling panels
+        underfloor_h = fuse.underfloorBaggageHeight.si
+        belly_wall = fuse.wallThickness.si if underfloor_h > 0 else 0.0
         return SiValue(
-            fuse.aisleHeadroom.si + roof_structure + fuse.floorStructuralDepth.si,
+            fuse.aisleHeadroom.si
+            + roof_structure
+            + fuse.floorStructuralDepth.si
+            + underfloor_h
+            + belly_wall,
             "m",
         )
 
@@ -117,26 +123,47 @@ class FuselageDesign:
     @property
     def _usable_baggage_area(self) -> SiValue:
         """Usable internal cross-sectional area of aft baggage bay [m^2]."""
+        fuse = self.design.fuselage
         return SiValue(
-            0.75 * self.cabin_width * self.design.fuselage.aisleHeadroom.si,
+            fuse.usableBaggageFactor * self.cabin_width * fuse.aisleHeadroom.si,
             "m^2",
+        )
+
+    @property
+    def underfloor_baggage_volume(self) -> SiValue:
+        """Usable underfloor baggage compartment volume beneath the cabin [m^3]."""
+        fuse = self.design.fuselage
+        return SiValue(
+            fuse.usableBaggageFactor
+            * self.cabin_width
+            * fuse.underfloorBaggageHeight.si
+            * self.cabin_length,
+            "m^3",
         )
 
     @property
     def baggage_length(self) -> SiValue:
         """Aft baggage compartment length [m]."""
+        remaining_volume = max(
+            0.0, self.cargo_volume_required - self.underfloor_baggage_volume
+        )
         return SiValue(
             max(
                 self.design.fuselage.minBaggageLength.si,
-                self.cargo_volume_required / self._usable_baggage_area,
+                remaining_volume / self._usable_baggage_area,
             ),
             "m",
         )
 
     @property
-    def baggage_volume(self) -> SiValue:
+    def aft_baggage_volume(self) -> SiValue:
         """Actual available aft baggage compartment volume [m^3]."""
         return SiValue(self.baggage_length * self._usable_baggage_area, "m^3")
+
+    @property
+    def baggage_volume(self) -> SiValue:
+        """Total available baggage volume (aft + underfloor) [m^3]."""
+        return SiValue(self.aft_baggage_volume + self.underfloor_baggage_volume, "m^3")
 
     @property
     def tail_length(self) -> SiValue:

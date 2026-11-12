@@ -32,12 +32,14 @@
     "armrestWidth": [0.05, "m"],
     "aisleWidth": [0.5, "m"],
     "wallClearance": [0.05, "m"],
-    "wallThickness": [0.06, "m"],
+    "wallThickness": [0.05, "m"],
     "aisleHeadroom": [1.65, "m"],
     "floorStructuralDepth": [0.15, "m"],
     "noseLength": [2.40, "m"],
     "frontBulkheadClearance": [0.40, "m"],
-    "minBaggageLength": [1, "m"]
+    "minBaggageLength": [1, "m"],
+    "usableBaggageFactor": [0.75, ""],
+    "underfloorBaggageHeight": [0.0, "m"]
   },
   "mission": {
     "range": [100, "nm"],

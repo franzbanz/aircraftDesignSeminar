@@ -46,8 +46,13 @@ def print_fuselage_summary(fuselage: FuselageDesign) -> None:
     )
     print(
         f"  3. Aft Baggage:            {fuselage.baggage_length:.2f} "
-        f"(Vol: {fuselage.baggage_volume:.2f}, Req: {fuselage.cargo_volume_required:.2f})"
+        f"(Vol: {fuselage.aft_baggage_volume:.2f}, Total: {fuselage.baggage_volume:.2f}, Req: {fuselage.cargo_volume_required:.2f})"
     )
+    if fuse.underfloorBaggageHeight.si > 0:
+        print(
+            f"     Underfloor Hold:        {fuse.underfloorBaggageHeight.si:.2f} height "
+            f"(Vol: {fuselage.underfloor_baggage_volume:.2f})"
+        )
     print(f"  4. Tailcone:               {fuselage.tail_length:.2f}")
     print(f"  --> TOTAL FUSELAGE LENGTH: {fuselage.length:.2f}")
     print("-" * 68)
@@ -226,8 +231,11 @@ def _plot_cross_section_shell(ax: Axes, fuselage: FuselageDesign, color: str) ->
     h2 = fuselage.height / 2.0
     wall_thickness = fuse.wallThickness.si
     floor_height = fuse.floorStructuralDepth.si
+    underfloor_height = fuse.underfloorBaggageHeight.si
+    belly_wall = wall_thickness if underfloor_height > 0 else 0.0
     aisle_headroom = fuse.aisleHeadroom.si
     aisle_width = fuse.aisleWidth.si
+    y_floor = -h2 + belly_wall + underfloor_height + floor_height
 
     outer_box = patches.FancyBboxPatch(
         (-w2, -h2),
@@ -243,7 +251,7 @@ def _plot_cross_section_shell(ax: Axes, fuselage: FuselageDesign, color: str) ->
 
     inner_r = max(0.05, fuselage.corner_radius - wall_thickness)
     inner_box = patches.FancyBboxPatch(
-        (-fuselage.cabin_width / 2.0, -h2 + floor_height),
+        (-fuselage.cabin_width / 2.0, y_floor),
         fuselage.cabin_width,
         aisle_headroom,
         boxstyle=patches.BoxStyle("Round", pad=0, rounding_size=inner_r),
@@ -254,7 +262,28 @@ def _plot_cross_section_shell(ax: Axes, fuselage: FuselageDesign, color: str) ->
     )
     ax.add_patch(inner_box)
 
-    y_floor = -h2 + floor_height
+    if underfloor_height > 0:
+        underfloor_box = patches.Rectangle(
+            (-fuselage.cabin_width / 2.0, -h2 + belly_wall),
+            fuselage.cabin_width,
+            underfloor_height,
+            fc="#d35400",
+            alpha=0.12,
+            ec="#d35400",
+            ls="--",
+            lw=1.0,
+        )
+        ax.add_patch(underfloor_box)
+        ax.text(
+            0.0,
+            -h2 + belly_wall + underfloor_height / 2.0,
+            f"Underfloor Hold ({underfloor_height:.2f})",
+            ha="center",
+            va="center",
+            fontsize=8,
+            color="#a04000",
+        )
+
     ax.plot(
         [-fuselage.cabin_width / 2.0, fuselage.cabin_width / 2.0],
         [y_floor, y_floor],
