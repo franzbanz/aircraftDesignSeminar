@@ -7,6 +7,7 @@ from typing import TYPE_CHECKING
 from data import SiValue
 from formulas import (
     calc_empennage_mass,
+    calc_empennage_mass_transport,
     calc_horizontal_tail_area,
     calc_vertical_tail_area,
 )
@@ -52,8 +53,20 @@ class EmpennageDesign:
     @property
     def mass(self) -> SiValue:
         """Calibrated empennage mass [kg]."""
-        n_ult = self.design.assumptions.limitLoad * 1.5
-        raw = calc_empennage_mass(
-            n_ult, self.horizontal_tail_area, self.vertical_tail_area
-        )
+        method = self.design.empennage.massMethod
+        if method == "transport":
+            v_d = SiValue(1.25 * self.design.mission.cruiseSpeedTAS.si, "m/s")
+            raw = calc_empennage_mass_transport(
+                v_d,
+                self.horizontal_tail_area,
+                self.vertical_tail_area,
+            )
+        elif method == "small":
+            n_ult = self.design.assumptions.limitLoad * 1.5
+            raw = calc_empennage_mass(
+                n_ult, self.horizontal_tail_area, self.vertical_tail_area
+            )
+        else:
+            msg = f"Unknown empennage massMethod: '{method}'. Expected 'transport' or 'small'."
+            raise ValueError(msg)
         return SiValue(raw * self.ref.empennage_calibration_factor, "kg")

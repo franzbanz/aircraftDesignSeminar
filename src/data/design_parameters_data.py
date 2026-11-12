@@ -36,6 +36,7 @@ class DesignWingParameters:
 class DesignEmpennageParameters:
     """Empennage sizing parameters."""
 
+    massMethod: str
     maxHorizontalVolumeCoefficient: UnitValue
 
 

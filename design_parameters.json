@@ -18,6 +18,8 @@
     "wingMassPenaltyFactor": [-0.10, ""]
   },
   "empennage": {
+    // "transport" [Strohmayer II | p. 120] or "small" (v_D < 250 kts)
+    "massMethod": "transport",
     // the reference aircraft has a very high coefficient, the reference table [Strohmayer I | p. 213] has a maximum value of 1.0
     "maxHorizontalVolumeCoefficient": [1.0, ""]
   },

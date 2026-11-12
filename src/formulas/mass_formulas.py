@@ -3,6 +3,8 @@
 Contains empirical and physical formulas for aircraft preliminary design.
 """
 
+import math
+
 from data import SiValue
 
 
@@ -125,6 +127,68 @@ def calc_empennage_mass(n_ult: float, s_htp: SiValue, s_vtp: SiValue) -> SiValue
         Total empennage mass [kg].
     """
     return SiValue(0.64 * (n_ult * (s_htp + s_vtp) ** 2) ** 0.75, "kg")
+
+
+def calc_tailplane_mass(
+    v_D: SiValue,
+    surface_area: SiValue,
+    phi_50_deg: float = 0.0,
+    k: float = 1.0,
+) -> SiValue:
+    """Calculates mass of a single tailplane surface (horizontal or vertical) for transport aircraft [kg].
+
+    Uses Torenbeek formula [Strohmayer - Flugzeugentwurf 2 | p. 120]
+
+    Args:
+        v_D: Design diving speed [m/s].
+        surface_area: Tailplane aerodynamic area (S_H or S_S) [m^2].
+        phi_50_deg: Tailplane sweep angle at 50% chord line phi_50 [deg]. Defaults to 0.0.
+        k: Configuration or trimming factor [-]:
+            - Horizontal tail: k_H = 1.0 (fixed stabilizer), 1.1 (trimmable stabilizer).
+            - Vertical tail: k_S = 1.0 (fuselage-mounted tail), 1.0 + 0.15 * (S_H * h_H) / (S_S * b_S) (T-tail).
+
+    Returns:
+        Tailplane mass [kg].
+    """
+    cos_phi = math.cos(math.radians(phi_50_deg))
+    bracket = (
+        11.9119 * (surface_area**0.2 * v_D) / (1000.0 * math.sqrt(cos_phi)) - 0.287
+    )
+    return SiValue(4.882 * surface_area * k * bracket, "kg")
+
+
+def calc_empennage_mass_transport(
+    v_D: SiValue,
+    s_htp: SiValue,
+    s_vtp: SiValue,
+    phi_50_h_deg: float = 0.0,
+    phi_50_v_deg: float = 0.0,
+    k_h: float = 1.0,
+    k_s: float = 1.0,
+) -> SiValue:
+    """Calculates total empennage mass for transport aircraft based on diving speed and tail areas [kg].
+
+    Uses Torenbeek formula [Strohmayer - Flugzeugentwurf 2 | p. 120] for transport aircraft
+
+    Args:
+        v_D: Design diving speed [m/s].
+        s_htp: Horizontal tailplane area S_H [m^2].
+        s_vtp: Vertical tailplane area S_S [m^2].
+        phi_50_h_deg: Horizontal tail sweep angle at 50% chord phi_50,H [deg]. Defaults to 0.0.
+        phi_50_v_deg: Vertical tail sweep angle at 50% chord phi_50,S [deg]. Defaults to 0.0.
+        k_h: Trimming factor for horizontal tail [-]:
+            - 1.0 for fixed stabilizer with elevator (festes HLW)
+            - 1.1 for trimmable horizontal stabilizer (Flossentrimmung)
+        k_s: Configuration factor for vertical tail [-]:
+            - 1.0 for fuselage-mounted horizontal tail (HLW am Rumpf)
+            - 1.0 + 0.15 * (S_H * h_H) / (S_S * b_S) for T-tail / cruciform tail (HLW am SLW)
+
+    Returns:
+        Total empennage mass m_empennage = m_HLW + m_SLW [kg].
+    """
+    m_hlw = calc_tailplane_mass(v_D, s_htp, phi_50_deg=phi_50_h_deg, k=k_h)
+    m_slw = calc_tailplane_mass(v_D, s_vtp, phi_50_deg=phi_50_v_deg, k=k_s)
+    return SiValue(m_hlw + m_slw, "kg")
 
 
 def calc_pylons_mass(p_to: SiValue) -> SiValue:

@@ -6,10 +6,14 @@ tail volume coefficients, cruise aerodynamics, and component mass calibration fa
 
 import math
 from pathlib import Path
+from typing import TYPE_CHECKING
 
 from data import SiValue
 from data.loader import load_reference_aircraft_data
 from data.reference_aircraft_data import ReferenceAircraftData
+
+if TYPE_CHECKING:
+    from data.design_parameters_data import DesignParameters
 from formulas.aerodynamics import (
     calc_cruise_lift_coefficient,
     calc_wing_zero_lift_drag_coefficient,
@@ -22,6 +26,7 @@ from formulas.geometry import (
 )
 from formulas.mass_formulas import (
     calc_empennage_mass,
+    calc_empennage_mass_transport,
     calc_fuselage_mass,
     calc_landing_gear_mass,
     calc_pylons_mass,
@@ -33,8 +38,13 @@ from formulas.mass_formulas import (
 class ReferenceAircraft:
     """Reference aircraft (Dornier 228) with catalog parameters and derived properties."""
 
-    def __init__(self, data: ReferenceAircraftData) -> None:
+    def __init__(
+        self,
+        data: ReferenceAircraftData,
+        design: DesignParameters,
+    ) -> None:
         self.data = data
+        self.design = design
 
     @property
     def aspect_ratio(self) -> float:
@@ -206,6 +216,12 @@ class ReferenceAircraft:
     @property
     def empennage_estimated_mass(self) -> SiValue:
         """Uncalibrated formula estimation of empennage mass [kg]."""
+        if self.design.empennage.massMethod == "transport":
+            return calc_empennage_mass_transport(
+                self.design_diving_speed,
+                self.data.dimensions.horizontalTailArea.si,
+                self.data.dimensions.verticalTailArea.si,
+            )
         return calc_empennage_mass(
             self.ultimate_load_factor,
             self.data.dimensions.horizontalTailArea.si,
@@ -238,9 +254,16 @@ class ReferenceAircraft:
         return self.data.mass.systems / self.systems_estimated_mass
 
 
-def load_reference_aircraft(path: Path | str | None = None) -> ReferenceAircraft:
+def load_reference_aircraft(
+    path: Path | str | None = None,
+    design: DesignParameters | None = None,
+) -> ReferenceAircraft:
     """Loads reference aircraft JSON data and returns an initialized ``ReferenceAircraft``."""
-    return ReferenceAircraft(load_reference_aircraft_data(path))
+    if design is None:
+        from data.loader import load_design_parameters
+
+        design = load_design_parameters()
+    return ReferenceAircraft(load_reference_aircraft_data(path), design=design)
 
 
 if __name__ == "__main__":
