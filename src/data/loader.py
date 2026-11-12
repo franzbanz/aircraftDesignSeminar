@@ -23,11 +23,13 @@ from data.constraints_data import (
 from data.design_parameters_data import (
     DesignAerodynamicParameters,
     DesignAssumptionsParameters,
+    DesignEmpennageParameters,
     DesignFuselageParameters,
     DesignInitialSizingParameters,
     DesignMissionParameters,
     DesignParameters,
     DesignPropulsionParameters,
+    DesignWingParameters,
 )
 from data.reference_aircraft_data import (
     ReferenceAerodynamicParameters,
@@ -207,6 +209,12 @@ def load_design_parameters(path: Path | str | None = None) -> DesignParameters:
         ),
         aerodynamics=instantiate_dataclass_with_extra_warning(
             DesignAerodynamicParameters, _parameter_group(data["aerodynamics"])
+        ),
+        wing=instantiate_dataclass_with_extra_warning(
+            DesignWingParameters, _parameter_group(data["wing"])
+        ),
+        empennage=instantiate_dataclass_with_extra_warning(
+            DesignEmpennageParameters, _parameter_group(data["empennage"])
         ),
         propulsion=instantiate_dataclass_with_extra_warning(
             DesignPropulsionParameters, _parameter_group(data["propulsion"])

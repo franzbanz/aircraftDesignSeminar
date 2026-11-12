@@ -211,7 +211,7 @@ class FuselageDesign:
         """Calibrated fuselage mass [kg]."""
         v_d = SiValue(1.25 * self.design.mission.cruiseSpeedTAS.si, "m/s")
         r_h = self.ref.horizontal_tail_lever_arm.si
-        delta_m_f = self.ref.data.assumptions.fuselageMassPenaltyFactor
+        delta_m_f = self.design.fuselage.fuselageMassPenaltyFactor
         raw = calc_fuselage_mass(
             v_d,
             r_h,

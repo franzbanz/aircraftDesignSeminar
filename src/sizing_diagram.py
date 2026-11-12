@@ -251,9 +251,9 @@ class SizingDiagram:
         self.n_engines = int(propulsion.numberOfEngines)
         self.h_cruise = mission.cruiseAltitude.si
         self.v_cruise = mission.cruiseSpeedTAS.si
-        self.c_a_max_to = self.design.assumptions.maxTakeOffLiftCoefficient
-        self.c_a_max_l = self.design.aerodynamics.maxLandingLiftCoefficient
-        self.aspect_ratio = self.design.aerodynamics.aspectRatio
+        self.c_a_max_to = self.design.wing.maxTakeOffLiftCoefficient
+        self.c_a_max_l = self.design.wing.maxLandingLiftCoefficient
+        self.aspect_ratio = self.design.wing.aspectRatio
         self.power_ratio = (
             propulsion.engineTakeOffPower.si / propulsion.engineMaxContinousPower.si
         )

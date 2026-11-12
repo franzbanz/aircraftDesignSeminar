@@ -14,13 +14,28 @@ class DesignInitialSizingParameters:
 
 @dataclass(frozen=True)
 class DesignAerodynamicParameters:
-    """Aerodynamic parameters and lift coefficients."""
+    """Whole-aircraft aerodynamic performance parameters."""
 
     liftToDragRatioLoiter: UnitValue
+    oswaldFactor: UnitValue
+
+
+@dataclass(frozen=True)
+class DesignWingParameters:
+    """Wing geometry, high-lift, and mass assumptions."""
+
+    maxTakeOffLiftCoefficient: UnitValue
     maxLandingLiftCoefficient: UnitValue
     aspectRatio: UnitValue
-    oswaldFactor: UnitValue
     relWingThickness: UnitValue
+    wingSweepHalfChord: UnitValue
+    wingMassPenaltyFactor: UnitValue
+
+
+@dataclass(frozen=True)
+class DesignEmpennageParameters:
+    """Empennage sizing parameters."""
+
     maxHorizontalVolumeCoefficient: UnitValue
 
 
@@ -55,6 +70,7 @@ class DesignFuselageParameters:
     minBaggageLength: UnitValue
     usableBaggageFactor: UnitValue
     underfloorBaggageHeight: UnitValue
+    fuselageMassPenaltyFactor: UnitValue
 
 
 @dataclass(frozen=True)
@@ -69,12 +85,9 @@ class DesignMissionParameters:
 
 @dataclass(frozen=True)
 class DesignAssumptionsParameters:
-    """Structural, geometric, and aerodynamic design assumptions."""
+    """Structural design assumptions."""
 
     limitLoad: UnitValue
-    maxTakeOffLiftCoefficient: UnitValue
-    wingSweepHalfChord: UnitValue
-    wingMassPenaltyFactor: UnitValue
 
 
 @dataclass(frozen=True)
@@ -83,6 +96,8 @@ class DesignParameters:
 
     initialSizing: DesignInitialSizingParameters
     aerodynamics: DesignAerodynamicParameters
+    wing: DesignWingParameters
+    empennage: DesignEmpennageParameters
     propulsion: DesignPropulsionParameters
     fuselage: DesignFuselageParameters
     mission: DesignMissionParameters

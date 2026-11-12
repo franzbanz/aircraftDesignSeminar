@@ -33,9 +33,14 @@ def verify_wing_design_polar() -> None:
         design,
         aerodynamics=replace(
             design.aerodynamics,
-            aspectRatio=UnitValue(ref.aspect_ratio, ""),
             oswaldFactor=ref.data.assumptions.oswaldFactor,
+        ),
+        wing=replace(
+            design.wing,
+            aspectRatio=UnitValue(ref.aspect_ratio, ""),
             relWingThickness=ref.data.assumptions.relWingThickness,
+            wingSweepHalfChord=ref.data.assumptions.wingSweepHalfChord,
+            wingMassPenaltyFactor=ref.data.assumptions.wingMassPenaltyFactor,
         ),
         mission=replace(
             design.mission,
@@ -45,8 +50,6 @@ def verify_wing_design_polar() -> None:
         assumptions=replace(
             design.assumptions,
             limitLoad=ref.data.assumptions.limitLoad,
-            wingSweepHalfChord=ref.data.assumptions.wingSweepHalfChord,
-            wingMassPenaltyFactor=ref.data.assumptions.wingMassPenaltyFactor,
         ),
     )
 
@@ -134,8 +137,11 @@ def verify_wing_design_polar() -> None:
         step1_design,
         aerodynamics=replace(
             step1_design.aerodynamics,
-            aspectRatio=design.aerodynamics.aspectRatio,
             oswaldFactor=design.aerodynamics.oswaldFactor,
+        ),
+        wing=replace(
+            step1_design.wing,
+            aspectRatio=design.wing.aspectRatio,
         ),
     )
     step2 = WingDesign(

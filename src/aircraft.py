@@ -130,7 +130,7 @@ class BatteryAircraft:
         """Horizontal tailplane area S_HTP scaled via volume coefficient [m^2]."""
         c_ht = min(
             self.ref.horizontal_tail_volume_coefficient,
-            self.design.aerodynamics.maxHorizontalVolumeCoefficient,
+            self.design.empennage.maxHorizontalVolumeCoefficient,
         )
         r_h = self.ref.horizontal_tail_lever_arm.si
         return calc_horizontal_tail_area(
