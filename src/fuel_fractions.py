@@ -12,8 +12,6 @@ params = load_parameters()
 ref_aircraft = load_reference_aircraft()
 
 GRAVITY = 9.81  # [m/s^2]
-KTS_TO_MS = 1.852 / 3.6  # [m/s per kt]
-MJ_TO_KWH = 1.0 / 3.6  # [kWh per MJ]
 
 MTOM = 8600.0  # [kg] Design take-off mass of the electric aircraft
 ETA_ELECTRIC = 0.85  # [-] Overall electric powertrain efficiency
@@ -28,15 +26,15 @@ def calc_reference_propulsion_efficiency() -> float:
     where thrust specific fuel consumption (TSFC) is converted from [lb/(h*lbf)] to SI units
     [kg/(N*s)] by dividing by (3600 * GRAVITY).
     """
-    cruise_speed_ms = ref_aircraft.performance.cruiseSpeedTAS * KTS_TO_MS
-    thrust_specific_fuel_consumption_si = ref_aircraft.propulsion.tsfcCruise / (3600.0 * GRAVITY)  # [kg/(N*s)]
-    fuel_energy_density_j_per_kg = ref_aircraft.fuel.energyDensity * 1e6  # [J/kg]
+    cruise_speed_ms = ref_aircraft.performance.cruiseSpeedTAS.to("m/s")
+    thrust_specific_fuel_consumption_si = ref_aircraft.propulsion.tsfcCruise.to("kg/(N*s)")  # [kg/(N*s)]
+    fuel_energy_density_j_per_kg = ref_aircraft.fuel.energyDensity.to("J/kg")  # [J/kg]
     return cruise_speed_ms / (thrust_specific_fuel_consumption_si * fuel_energy_density_j_per_kg)
 
 
 def calc_reference_propulsive_energy(fuel_mass_kg: float) -> float:
     """Converts burned kerosene mass of the reference aircraft into propulsive energy [kWh]."""
-    chemical_energy_kwh = fuel_mass_kg * ref_aircraft.fuel.energyDensity * MJ_TO_KWH
+    chemical_energy_kwh = fuel_mass_kg * ref_aircraft.fuel.energyDensity.to("kWh/kg")
     reference_propulsion_efficiency = calc_reference_propulsion_efficiency()
     return chemical_energy_kwh * reference_propulsion_efficiency
 
@@ -67,7 +65,7 @@ def calc_taxi_and_takeoff_energy() -> float:
     return calc_scaled_electric_energy(fuel_ref, m_start_ref)
 
 
-def calc_cruise_energy(range_m: float = params.mission.range * 1000.0) -> float:
+def calc_cruise_energy(range_m: float = params.mission.range.to("m")) -> float:
     """Calculates required electrical battery energy for horizontal cruise flight [kWh].
 
     Derived from steady level flight equilibrium (D = MTOM * g / (L/D)):
@@ -149,7 +147,7 @@ def calc_reference_loiter_fuel_mass(
 
 
 def calc_reference_diversion_fuel_mass(
-    diversion_distance_m: float = params.mission.diversionDistance * 1000.0,
+    diversion_distance_m: float = params.mission.diversionDistance.to("m"),
     lift_to_drag_cruise: float = ref_aircraft.aerodynamics.liftToDragRatioCruise,
 ) -> float:
     """Calculates reference aircraft fuel mass for diversion via Breguet range [kg]."""
@@ -174,7 +172,7 @@ def calc_route_reserve_energy() -> float:
 def calc_loiter_energy(
     loiter_time_h: float = params.mission.loiterTime,
     lift_to_drag_loiter: float = L_D_LOITER,
-    loiter_speed_ms: float = params.performance.cruiseSpeedMin * KTS_TO_MS,
+    loiter_speed_ms: float = params.performance.cruiseSpeedMin.to("m/s"),
 ) -> float:
     """Calculates required electrical battery energy for loiter flight [kWh].
 
@@ -196,7 +194,7 @@ def calc_loiter_energy(
 
 
 def calc_diversion_energy(
-    diversion_distance_m: float = params.mission.diversionDistance * 1000.0,
+    diversion_distance_m: float = params.mission.diversionDistance.to("m"),
 ) -> float:
     """Calculates electric energy required for diversion to alternate airport [kWh]."""
     return calc_cruise_energy(diversion_distance_m)
@@ -214,7 +212,7 @@ def calc_total_mission_energy() -> float:
 
 def calc_battery_cell_mass(electric_energy_kwh: float) -> float:
     """Calculates required battery mass at cell level for a given electric energy [kg]."""
-    cell_energy_density_kwh_per_kg = params.battery.cellEnergyDensityMax / 1000.0
+    cell_energy_density_kwh_per_kg = params.battery.cellEnergyDensityMax.to("kWh/kg")
     return electric_energy_kwh / cell_energy_density_kwh_per_kg
 
 

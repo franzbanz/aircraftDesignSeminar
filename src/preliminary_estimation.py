@@ -8,7 +8,7 @@ from formulas import (
     calc_systems_mass,
     calc_wing_mass,
 )
-from data import load_parameters, load_reference_aircraft
+from data import Parameter, load_parameters, load_reference_aircraft
 
 
 params = load_parameters()
@@ -42,7 +42,7 @@ def calc_calibrated_wing_mass() -> float:
 
 def calc_calibrated_fuselage_mass() -> float:
     """Calculates fuselage mass scaled with the reference aircraft calibration factor [kg]."""
-    v_D = 1.25 * params.performance.cruiseSpeedMin * (1.852 / 3.6)  # [m/s] Design diving speed (1.25 * v_cruise)
+    v_D = 1.25 * params.performance.cruiseSpeedMin.to("m/s")  # [m/s] Design diving speed (1.25 * v_cruise)
     r_H = ref_aircraft.calculatedValues.horizontalTailLeverArm  # [m] Horizontal tail moment arm
     b_R = ref_aircraft.dimensions.fuselageWidth  # [m] Max fuselage width
     h_R = ref_aircraft.dimensions.fuselageHeight  # [m] Fuselage height
@@ -163,7 +163,7 @@ print(f"Battery mass: {m_battery} {mass_unit}")
 print(f"Total Takeoff Mass (MTOM): {MTOM} {mass_unit} (Ref: {ref_aircraft.mass.takeOffMassMax})\n")
 
 # ------------- Range ------------------
-range_m = params.battery.cellEnergyDensityMax*3600 * 0.85 * 1/gravity * L_D * m_battery / MTOM
-range_km = range_m / 1000
-print(f"Range: {range_km} {params.mission.range.unit}")
-print(f"Range: {range_km / 1.852} NM")
+range_m = params.battery.cellEnergyDensityMax.to("J/kg") * 0.85 * 1 / gravity * L_D * m_battery / MTOM
+range_km = Parameter(range_m, "m").to("km")
+print(f"Range: {range_km}")
+print(f"Range: {range_km.to('NM').value} NM")
