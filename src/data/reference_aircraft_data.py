@@ -16,6 +16,7 @@ class ReferenceMassParameters:
     takeOffMassMax: Parameter
     landingMassMax: Parameter
     zeroFuelMassMax: Parameter
+    mwe: Parameter
     wing: Parameter
     fuselage: Parameter
     horizontalEmpennage: Parameter
@@ -66,16 +67,6 @@ class ReferenceAssumptionsParameters:
     wingRootThickness: Parameter
     wingSweepHalfChord: Parameter
     wingMassPenaltyFactor: Parameter
-    kTakeOff: Parameter
-    maxStallSpeed: Parameter
-    obstacleClearance: Parameter
-    reverseThrustFactorA: Parameter
-    minClimbGradient: Parameter
-    massClimbRatio: Parameter
-    oswaldFactor: Parameter
-    maxThrustOverCruiseThrustRatio: Parameter
-    maxMassOverCruiseMassRatio: Parameter
-    maxMassOverLandingMassRatio: Parameter
 
 
 @dataclass(frozen=True)
@@ -117,6 +108,7 @@ class ReferenceFuelParameters:
     descent: Parameter
     approachLandingAndTaxiIn: Parameter
     reserve: Parameter
+    total: Parameter
 
     @property
     def tripMass(self) -> Parameter:

@@ -25,18 +25,16 @@ def getSizingDiagram():
     rho0 = par.performance.takeOffDensity
     fieldElevation = par.performance.takeOffAltitude
     vCruise = par.performance.cruiseSpeedMin * 0.5144
-
-    # ref aircraft
-    m0Ref = ref.mass.takeOffMassMax
-    Sref = ref.dimensions.wingArea
-    b = ref.dimensions.wingspan
-    nEng = ref.propulsion.numberOfEngines
-    eCruise = ref.aerodynamics.liftToDragRatioCruise
-    hCruise = ref.performance.cruiseAltitude
-    caMaxTo = ref.assumptions.maxTakeOffLiftCoefficient
-    caMaxL = ref.aerodynamics.maxLandingLiftCoefficient
+    m0 = par.performance.takeOffMassMax
 
     # electric aircraft
+    Sref = bat.dimensions.wingArea
+    b = bat.dimensions.wingspan
+    nEng = bat.propulsion.numberOfEngines
+    eCruise = bat.aerodynamics.liftToDragRatioCruise
+    hCruise = bat.performance.cruiseAltitude * 0.3048
+    caMaxTo = bat.assumptions.maxTakeOffLiftCoefficient
+    caMaxL = bat.aerodynamics.maxLandingLiftCoefficient
     kTO = bat.assumptions.kTakeOff
     vSMax = bat.assumptions.maxStallSpeed * 0.5144  # transfer to SI units
     lA = bat.assumptions.obstacleClearance
@@ -109,3 +107,5 @@ def getSizingDiagram():
     plt.show()
     
     return designPoint
+
+getSizingDiagram()
