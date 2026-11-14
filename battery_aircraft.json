@@ -26,12 +26,17 @@
   },
   "performance": {
     "cruiseSpeedTAS": [200, "kts"],
-    "cruiseAltitude": [10000, "ft"]
+    "cruiseAltitude": [10000, "ft"],
+    "cruiseMachNumber": [0.27, ""]
   },
   "aerodynamics": {
     "liftToDragRatioCruise": [15, ""],
     "liftToDragRatioLoiter": [15.7, ""],
-    "maxLandingLiftCoefficient": [2.6, ""]
+    "maxLandingLiftCoefficient": [2.6, ""],
+      "drag": {
+        "EquivalentDragParameter": [0.0045, ""],
+        "fuselageInterfereceParameter": [1.0, ""]
+      }
   },
   "propulsion": {
     "engineTakeOffPower": [580, "kW"],
