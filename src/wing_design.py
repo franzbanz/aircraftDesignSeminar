@@ -77,7 +77,11 @@ class WingDesign:
             s_w=self.area,
             delta_m_F=self.design.wing.wingMassPenaltyFactor.value,
         )
-        return SiValue(raw * self.ref.wing_calibration_factor, "kg")
+        # Note: Advanced composite technology (CFRP) provides an additional ~10-15% weight reduction
+        # (factor 0.85-0.90; see Raymer, Table 15.4, p. 580). The reference aircraft baseline is certified
+        # as "all-metal construction" (EASA TCDS No. A.359, Section B.III, Item 2, p.13).
+        relief = 1.0 - self.design.wing.bendingReliefFactor.value
+        return SiValue(raw * self.ref.wing_calibration_factor * relief, "kg")
 
     @property
     def wing_zero_lift_drag_coefficient(self) -> float:
