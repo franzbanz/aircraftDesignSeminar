@@ -47,7 +47,7 @@ class WingDesign:
     @property
     def span(self) -> SiValue:
         """Wingspan b_W [m], constrained to maximum allowable span."""
-        b_s = calc_wingspan(self.area, self.design.aerodynamics.aspectRatio)
+        b_s = calc_wingspan(self.area, self.design.wing.aspectRatio)
         return min(b_s, self.constraints.performance.wingSpanMax.si)
 
     @property
@@ -63,7 +63,7 @@ class WingDesign:
     @property
     def root_thickness(self) -> SiValue:
         """Wing thickness at root t_root = c_mu * rel_thickness [m]."""
-        rel_t = self.design.aerodynamics.relWingThickness.value
+        rel_t = self.design.wing.relWingThickness.value
         return SiValue(self.mean_aerodynamic_chord * rel_t, "m")
 
     @property
@@ -75,7 +75,7 @@ class WingDesign:
             n_ult=self.design.assumptions.limitLoad * 1.5,
             d_root=self.root_thickness,
             s_w=self.area,
-            delta_m_F=self.design.assumptions.wingMassPenaltyFactor.value,
+            delta_m_F=self.design.wing.wingMassPenaltyFactor.value,
         )
         return SiValue(raw * self.ref.wing_calibration_factor, "kg")
 
@@ -86,8 +86,8 @@ class WingDesign:
             velocity=self.design.mission.cruiseSpeedTAS.si,
             altitude=self.design.mission.cruiseAltitude.si,
             mean_aerodynamic_chord=self.mean_aerodynamic_chord,
-            rel_thickness=self.design.aerodynamics.relWingThickness,
-            sweep_deg=self.design.assumptions.wingSweepHalfChord,
+            rel_thickness=self.design.wing.relWingThickness,
+            sweep_deg=self.design.wing.wingSweepHalfChord,
         )
 
     @property

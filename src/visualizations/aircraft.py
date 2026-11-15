@@ -33,9 +33,9 @@ def print_aircraft_summary(
         f"Operator items mass: {aircraft.m_operator_items} (Ref: {ref_aircraft.data.mass.operatorItems})"
     )
     print(f"Structure mass: {aircraft.m_structure} (Ref: {m_structure_ref})")
-    print(f"  - Wing: {aircraft.m_wing} (Ref: {ref_aircraft.data.mass.wing})")
+    print(f"  - Wing: {aircraft.wing.mass} (Ref: {ref_aircraft.data.mass.wing})")
     print(
-        f"  - Fuselage: {aircraft.m_fuselage} (Ref: {ref_aircraft.data.mass.fuselage})"
+        f"  - Fuselage: {aircraft.fuselage.mass} (Ref: {ref_aircraft.data.mass.fuselage})"
     )
     print(
         f"  - Landing gear: {aircraft.m_landing_gear} (Ref: {ref_aircraft.data.mass.landingGear})"
@@ -82,7 +82,7 @@ def print_aircraft_summary(
         f"Wing Root Thickness (16%):   {aircraft.wing.root_thickness:.2f} (Ref: {ref_aircraft.wing_root_thickness:.2f})"
     )
     print(
-        f"Fuselage (L x W x H):        {aircraft.fuselage_length:.2f} x {aircraft.fuselage_width:.2f} x {aircraft.fuselage_height:.2f}"
+        f"Fuselage (L x W x H):        {aircraft.fuselage.length:.2f} x {aircraft.fuselage.width:.2f} x {aircraft.fuselage.height:.2f}"
     )
     print(
         f"Horizontal Tail Area (S_HT): {aircraft.horizontal_tail_area:.2f} (Ref: {ref_aircraft.data.dimensions.horizontalTailArea:.2f})"
@@ -227,8 +227,8 @@ def plot_mass_breakdown(
         ref_aircraft.data.mass.pylons.si,
     ]
     el_parts = [
-        aircraft.m_wing,
-        aircraft.m_fuselage,
+        aircraft.wing.mass,
+        aircraft.fuselage.mass,
         aircraft.m_landing_gear,
         aircraft.m_empennage,
         aircraft.m_pylons,
@@ -291,8 +291,8 @@ def plot_aircraft_geometry(
         1, 2, figsize=(14, 6.5), gridspec_kw={"width_ratios": [1.4, 1]}
     )
 
-    l_f = aircraft.fuselage_length
-    w_f = aircraft.fuselage_width
+    l_f = aircraft.fuselage.length
+    w_f = aircraft.fuselage.width
 
     fuselage_x = [0, 1.5, l_f - 3.0, l_f, l_f - 3.0, 1.5, 0]
     fuselage_y = [0, w_f / 2, w_f / 2, 0, -w_f / 2, -w_f / 2, 0]

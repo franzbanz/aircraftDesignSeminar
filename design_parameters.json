@@ -4,11 +4,20 @@
   },
   "aerodynamics": {
     "liftToDragRatioLoiter": [15.7, ""],
+    "oswaldFactor": [0.85, ""]
+  },
+  "wing": {
+    "maxTakeOffLiftCoefficient": [1.7, ""],
     "maxLandingLiftCoefficient": [2.6, ""],
     // maximum 10.63 if wingspan should be lower than 24m with 54.15m^2 wing area
     "aspectRatio": [10.5, ""],
-    "oswaldFactor": [0.85, ""],
     "relWingThickness": [0.18, ""],
+    // rectangular wing
+    "wingSweepHalfChord": [0.0, "deg"],
+    // 2 engines (-5%) and no landing gear on wing (-5%)
+    "wingMassPenaltyFactor": [-0.10, ""]
+  },
+  "empennage": {
     // the reference aircraft has a very high coefficient, the reference table [Strohmayer I | p. 213] has a maximum value of 1.0
     "maxHorizontalVolumeCoefficient": [1.0, ""]
   },
@@ -24,22 +33,29 @@
     "etaElectric": [0.85, ""]
   },
   "fuselage": {
-    "fuselageLength": [17.0, "m"],
-    "fuselageWidth": [1.82, "m"],
-    "fuselageHeight": [2.25, "m"]
+    "seatPitch": [0.8, "m"],
+    "seatWidth": [0.5, "m"],
+    "armrestWidth": [0.05, "m"],
+    "aisleWidth": [0.5, "m"],
+    "wallClearance": [0.05, "m"],
+    "wallThickness": [0.05, "m"],
+    "aisleHeadroom": [1.65, "m"],
+    "floorStructuralDepth": [0.15, "m"],
+    "noseLength": [2.40, "m"],
+    "frontBulkheadClearance": [0.40, "m"],
+    "minBaggageLength": [1, "m"],
+    "usableBaggageFactor": [0.75, ""],
+    "underfloorBaggageHeight": [0.0, "m"],
+    // fuselage-mounted landing gear (+7%)
+    "fuselageMassPenaltyFactor": [0.07, ""]
   },
   "mission": {
     "range": [100, "nm"],
-    "cruiseSpeedTAS": [184.4, "kts"],
+    "cruiseSpeedTAS": [170, "kts"],
     "cruiseAltitude": [10000, "ft"],
     "numberOfPassengers": [19, ""]
   },
   "assumptions": {
-    "limitLoad": [3.0, ""],
-    "maxTakeOffLiftCoefficient": [1.7, ""],
-    // rectangular wing
-    "wingSweepHalfChord": [0.0, "deg"],
-    // 2 engines (-5%) and no landing gear on wing (-5%)
-    "wingMassPenaltyFactor": [-0.10, ""]
+    "limitLoad": [3.0, ""]
   }
 }

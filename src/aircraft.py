@@ -1,13 +1,10 @@
 """Battery-powered electric aircraft model with integrated calibrated mass estimation."""
 
-import math
-
 from constants import GRAVITY
 from data import Constraints, DesignParameters, SiValue
 from formulas import (
     calc_electric_range,
     calc_empennage_mass,
-    calc_fuselage_mass,
     calc_horizontal_tail_area,
     calc_landing_gear_mass,
     calc_pylons_mass,
@@ -15,6 +12,7 @@ from formulas import (
     calc_vertical_tail_area,
 )
 from fuel_fractions import MissionEnergyCalculator, ReferenceMissionCalculator
+from fuselage_sizing import FuselageDesign
 from reference_aircraft import ReferenceAircraft
 from sizing_diagram import SizingDiagram, SizingMode
 from wing_design import WingDesign
@@ -56,6 +54,11 @@ class BatteryAircraft:
             self.mtom,
             self.wing_loading_design,
         )
+
+    @property
+    def fuselage(self) -> FuselageDesign:
+        """Fuselage geometry and cabin layout design calculator."""
+        return FuselageDesign(self.constraints, self.design, self.ref)
 
     # --------------------------------------------------------------------------
     # Fixed Operational & Payload Masses
@@ -123,26 +126,11 @@ class BatteryAircraft:
         return self.sizing_diagram(mode="power").design_power_loading
 
     @property
-    def fuselage_length(self) -> SiValue:
-        """Fuselage length [m]."""
-        return self.design.fuselage.fuselageLength.si
-
-    @property
-    def fuselage_width(self) -> SiValue:
-        """Fuselage width [m]."""
-        return self.design.fuselage.fuselageWidth.si
-
-    @property
-    def fuselage_height(self) -> SiValue:
-        """Fuselage height [m]."""
-        return self.design.fuselage.fuselageHeight.si
-
-    @property
     def horizontal_tail_area(self) -> SiValue:
         """Horizontal tailplane area S_HTP scaled via volume coefficient [m^2]."""
         c_ht = min(
             self.ref.horizontal_tail_volume_coefficient,
-            self.design.aerodynamics.maxHorizontalVolumeCoefficient,
+            self.design.empennage.maxHorizontalVolumeCoefficient,
         )
         r_h = self.ref.horizontal_tail_lever_arm.si
         return calc_horizontal_tail_area(
@@ -180,24 +168,6 @@ class BatteryAircraft:
     # --------------------------------------------------------------------------
 
     @property
-    def m_wing(self) -> SiValue:
-        """Calibrated wing mass [kg]."""
-        return self.wing.mass
-
-    @property
-    def m_fuselage(self) -> SiValue:
-        """Calibrated fuselage mass [kg]."""
-        v_D = SiValue(1.25 * self.design.mission.cruiseSpeedTAS.si, "m/s")
-        r_H = self.ref.horizontal_tail_lever_arm.si
-        b_R = self.fuselage_width
-        h_R = self.fuselage_height
-        l_R = self.fuselage_length
-        delta_m_F = self.ref.data.assumptions.fuselageMassPenaltyFactor
-        s_o = SiValue(math.pi * ((b_R + h_R) / 2.0) * l_R, "m^2")
-        raw = calc_fuselage_mass(v_D, r_H, b_R, h_R, s_o, delta_m_F)
-        return SiValue(raw * self.ref.fuselage_calibration_factor, "kg")
-
-    @property
     def m_landing_gear(self) -> SiValue:
         """Calibrated landing gear mass [kg]."""
         raw = calc_landing_gear_mass(self.mtom)
@@ -227,8 +197,8 @@ class BatteryAircraft:
     def m_structure(self) -> SiValue:
         """Total airframe structure mass [kg]."""
         return SiValue(
-            self.m_wing
-            + self.m_fuselage
+            self.wing.mass
+            + self.fuselage.mass
             + self.m_landing_gear
             + self.m_empennage
             + self.m_pylons,

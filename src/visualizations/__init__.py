@@ -14,6 +14,10 @@ from visualizations.fuel_fractions import (
     plot_payload_range,
     print_mission_energy_breakdown,
 )
+from visualizations.fuselage_sizing import (
+    plot_fuselage_sizing,
+    print_fuselage_summary,
+)
 from visualizations.reference_aircraft import print_reference_aircraft
 from visualizations.sizing_diagram import plot_sizing_diagram, print_sizing_diagram
 
@@ -24,11 +28,13 @@ if TYPE_CHECKING:
 __all__ = [
     "interactive_plot_menu",
     "plot_aircraft_geometry",
+    "plot_fuselage_sizing",
     "plot_mass_breakdown",
     "plot_mission_energy",
     "plot_payload_range",
     "plot_sizing_diagram",
     "print_aircraft_summary",
+    "print_fuselage_summary",
     "print_mission_energy_breakdown",
     "print_reference_aircraft",
     "print_sizing_diagram",
@@ -50,6 +56,7 @@ def interactive_plot_menu(
   [3d] Mission Energy Breakdown (Detailed Variant - analytical segments)
   [4] Payload-Range Diagram
   [5] Aircraft Dimensions & 2D Geometry Comparison
+  [6] Fuselage Sizing & Cabin Layout (1+1)
   [A] Show All Plots
   [Q] Exit Menu
 ======================================================================
@@ -86,6 +93,9 @@ def interactive_plot_menu(
         elif choice in ("5", "g", "geom", "geometry", "dimensions"):
             print("Opening Aircraft Dimensions & Geometry Comparison...")
             plot_aircraft_geometry(aircraft, ref_aircraft)
+        elif choice in ("6", "f", "fuse", "fuselage", "cabin"):
+            print("Opening Fuselage Sizing & Cabin Layout (1+1)...")
+            plot_fuselage_sizing(aircraft.fuselage)
         elif choice in ("a", "all"):
             print("Opening all diagrams sequentially...")
             plot_sizing_diagram(aircraft.sizing_diagram(mode="thrust"))
@@ -94,7 +104,8 @@ def interactive_plot_menu(
             plot_mission_energy(aircraft, ref_aircraft, variant="simple")
             plot_payload_range(aircraft)
             plot_aircraft_geometry(aircraft, ref_aircraft)
+            plot_fuselage_sizing(aircraft.fuselage)
         else:
             print(
-                f"Unknown option '{choice}'. Please choose 1, 1p, 2, 3, 3d, 4, 5, A or Q."
+                f"Unknown option '{choice}'. Please choose 1, 1p, 2, 3, 3d, 4, 5, 6, A or Q."
             )
