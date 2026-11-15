@@ -1,5 +1,6 @@
 {
   "mass": {
+    // Certified baseline is "all-metal construction" (EASA TCDS No. A.359, Section B.III, Item 2, p. 13)
     "takeOffMassMax": [6400, "kg"],
     "landingMassMax": [6100, "kg"],
     "zeroFuelMassMax": [5940, "kg"],

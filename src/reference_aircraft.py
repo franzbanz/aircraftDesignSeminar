@@ -2,6 +2,7 @@
 
 Combines catalog specifications from ``reference_aircraft.json`` with derived geometry,
 tail volume coefficients, cruise aerodynamics, and component mass calibration factors.
+The reference airframe is certified as "all-metal construction" (EASA TCDS No. A.359, Section B.III, Item 2, p. 13).
 """
 
 import math

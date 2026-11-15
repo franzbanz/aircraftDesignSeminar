@@ -18,13 +18,16 @@
     "wingSweepHalfChord": [0.0, "deg"],
     // 2 engines (-5%) and no landing gear on wing (-5%)
     "wingMassPenaltyFactor": [-0.10, ""],
-    "bendingReliefFactor": [0.0, ""]
+    "bendingReliefFactor": [0.0, ""],
+    // Baseline uses conventional all-metal structure (factor 1.0)
+    "technologyFactor": [1.0, ""]
   },
   "empennage": {
     // "transport" [Strohmayer II | p. 120] or "small" (v_D < 250 kts)
     "massMethod": "transport",
     // the reference aircraft has a very high coefficient, the reference table [Strohmayer I | p. 213] has a maximum value of 1.0
-    "maxHorizontalVolumeCoefficient": [1.5, ""]
+    "maxHorizontalVolumeCoefficient": [1.5, ""],
+    "technologyFactor": [1.0, ""]
   },
   "propulsion": {
     // assumption of engine magni 650 (scaled to 1200kW)
@@ -52,7 +55,8 @@
     "usableBaggageFactor": [0.75, ""],
     "underfloorBaggageHeight": [0.0, "m"],
     // fuselage-mounted landing gear (+7%)
-    "fuselageMassPenaltyFactor": [0.07, ""]
+    "fuselageMassPenaltyFactor": [0.07, ""],
+    "technologyFactor": [1.0, ""]
   },
   "mission": {
     "range": [100, "nm"],

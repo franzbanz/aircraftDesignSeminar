@@ -69,4 +69,9 @@ class EmpennageDesign:
         else:
             msg = f"Unknown empennage massMethod: '{method}'. Expected 'transport' or 'small'."
             raise ValueError(msg)
-        return SiValue(raw * self.ref.empennage_calibration_factor, "kg")
+        return SiValue(
+            raw
+            * self.ref.empennage_calibration_factor
+            * self.design.empennage.technologyFactor,
+            "kg",
+        )

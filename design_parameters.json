@@ -19,15 +19,17 @@
     // 2 engines (-5%) and no landing gear on wing (-5%)
     "wingMassPenaltyFactor": [-0.10, ""],
     // flat wing bending relief factor (e.g. 0.10-0.20 for wing-mounted batteries; 0.0 = none)
-    // Note: Composite materials (CFRP) can additionally save ~10-15% (factor 0.85-0.90, Raymer Table 15.4, p. 580).
-    // Reference baseline is certified as "all-metal construction" (EASA TCDS No. A.359, Section B.III, Item 2, p.13).
-    "bendingReliefFactor": [0.2, ""]
+    "bendingReliefFactor": [0.0, ""],
+    // Composite technology factor (0.85-0.90 for CFRP; Raymer Table 15.4, p. 580)
+    "technologyFactor": [0.9, ""]
   },
   "empennage": {
     // "transport" [Strohmayer II | p. 120] or "small" (v_D < 250 kts)
     "massMethod": "transport",
     // the reference aircraft has a very high coefficient, the reference table [Strohmayer I | p. 213] has a maximum value of 1.0
-    "maxHorizontalVolumeCoefficient": [1.0, ""]
+    "maxHorizontalVolumeCoefficient": [1.0, ""],
+    // Composite technology factor (0.83-0.88 for CFRP; Raymer Table 15.4, p. 580)
+    "technologyFactor": [1.0, ""]
   },
   "propulsion": {
     // assumption of engine magni 650 -> to be determined
@@ -55,7 +57,9 @@
     "usableBaggageFactor": [0.75, ""],
     "underfloorBaggageHeight": [0.0, "m"],
     // fuselage-mounted landing gear (+7%)
-    "fuselageMassPenaltyFactor": [0.07, ""]
+    "fuselageMassPenaltyFactor": [0.07, ""],
+    // Composite technology factor (0.90-0.95 for CFRP; Raymer Table 15.4, p. 580)
+    "technologyFactor": [1.0, ""]
   },
   "mission": {
     "range": [100, "nm"],

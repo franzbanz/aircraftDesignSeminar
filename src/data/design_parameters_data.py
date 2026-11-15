@@ -32,6 +32,7 @@ class DesignWingParameters:
     wingSweepHalfChord: UnitValue
     wingMassPenaltyFactor: UnitValue
     bendingReliefFactor: UnitValue
+    technologyFactor: UnitValue
 
 
 @dataclass(frozen=True)
@@ -40,6 +41,7 @@ class DesignEmpennageParameters:
 
     massMethod: str
     maxHorizontalVolumeCoefficient: UnitValue
+    technologyFactor: UnitValue
 
 
 @dataclass(frozen=True)
@@ -74,6 +76,7 @@ class DesignFuselageParameters:
     usableBaggageFactor: UnitValue
     underfloorBaggageHeight: UnitValue
     fuselageMassPenaltyFactor: UnitValue
+    technologyFactor: UnitValue
 
 
 @dataclass(frozen=True)

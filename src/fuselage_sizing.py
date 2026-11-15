@@ -210,17 +210,20 @@ class FuselageDesign:
     def mass(self) -> SiValue:
         """Calibrated fuselage mass [kg]."""
         v_d = SiValue(1.25 * self.design.mission.cruiseSpeedTAS.si, "m/s")
-        r_h = self.ref.horizontal_tail_lever_arm.si
-        delta_m_f = self.design.fuselage.fuselageMassPenaltyFactor
         raw = calc_fuselage_mass(
             v_d,
-            r_h,
+            self.ref.horizontal_tail_lever_arm.si,
             self.width,
             self.height,
             self.wetted_area,
-            delta_m_f,
+            self.design.fuselage.fuselageMassPenaltyFactor,
         )
-        return SiValue(raw * self.ref.fuselage_calibration_factor, "kg")
+        return SiValue(
+            raw
+            * self.ref.fuselage_calibration_factor
+            * self.design.fuselage.technologyFactor,
+            "kg",
+        )
 
 
 if __name__ == "__main__":
