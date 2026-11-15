@@ -242,6 +242,31 @@ def calc_component_drag_area(
     return SiValue(c_f * form_factor * interference_factor * wetted_area, "m^2")
 
 
+def calc_wing_wetted_area(
+    exposed_area: SiValue,
+    rel_thickness: float,
+) -> SiValue:
+    """Calculates lifting surface wetted area from exposed planform area [Strohmayer - Flugzeugentwurf 2 | p. 77] [m^2].
+
+    Uses Raymer's thickness-dependent wetted area approximation:
+    - S_wet = 2.003 * S_exposed for t/c < 0.05
+    - S_wet = (1.977 + 0.52 * t/c) * S_exposed for t/c >= 0.05
+
+    Args:
+        exposed_area: Exposed planform area S_exposed [m^2].
+        rel_thickness: Relative airfoil thickness d/l = t/c [-].
+
+    Returns:
+        Wetted surface area S_wet [m^2].
+    """
+    if rel_thickness < 0:
+        raise ValueError(
+            f"Relative thickness must be non-negative (got {rel_thickness})"
+        )
+    factor = 2.003 if rel_thickness < 0.05 else 1.977 + 0.52 * rel_thickness
+    return SiValue(exposed_area * factor, "m^2")
+
+
 def calc_wing_zero_lift_drag_coefficient(
     velocity: SiValue,
     altitude: SiValue,
@@ -253,7 +278,7 @@ def calc_wing_zero_lift_drag_coefficient(
     k_roughness: SiValue = SiValue(6.34e-6, "m"),
     laminar_fraction: float = 0.0,
 ) -> float:
-    """Calculates wing zero-lift drag coefficient c_W0,wing = 2 * c_f * FF_wing * IF_wing [Strohmayer - Flugzeugentwurf 2 | p. 88] [-].
+    """Calculates wing zero-lift drag coefficient c_W0,wing = (S_wet / S_ref) * c_f * FF_wing * IF_wing [Strohmayer - Flugzeugentwurf 2 | p. 88] [-].
 
     Args:
         velocity: True airspeed (TAS) [m/s].
@@ -281,7 +306,8 @@ def calc_wing_zero_lift_drag_coefficient(
         mach=mach,
         sweep_d_max_deg=sweep_deg,
     )
-    return 2.0 * cf_wing * ff_wing * interference_factor
+    s_wet_ratio = calc_wing_wetted_area(SiValue(1.0, "m^2"), rel_thickness)
+    return s_wet_ratio * cf_wing * ff_wing * interference_factor
 
 
 def calc_fuselage_drag_area(
