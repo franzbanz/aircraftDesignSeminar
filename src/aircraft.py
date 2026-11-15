@@ -2,14 +2,12 @@
 
 from constants import GRAVITY
 from data import Constraints, DesignParameters, SiValue
+from empennage_sizing import EmpennageDesign
 from formulas import (
     calc_electric_range,
-    calc_empennage_mass,
-    calc_horizontal_tail_area,
     calc_landing_gear_mass,
     calc_pylons_mass,
     calc_systems_mass,
-    calc_vertical_tail_area,
 )
 from fuel_fractions import MissionEnergyCalculator, ReferenceMissionCalculator
 from fuselage_sizing import FuselageDesign
@@ -59,6 +57,11 @@ class BatteryAircraft:
     def fuselage(self) -> FuselageDesign:
         """Fuselage geometry and cabin layout design calculator."""
         return FuselageDesign(self.constraints, self.design, self.ref)
+
+    @property
+    def empennage(self) -> EmpennageDesign:
+        """Empennage sizing and mass calculator bound to current wing state."""
+        return EmpennageDesign(self.design, self.ref, self.wing)
 
     # --------------------------------------------------------------------------
     # Fixed Operational & Payload Masses
@@ -126,25 +129,6 @@ class BatteryAircraft:
         return self.sizing_diagram(mode="power").design_power_loading
 
     @property
-    def horizontal_tail_area(self) -> SiValue:
-        """Horizontal tailplane area S_HTP scaled via volume coefficient [m^2]."""
-        c_ht = min(
-            self.ref.horizontal_tail_volume_coefficient,
-            self.design.empennage.maxHorizontalVolumeCoefficient,
-        )
-        r_h = self.ref.horizontal_tail_lever_arm.si
-        return calc_horizontal_tail_area(
-            c_ht, r_h, self.wing.area, self.wing.mean_aerodynamic_chord
-        )
-
-    @property
-    def vertical_tail_area(self) -> SiValue:
-        """Vertical tailplane area S_VTP scaled via volume coefficient [m^2]."""
-        c_vt = self.ref.vertical_tail_volume_coefficient
-        r_v = self.ref.vertical_tail_lever_arm.si
-        return calc_vertical_tail_area(c_vt, r_v, self.wing.area, self.wing.span)
-
-    @property
     def total_takeoff_thrust(self) -> SiValue:
         """Total required take-off thrust T_TO [N]."""
         return SiValue(self.thrust_loading_design * self.mtom * GRAVITY, "N")
@@ -174,15 +158,6 @@ class BatteryAircraft:
         return SiValue(raw * self.ref.landing_gear_calibration_factor, "kg")
 
     @property
-    def m_empennage(self) -> SiValue:
-        """Calibrated empennage mass [kg]."""
-        n_ult = self.design.assumptions.limitLoad * 1.5
-        raw = calc_empennage_mass(
-            n_ult, self.horizontal_tail_area, self.vertical_tail_area
-        )
-        return SiValue(raw * self.ref.empennage_calibration_factor, "kg")
-
-    @property
     def m_pylons(self) -> SiValue:
         """Calibrated engine pylons/cowling mass [kg]."""
         p_to = SiValue(
@@ -200,7 +175,7 @@ class BatteryAircraft:
             self.wing.mass
             + self.fuselage.mass
             + self.m_landing_gear
-            + self.m_empennage
+            + self.empennage.mass
             + self.m_pylons,
             "kg",
         )

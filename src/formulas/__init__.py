@@ -36,10 +36,12 @@ from formulas.geometry import (
 )
 from formulas.mass_formulas import (
     calc_empennage_mass,
+    calc_empennage_mass_transport,
     calc_fuselage_mass,
     calc_landing_gear_mass,
     calc_pylons_mass,
     calc_systems_mass,
+    calc_tailplane_mass,
     calc_wing_mass,
 )
 from formulas.propulsion import (
@@ -69,6 +71,8 @@ __all__ = [
     "calc_landing_gear_mass",
     "calc_fuselage_mass",
     "calc_empennage_mass",
+    "calc_empennage_mass_transport",
+    "calc_tailplane_mass",
     "calc_pylons_mass",
     "calc_systems_mass",
     # Geometry

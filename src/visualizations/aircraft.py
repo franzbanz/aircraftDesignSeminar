@@ -41,7 +41,7 @@ def print_aircraft_summary(
         f"  - Landing gear: {aircraft.m_landing_gear} (Ref: {ref_aircraft.data.mass.landingGear})"
     )
     print(
-        f"  - Empennage: {aircraft.m_empennage} (Ref: {ref_aircraft.data.mass.empennage})"
+        f"  - Empennage: {aircraft.empennage.mass} (Ref: {ref_aircraft.data.mass.empennage})"
     )
     print(f"  - Pylons: {aircraft.m_pylons} (Ref: {ref_aircraft.data.mass.pylons})")
     print(f"Engine mass: {aircraft.m_engine} (Ref: {ref_aircraft.data.mass.engine})")
@@ -85,10 +85,10 @@ def print_aircraft_summary(
         f"Fuselage (L x W x H):        {aircraft.fuselage.length:.2f} x {aircraft.fuselage.width:.2f} x {aircraft.fuselage.height:.2f}"
     )
     print(
-        f"Horizontal Tail Area (S_HT): {aircraft.horizontal_tail_area:.2f} (Ref: {ref_aircraft.data.dimensions.horizontalTailArea:.2f})"
+        f"Horizontal Tail Area (S_HT): {aircraft.empennage.horizontal_tail_area:.2f} (Ref: {ref_aircraft.data.dimensions.horizontalTailArea:.2f})"
     )
     print(
-        f"Vertical Tail Area (S_VT):   {aircraft.vertical_tail_area:.2f} (Ref: {ref_aircraft.data.dimensions.verticalTailArea:.2f})"
+        f"Vertical Tail Area (S_VT):   {aircraft.empennage.vertical_tail_area:.2f} (Ref: {ref_aircraft.data.dimensions.verticalTailArea:.2f})"
     )
     print(f"Design Wing Loading:         {aircraft.wing_loading_design:.2f} kg/m^2")
     print(f"Design Thrust Loading:       {aircraft.thrust_loading_design:.4f}")
@@ -230,7 +230,7 @@ def plot_mass_breakdown(
         aircraft.wing.mass,
         aircraft.fuselage.mass,
         aircraft.m_landing_gear,
-        aircraft.m_empennage,
+        aircraft.empennage.mass,
         aircraft.m_pylons,
     ]
 
@@ -359,7 +359,7 @@ def plot_aircraft_geometry(
         ls="--",
     )
 
-    s_ht_el = aircraft.horizontal_tail_area
+    s_ht_el = aircraft.empennage.horizontal_tail_area
     b_ht_el = (s_ht_el * 4.0) ** 0.5
     c_ht_el = s_ht_el / b_ht_el
     ax1.fill(
@@ -408,8 +408,8 @@ def plot_aircraft_geometry(
         aircraft.wing.span,
         aircraft.wing.aspect_ratio,
         aircraft.wing.mean_aerodynamic_chord,
-        aircraft.horizontal_tail_area,
-        aircraft.vertical_tail_area,
+        aircraft.empennage.horizontal_tail_area,
+        aircraft.empennage.vertical_tail_area,
     ]
 
     y = np.arange(len(labels))
