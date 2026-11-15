@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
+from visualizations.aerodynamics import plot_aerodynamics
 from visualizations.aircraft import (
     plot_aircraft_geometry,
     plot_mass_breakdown,
@@ -41,6 +42,7 @@ def interactive_plot_menu(
   [4] Payload-Range Diagram
   [5] Aircraft Dimensions & 2D Geometry Comparison
   [6] Fuselage Sizing & Cabin Layout (1+1)
+  [7] Aerodynamics (Drag Buildup & Cruise Polar)
   [A] Show All Plots
   [Q] Exit Menu
 ======================================================================
@@ -89,6 +91,9 @@ def interactive_plot_menu(
             print("Opening Fuselage Sizing & Cabin Layout (1+1)...")
             print_fuselage_summary(aircraft.fuselage)
             plot_fuselage_sizing(aircraft.fuselage)
+        elif choice in ("7", "aero", "aerodynamics", "polar", "drag"):
+            print("Opening Aerodynamics (Drag Buildup & Cruise Polar)...")
+            plot_aerodynamics(aircraft, ref_aircraft)
         elif choice in ("a", "all"):
             print("Opening all diagrams sequentially...")
             plot_sizing_diagram(aircraft.sizing_diagram(mode="thrust"))
@@ -98,7 +103,8 @@ def interactive_plot_menu(
             plot_payload_range(aircraft)
             plot_aircraft_geometry(aircraft, ref_aircraft)
             plot_fuselage_sizing(aircraft.fuselage)
+            plot_aerodynamics(aircraft, ref_aircraft)
         else:
             print(
-                f"Unknown option '{choice}'. Please choose 1, 1p, 2, 3, 3d, 4, 5, 6, A or Q."
+                f"Unknown option '{choice}'. Please choose 1, 1p, 2, 3, 3d, 4, 5, 6, 7, A or Q."
             )
