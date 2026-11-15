@@ -16,6 +16,7 @@ class DesignInitialSizingParameters:
 class DesignAerodynamicParameters:
     """Whole-aircraft aerodynamic performance parameters."""
 
+    liftToDragRatioCruise: UnitValue | str | None
     liftToDragRatioLoiter: UnitValue
     oswaldFactor: UnitValue
 

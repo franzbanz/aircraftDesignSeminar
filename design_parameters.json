@@ -3,6 +3,8 @@
     "maximumTakeOffMass": [8618, "kg"]
   },
   "aerodynamics": {
+    // null = calculate from polar, "reference" = use reference aircraft L/D, or [value, ""] = fixed L/D
+    "liftToDragRatioCruise": null,
     "liftToDragRatioLoiter": [15.7, ""],
     "oswaldFactor": [0.85, ""]
   },

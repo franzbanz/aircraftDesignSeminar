@@ -131,4 +131,15 @@ class WingDesign:
     @property
     def lift_to_drag_cruise(self) -> float:
         """Cruise lift-to-drag ratio L/D = C_L / C_D [-]."""
+        override = self.design.aerodynamics.liftToDragRatioCruise
+        if override == "reference":
+            return self.ref.data.aerodynamics.liftToDragRatioCruise
+        if isinstance(override, str):
+            msg = (
+                f"Unknown liftToDragRatioCruise: '{override}'. "
+                "Expected null, 'reference', or a [value, ''] pair."
+            )
+            raise ValueError(msg)
+        if override is not None:
+            return override
         return self.cruise_lift_coefficient / self.cruise_drag_coefficient
