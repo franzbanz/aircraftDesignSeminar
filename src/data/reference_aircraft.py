@@ -72,6 +72,8 @@ class ReferenceAssumptionsParameters:
     fuselageMassPenaltyFactor: UnitValue
     horizontalTailLeverArm: UnitValue
     verticalTailLeverArm: UnitValue
+    horizontalTailAspectRatio: UnitValue
+    verticalTailAspectRatio: UnitValue
     wettedSurface: UnitValue
 
 

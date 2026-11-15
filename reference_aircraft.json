@@ -71,6 +71,8 @@
     "horizontalTailLeverArm": [9.15, "m"],
     // from 25% MAC to 25% vertical stabilizer
     "verticalTailLeverArm": [8.5, "m"],
+    "horizontalTailAspectRatio": [4.5, ""],
+    "verticalTailAspectRatio": [1.5, ""],
     // sideview ~ 2*27.50m^2 + topview ~ 2*21.0mm^2
     "wettedSurface": [97, "m^2"]
   }

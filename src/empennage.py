@@ -83,7 +83,7 @@ class EmpennageDesign:
             velocity=self.design.mission.cruiseSpeedTAS.si,
             altitude=self.design.mission.cruiseAltitude.si,
             area=self.horizontal_tail_area,
-            aspect_ratio=4.5,
+            aspect_ratio=self.design.empennage.horizontalTailAspectRatio,
         )
 
     @property
@@ -93,7 +93,7 @@ class EmpennageDesign:
             velocity=self.design.mission.cruiseSpeedTAS.si,
             altitude=self.design.mission.cruiseAltitude.si,
             area=self.vertical_tail_area,
-            aspect_ratio=1.5,
+            aspect_ratio=self.design.empennage.verticalTailAspectRatio,
         )
 
     @property

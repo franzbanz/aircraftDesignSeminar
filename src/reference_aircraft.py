@@ -210,13 +210,13 @@ class ReferenceAircraft:
             velocity=self.data.mission.cruiseSpeedTAS.si,
             altitude=self.data.mission.cruiseAltitude.si,
             area=self.data.dimensions.horizontalTailArea.si,
-            aspect_ratio=4.5,
+            aspect_ratio=self.data.assumptions.horizontalTailAspectRatio,
         )
         f_vtp = calc_tailplane_drag_area(
             velocity=self.data.mission.cruiseSpeedTAS.si,
             altitude=self.data.mission.cruiseAltitude.si,
             area=self.data.dimensions.verticalTailArea.si,
-            aspect_ratio=1.5,
+            aspect_ratio=self.data.assumptions.verticalTailAspectRatio,
         )
         return SiValue(f_htp + f_vtp, "m^2")
 

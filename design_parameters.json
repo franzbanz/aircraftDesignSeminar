@@ -28,6 +28,8 @@
     "massMethod": "transport",
     // the reference aircraft has a very high coefficient, the reference table [Strohmayer I | p. 213] has a maximum value of 1.0
     "maxHorizontalVolumeCoefficient": [1.0, ""],
+    "horizontalTailAspectRatio": [4.5, ""],
+    "verticalTailAspectRatio": [1.5, ""],
     // Composite technology factor (0.83-0.88 for CFRP; Raymer Table 15.4, p. 580)
     "technologyFactor": [0.88, ""]
   },

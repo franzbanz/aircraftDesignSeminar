@@ -41,6 +41,8 @@ class DesignEmpennageParameters:
 
     massMethod: str
     maxHorizontalVolumeCoefficient: UnitValue
+    horizontalTailAspectRatio: UnitValue
+    verticalTailAspectRatio: UnitValue
     technologyFactor: UnitValue
 
 

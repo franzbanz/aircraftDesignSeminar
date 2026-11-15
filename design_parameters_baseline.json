@@ -27,6 +27,8 @@
     "massMethod": "transport",
     // the reference aircraft has a very high coefficient, the reference table [Strohmayer I | p. 213] has a maximum value of 1.0
     "maxHorizontalVolumeCoefficient": [1.5, ""],
+    "horizontalTailAspectRatio": [4.5, ""],
+    "verticalTailAspectRatio": [1.5, ""],
     "technologyFactor": [1.0, ""]
   },
   "propulsion": {
