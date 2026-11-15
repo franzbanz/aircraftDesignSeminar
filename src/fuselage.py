@@ -13,6 +13,7 @@ import math
 from typing import TYPE_CHECKING
 
 from data import SiValue
+from formulas.aerodynamics import calc_fuselage_drag_area
 from formulas.geometry import calc_fuselage_wetted_area
 from formulas.mass import calc_fuselage_mass
 
@@ -221,6 +222,17 @@ class FuselageDesign:
             * self.ref.fuselage_calibration_factor
             * self.design.fuselage.technologyFactor,
             "kg",
+        )
+
+    @property
+    def drag_area(self) -> SiValue:
+        """Fuselage parasite drag area f_fuselage [m^2]."""
+        return calc_fuselage_drag_area(
+            velocity=self.design.mission.cruiseSpeedTAS.si,
+            altitude=self.design.mission.cruiseAltitude.si,
+            length=self.length,
+            slenderness_ratio=self.slenderness_ratio,
+            wetted_area=self.wetted_area,
         )
 
 

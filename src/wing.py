@@ -2,14 +2,10 @@
 
 from __future__ import annotations
 
-import math
 from typing import TYPE_CHECKING
 
 from data import SiValue
-from formulas.aerodynamics import (
-    calc_cruise_lift_coefficient,
-    calc_wing_zero_lift_drag_coefficient,
-)
+from formulas.aerodynamics import calc_wing_zero_lift_drag_coefficient
 from formulas.geometry import (
     calc_aspect_ratio,
     calc_mean_aerodynamic_chord,
@@ -23,7 +19,7 @@ if TYPE_CHECKING:
 
 
 class WingDesign:
-    """Encapsulates wing geometry, calibrated wing mass, and cruise polar evaluation."""
+    """Encapsulates wing geometry, calibrated wing mass, and wing parasite drag."""
 
     def __init__(
         self,
@@ -100,51 +96,6 @@ class WingDesign:
         )
 
     @property
-    def zero_lift_drag_coefficient(self) -> float:
-        """Total aircraft zero-lift drag coefficient c_W0 referenced to new wing area S_W [-]."""
-        # TODO: Account for increased zero-lift drag of enlarged empennage surfaces (S_HTP, S_VTP)
-        c_w0_rest_ref = (
-            self.ref.zero_lift_drag_coefficient
-            - self.ref.wing_zero_lift_drag_coefficient
-        )
-        s_w_ref = self.ref.data.dimensions.wingArea.si
-        return self.wing_zero_lift_drag_coefficient + c_w0_rest_ref * (
-            s_w_ref / self.area
-        )
-
-    @property
-    def cruise_lift_coefficient(self) -> float:
-        """Cruise lift coefficient C_L = (m_0 / S) * g / q [-]."""
-        return calc_cruise_lift_coefficient(
-            self.wing_loading_design,
-            self.design.mission.cruiseSpeedTAS.si,
-            self.design.mission.cruiseAltitude.si,
-        )
-
-    @property
-    def induced_drag_coefficient(self) -> float:
-        """Cruise induced drag coefficient c_Wi = C_L^2 / (pi * AR * e) [-]."""
-        return (self.cruise_lift_coefficient**2) / (
-            math.pi * self.aspect_ratio * self.design.aerodynamics.oswaldFactor
-        )
-
-    @property
-    def cruise_drag_coefficient(self) -> float:
-        """Total cruise drag coefficient C_D = c_W0 + c_Wi [-]."""
-        return self.zero_lift_drag_coefficient + self.induced_drag_coefficient
-
-    @property
-    def lift_to_drag_cruise(self) -> float:
-        """Cruise lift-to-drag ratio L/D = C_L / C_D [-]."""
-        override = self.design.aerodynamics.liftToDragRatioCruise
-        if override == "reference":
-            return self.ref.data.aerodynamics.liftToDragRatioCruise
-        if isinstance(override, str):
-            msg = (
-                f"Unknown liftToDragRatioCruise: '{override}'. "
-                "Expected null, 'reference', or a [value, ''] pair."
-            )
-            raise ValueError(msg)
-        if override is not None:
-            return override
-        return self.cruise_lift_coefficient / self.cruise_drag_coefficient
+    def drag_area(self) -> SiValue:
+        """Wing parasite drag area f_wing = c_W0,wing * S_W [m^2]."""
+        return SiValue(self.wing_zero_lift_drag_coefficient * self.area, "m^2")

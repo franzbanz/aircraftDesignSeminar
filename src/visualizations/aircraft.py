@@ -58,11 +58,11 @@ def print_aircraft_summary(
     print(f"Range: {aircraft.range.to('NM')}")
     print(
         f"Cruise L/D (at {aircraft.design.mission.cruiseSpeedTAS}): "
-        f"{aircraft.wing.lift_to_drag_cruise:.2f} "
-        f"(C_L = {aircraft.wing.cruise_lift_coefficient:.3f}, "
-        f"C_D = {aircraft.wing.cruise_drag_coefficient:.4f}, "
-        f"c_W0 = {aircraft.wing.zero_lift_drag_coefficient:.4f}, "
-        f"c_Wi = {aircraft.wing.induced_drag_coefficient:.4f})"
+        f"{aircraft.aerodynamics.lift_to_drag_cruise:.2f} "
+        f"(C_L = {aircraft.aerodynamics.cruise_lift_coefficient:.3f}, "
+        f"C_D = {aircraft.aerodynamics.cruise_drag_coefficient:.4f}, "
+        f"c_W0 = {aircraft.aerodynamics.zero_lift_drag_coefficient:.4f}, "
+        f"c_Wi = {aircraft.aerodynamics.induced_drag_coefficient:.4f})"
     )
 
     print("\n----- AIRCRAFT DIMENSIONS & GEOMETRY -----")

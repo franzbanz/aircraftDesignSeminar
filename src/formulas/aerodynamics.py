@@ -2,7 +2,6 @@
 
 import math
 import sys
-from dataclasses import dataclass
 from pathlib import Path
 
 if __package__ in (None, ""):
@@ -79,70 +78,64 @@ def calc_reynolds_number(
     return (rho * velocity * length) / mu
 
 
-def calc_cf_flat_plate_laminar(re: float) -> float:
-    """Calculates laminar skin friction coefficient for flat plates / lifting surfaces [Strohmayer - Flugzeugentwurf 2 | p. 83].
+def calc_cf_flat_plate(
+    re: float,
+    mach: float = 0.0,
+    laminar_fraction: float = 0.0,
+) -> float:
+    """Calculates mixed laminar/turbulent skin friction coefficient for flat plates [Strohmayer - Flugzeugentwurf 2 | p. 83].
 
-    Args:
-        re: Reynolds number Re [-].
-
-    Returns:
-        Laminar skin friction coefficient c_f,lam [-].
-    """
-    if re <= 0:
-        raise ValueError(f"Reynolds number must be positive (got {re})")
-    return 1.328 / math.sqrt(re)
-
-
-def calc_cf_flat_plate_turbulent(re: float, mach: float = 0.0) -> float:
-    """Calculates turbulent skin friction coefficient for flat plates / lifting surfaces.
-
-    Uses the Prandtl-Schlichting formula with compressibility correction for Ma > 0.3 [Strohmayer - Flugzeugentwurf 2 | p. 83].
+    Combines Blasius laminar friction and Prandtl-Schlichting turbulent friction
+    (with compressibility correction for Ma > 0.3) weighted by `laminar_fraction`.
+    Typical Raymer rules of thumb: 0.05-0.10 for conventional aluminum wings/tails,
+    0.0-0.05 for fuselages, up to 0.30-0.50 for smooth composite NLF wings.
 
     Args:
         re: Reynolds number Re [-].
         mach: Mach number Ma [-]. Defaults to 0.0.
+        laminar_fraction: Fraction of wetted surface with laminar boundary layer [0..1]. Defaults to 0.0.
 
     Returns:
-        Turbulent skin friction coefficient c_f,turb [-].
+        Skin friction coefficient c_f [-].
     """
     if re <= 0:
         raise ValueError(f"Reynolds number must be positive (got {re})")
+    if not 0.0 <= laminar_fraction <= 1.0:
+        raise ValueError(f"laminar_fraction must be in [0, 1] (got {laminar_fraction})")
 
-    base = 0.455 / (math.log10(re) ** 2.58)
-    if mach > 0.3:
-        compressibility = (1.0 + 0.144 * (mach**2)) ** 0.65
-        return base / compressibility
-    return base
+    cf_lam = 1.328 / math.sqrt(re)
+    cf_turb_base = 0.455 / (math.log10(re) ** 2.58)
+    cf_turb = (
+        cf_turb_base / ((1.0 + 0.144 * (mach**2)) ** 0.65)
+        if mach > 0.3
+        else cf_turb_base
+    )
+    return laminar_fraction * cf_lam + (1.0 - laminar_fraction) * cf_turb
 
 
-def calc_delta_cf_body_laminar(re: float, l_over_d: float) -> float:
-    """Calculates additional 3D laminar skin friction increment for slender bodies [Strohmayer - Flugzeugentwurf 2 | p. 83].
+def calc_delta_cf_body(
+    re: float,
+    l_over_d: float,
+    laminar_fraction: float = 0.0,
+) -> float:
+    """Calculates additional 3D skin friction increment for slender bodies [Strohmayer - Flugzeugentwurf 2 | p. 83].
 
     Args:
         re: Reynolds number Re [-].
         l_over_d: Fineness ratio l/d (length over diameter) [-].
+        laminar_fraction: Fraction of body surface with laminar boundary layer [0..1]. Defaults to 0.0.
 
     Returns:
-        Additional 3D laminar friction increment Delta c_f,lam [-].
+        Additional 3D friction increment Delta c_f [-].
     """
     if re <= 0:
         raise ValueError(f"Reynolds number must be positive (got {re})")
-    return (2.0 / re) * l_over_d
+    if not 0.0 <= laminar_fraction <= 1.0:
+        raise ValueError(f"laminar_fraction must be in [0, 1] (got {laminar_fraction})")
 
-
-def calc_delta_cf_body_turbulent(re: float, l_over_d: float) -> float:
-    """Calculates additional 3D turbulent skin friction increment for slender bodies [Strohmayer - Flugzeugentwurf 2 | p. 83].
-
-    Args:
-        re: Reynolds number Re [-].
-        l_over_d: Fineness ratio l/d (length over diameter) [-].
-
-    Returns:
-        Additional 3D turbulent friction increment Delta c_f,turb [-].
-    """
-    if re <= 0:
-        raise ValueError(f"Reynolds number must be positive (got {re})")
-    return (0.0016 / (re**0.4)) * l_over_d
+    d_cf_lam = (2.0 / re) * l_over_d
+    d_cf_turb = (0.0016 / (re**0.4)) * l_over_d
+    return laminar_fraction * d_cf_lam + (1.0 - laminar_fraction) * d_cf_turb
 
 
 def calc_effective_reynolds_number(
@@ -220,24 +213,6 @@ def calc_form_factor_fuselage(l_over_d: float) -> float:
     return 1.0 + (60.0 / (l_over_d**3)) + (l_over_d / 400.0)
 
 
-@dataclass(frozen=True)
-class AerodynamicComponent:
-    """Component for zero-lift drag (c_W0) buildup [Strohmayer - Flugzeugentwurf 2 | p. 88]."""
-
-    name: str
-    c_f: float
-    form_factor: float
-    interference_factor: float
-    wetted_area: SiValue
-
-    @property
-    def drag_area(self) -> SiValue:
-        """Returns component drag area [m^2]."""
-        return calc_component_drag_area(
-            self.c_f, self.form_factor, self.interference_factor, self.wetted_area
-        )
-
-
 def calc_component_drag_area(
     c_f: float,
     form_factor: float,
@@ -267,28 +242,6 @@ def calc_component_drag_area(
     return SiValue(c_f * form_factor * interference_factor * wetted_area, "m^2")
 
 
-def calc_zero_lift_drag_coefficient(
-    components: list[AerodynamicComponent] | list[float],
-    s_ref: SiValue,
-    c_w_misc: float = 0.0,
-) -> float:
-    """Calculates total zero-lift drag coefficient c_W0 via component buildup method [Strohmayer - Flugzeugentwurf 2 | p. ?] [-].
-
-    Args:
-        components: List of AerodynamicComponent instances or precalculated component drag areas [m^2].
-        s_ref: Wing reference area S_ref [m^2].
-        c_w_misc: Miscellaneous drag increment c_w_misc [-]. Defaults to 0.0.
-
-    Returns:
-        Zero-lift drag coefficient c_W0 [-].
-    """
-    total_drag_area = sum(
-        comp.drag_area if isinstance(comp, AerodynamicComponent) else comp
-        for comp in components
-    )
-    return (total_drag_area / s_ref) + c_w_misc
-
-
 def calc_wing_zero_lift_drag_coefficient(
     velocity: SiValue,
     altitude: SiValue,
@@ -298,6 +251,7 @@ def calc_wing_zero_lift_drag_coefficient(
     x_d_over_l: float = 0.35,
     interference_factor: float = 1.0,
     k_roughness: SiValue = SiValue(6.34e-6, "m"),
+    laminar_fraction: float = 0.0,
 ) -> float:
     """Calculates wing zero-lift drag coefficient c_W0,wing = 2 * c_f * FF_wing * IF_wing [Strohmayer - Flugzeugentwurf 2 | p. 88] [-].
 
@@ -310,6 +264,7 @@ def calc_wing_zero_lift_drag_coefficient(
         x_d_over_l: Chordwise location of maximum thickness (x/c)_tmax [-]. Defaults to 0.35.
         interference_factor: Wing interference factor IF_wing [-]. Defaults to 1.0.
         k_roughness: Equivalent sand grain surface roughness [m]. Defaults to 6.34e-6 m (smooth paint).
+        laminar_fraction: Laminar boundary layer fraction [0..1]. Defaults to 0.0.
 
     Returns:
         Wing zero-lift drag coefficient c_W0,wing [-].
@@ -319,7 +274,7 @@ def calc_wing_zero_lift_drag_coefficient(
     re_eff = calc_effective_reynolds_number(
         re_wing, mean_aerodynamic_chord, k_roughness, mach
     )
-    cf_wing = calc_cf_flat_plate_turbulent(re_eff, mach)
+    cf_wing = calc_cf_flat_plate(re_eff, mach, laminar_fraction)
     ff_wing = calc_form_factor_wing(
         d_over_l=rel_thickness,
         x_d_over_l=x_d_over_l,
@@ -329,89 +284,80 @@ def calc_wing_zero_lift_drag_coefficient(
     return 2.0 * cf_wing * ff_wing * interference_factor
 
 
-if __name__ == "__main__":
-    from data import load_reference_aircraft_data
-    from formulas.geometry import calc_mean_aerodynamic_chord
+def calc_fuselage_drag_area(
+    velocity: SiValue,
+    altitude: SiValue,
+    length: SiValue,
+    slenderness_ratio: float,
+    wetted_area: SiValue,
+    interference_factor: float = 1.0,
+    k_roughness: SiValue = SiValue(6.34e-6, "m"),
+    laminar_fraction: float = 0.0,
+) -> SiValue:
+    """Calculates fuselage parasite drag area [Strohmayer - Flugzeugentwurf 2 | p. 88] [m^2].
 
-    ref = load_reference_aircraft_data()
+    Args:
+        velocity: True airspeed (TAS) [m/s].
+        altitude: Flight altitude [m].
+        length: Fuselage length l_R [m].
+        slenderness_ratio: Fuselage slenderness ratio l_R / d_equiv [-].
+        wetted_area: Fuselage wetted surface area S_O [m^2].
+        interference_factor: Fuselage interference factor IF_fuse [-]. Defaults to 1.0.
+        k_roughness: Equivalent sand grain surface roughness [m]. Defaults to 6.34e-6 m.
+        laminar_fraction: Laminar boundary layer fraction [0..1]. Defaults to 0.0.
 
-    s_ref_ex = ref.dimensions.wingArea.si
-    l_ex = calc_mean_aerodynamic_chord(
-        ref.dimensions.wingArea.si, ref.dimensions.wingspan.si
+    Returns:
+        Fuselage parasite drag area [m^2].
+    """
+    mach = calc_mach_number(velocity, altitude)
+    re_fuse = calc_reynolds_number(velocity, length, altitude)
+    re_eff = calc_effective_reynolds_number(re_fuse, length, k_roughness, mach)
+    cf_fuse = calc_cf_flat_plate(re_eff, mach, laminar_fraction) + calc_delta_cf_body(
+        re_eff, slenderness_ratio, laminar_fraction
     )
-    d_fus = (ref.dimensions.fuselageWidth.si + ref.dimensions.fuselageHeight.si) / 2.0
-    l_d_fus = ref.dimensions.fuselageLength.si / d_fus
-    t_over_c = ref.assumptions.relWingThickness
-    sweep_deg = ref.assumptions.wingSweepHalfChord
+    ff_fuse = calc_form_factor_fuselage(slenderness_ratio)
+    return calc_component_drag_area(cf_fuse, ff_fuse, interference_factor, wetted_area)
 
-    v_cruise = ref.mission.cruiseSpeedTAS.si
-    h_cruise = ref.mission.cruiseAltitude.si
-    mach_ex = calc_mach_number(v_cruise, h_cruise)
-    re_ex = calc_reynolds_number(v_cruise, l_ex, h_cruise)
 
-    k_ex = SiValue(6.34e-6, "m")  # smooth paint roughness
+def calc_tailplane_drag_area(
+    velocity: SiValue,
+    altitude: SiValue,
+    area: SiValue,
+    aspect_ratio: float,
+    rel_thickness: float = 0.12,
+    sweep_deg: float = 0.0,
+    x_d_over_l: float = 0.30,
+    interference_factor: float = 1.04,
+    k_roughness: SiValue = SiValue(6.34e-6, "m"),
+    laminar_fraction: float = 0.0,
+) -> SiValue:
+    """Calculates tailplane parasite drag area [Strohmayer - Flugzeugentwurf 2 | p. 88] [m^2].
 
-    print("--- SKIN FRICTION COEFFICIENTS (LIFTING SURFACES) ---")
-    cf_lam = calc_cf_flat_plate_laminar(re_ex)
-    cf_turb = calc_cf_flat_plate_turbulent(re_ex, mach_ex)
-    print(f"c_f,lam (Re={re_ex:.1e}):          {cf_lam:.6f}")
-    print(f"c_f,turb (Re={re_ex:.1e}, M={mach_ex:.2f}): {cf_turb:.6f}")
+    Args:
+        velocity: True airspeed (TAS) [m/s].
+        altitude: Flight altitude [m].
+        area: Tailplane reference area S_HTP or S_VTP [m^2].
+        aspect_ratio: Tailplane aspect ratio [-].
+        rel_thickness: Relative airfoil thickness t/c [-]. Defaults to 0.12.
+        sweep_deg: Sweep angle at maximum thickness / half-chord line [deg]. Defaults to 0.0.
+        x_d_over_l: Chordwise location of maximum thickness (x/c)_tmax [-]. Defaults to 0.30.
+        interference_factor: Tailplane interference factor IF_tail [-]. Defaults to 1.04.
+        k_roughness: Equivalent sand grain surface roughness [m]. Defaults to 6.34e-6 m.
+        laminar_fraction: Laminar boundary layer fraction [0..1]. Defaults to 0.0.
 
-    print("\n--- 3D BODY INCREMENT ---")
-    d_cf_lam = calc_delta_cf_body_laminar(re_ex, l_d_fus)
-    d_cf_turb = calc_delta_cf_body_turbulent(re_ex, l_d_fus)
-    print(f"Delta c_f,lam (l/d={l_d_fus:.2f}):    {d_cf_lam:.8f}")
-    print(f"Delta c_f,turb (l/d={l_d_fus:.2f}):   {d_cf_turb:.6f}")
-
-    print("\n--- SURFACE ROUGHNESS (CUTOFF REYNOLDS NUMBER) ---")
-    re_eff = calc_effective_reynolds_number(re_ex, l_ex, k_ex, mach_ex)
-    cf_turb_eff = calc_cf_flat_plate_turbulent(re_eff, mach_ex)
-    print(f"Re_eff:                          {re_eff:.2e}")
-    print(f"c_f,turb (with cutoff):          {cf_turb_eff:.6f}")
-
-    print("\n--- FORM FACTORS (RAYMER / NIKOLAI) ---")
-    ff_flaeche = calc_form_factor_wing(
-        d_over_l=t_over_c, x_d_over_l=0.35, mach=mach_ex, sweep_d_max_deg=sweep_deg
+    Returns:
+        Tailplane parasite drag area [m^2].
+    """
+    mean_chord = SiValue(math.sqrt(area / aspect_ratio), "m")
+    c_w0_tail = calc_wing_zero_lift_drag_coefficient(
+        velocity=velocity,
+        altitude=altitude,
+        mean_aerodynamic_chord=mean_chord,
+        rel_thickness=rel_thickness,
+        sweep_deg=sweep_deg,
+        x_d_over_l=x_d_over_l,
+        interference_factor=interference_factor,
+        k_roughness=k_roughness,
+        laminar_fraction=laminar_fraction,
     )
-    ff_rumpf = calc_form_factor_fuselage(l_over_d=l_d_fus)
-    print(f"FF_Wing (t/c={t_over_c:.2f}, M={mach_ex:.2f}):     {ff_flaeche:.4f}")
-    print(f"FF_Fuselage (l/d={l_d_fus:.2f}):            {ff_rumpf:.4f}")
-
-    print("\n--- ZERO-LIFT DRAG BUILDUP (c_W0) ---")
-    components_ex = [
-        AerodynamicComponent(
-            "Wing",
-            cf_turb_eff,
-            ff_flaeche,
-            1.0,  # High/mid wing with fairing
-            SiValue(2.0 * ref.dimensions.wingArea.si, "m^2"),
-        ),
-        AerodynamicComponent(
-            "Fuselage",
-            cf_turb_eff + d_cf_turb,
-            ff_rumpf,
-            1.0,
-            ref.assumptions.wettedSurface.si,
-        ),
-        AerodynamicComponent(
-            "HorizontalTail",
-            cf_turb_eff,
-            1.25,
-            1.04,
-            SiValue(2.0 * ref.dimensions.horizontalTailArea.si, "m^2"),
-        ),
-        AerodynamicComponent(
-            "VerticalTail",
-            cf_turb_eff,
-            1.25,
-            1.04,
-            SiValue(2.0 * ref.dimensions.verticalTailArea.si, "m^2"),
-        ),
-    ]
-    for comp in components_ex:
-        cw0_comp = calc_zero_lift_drag_coefficient([comp], s_ref=s_ref_ex)
-        label = f"c_W0 ({comp.name}):"
-        print(f"{label:<26} {cw0_comp:.5f}")
-    cw0 = calc_zero_lift_drag_coefficient(components_ex, s_ref=s_ref_ex)
-    total_label = "c_W0 (Total):"
-    print(f"{total_label:<26} {cw0:.5f}")
+    return SiValue(c_w0_tail * area, "m^2")

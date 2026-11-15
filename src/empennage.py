@@ -5,6 +5,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 from data import SiValue
+from formulas.aerodynamics import calc_tailplane_drag_area
 from formulas.geometry import calc_horizontal_tail_area, calc_vertical_tail_area
 from formulas.mass import (
     calc_empennage_mass,
@@ -73,4 +74,31 @@ class EmpennageDesign:
             * self.ref.empennage_calibration_factor
             * self.design.empennage.technologyFactor,
             "kg",
+        )
+
+    @property
+    def horizontal_tail_drag_area(self) -> SiValue:
+        """Horizontal tailplane parasite drag area f_HTP [m^2]."""
+        return calc_tailplane_drag_area(
+            velocity=self.design.mission.cruiseSpeedTAS.si,
+            altitude=self.design.mission.cruiseAltitude.si,
+            area=self.horizontal_tail_area,
+            aspect_ratio=4.5,
+        )
+
+    @property
+    def vertical_tail_drag_area(self) -> SiValue:
+        """Vertical tailplane parasite drag area f_VTP [m^2]."""
+        return calc_tailplane_drag_area(
+            velocity=self.design.mission.cruiseSpeedTAS.si,
+            altitude=self.design.mission.cruiseAltitude.si,
+            area=self.vertical_tail_area,
+            aspect_ratio=1.5,
+        )
+
+    @property
+    def drag_area(self) -> SiValue:
+        """Total empennage (HTP + VTP) parasite drag area f_empennage [m^2]."""
+        return SiValue(
+            self.horizontal_tail_drag_area + self.vertical_tail_drag_area, "m^2"
         )

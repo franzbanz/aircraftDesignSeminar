@@ -43,10 +43,25 @@ def print_reference_aircraft(ref: ReferenceAircraft) -> None:
     print(
         f"Vertical tail volume coeff (c_VT):   {ref.vertical_tail_volume_coefficient:.4f}"
     )
+    s_w = ref.data.dimensions.wingArea.si
     print(f"Cruise lift coefficient (c_A):       {ref.cruise_lift_coefficient:.4f}")
     print(f"Induced drag coeff (c_Wi):           {ref.induced_drag_coefficient:.4f}")
+
+    print("\n--- ZERO-LIFT DRAG BUILDUP ---")
     print(
-        f"Wing zero-lift drag (c_W0,wing):     {ref.wing_zero_lift_drag_coefficient:.4f}"
+        f"Wing:         f = {ref.wing_drag_area:.4f} | c_W0,wing = {ref.wing_drag_area / s_w:.4f}"
+    )
+    print(
+        f"Fuselage:     f = {ref.fuselage_drag_area:.4f} | c_W0,fuse = {ref.fuselage_drag_area / s_w:.4f}"
+    )
+    print(
+        f"Empennage:    f = {ref.empennage_drag_area:.4f} | c_W0,emp  = {ref.empennage_drag_area / s_w:.4f}"
+    )
+    print(
+        f"Misc (resid): f = {ref.misc_drag_area:.4f} | c_W0,misc = {ref.misc_drag_area / s_w:.4f}"
+    )
+    print(
+        f"Total:        f = {ref.zero_lift_drag_coefficient * s_w:.4f} m^2 | c_W0      = {ref.zero_lift_drag_coefficient:.4f}"
     )
 
     print("\n--- FORMULA MASS ESTIMATIONS & CALIBRATION FACTORS ---")

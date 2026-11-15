@@ -17,6 +17,8 @@ if TYPE_CHECKING:
     from data.design_parameters import DesignParameters
 from formulas.aerodynamics import (
     calc_cruise_lift_coefficient,
+    calc_fuselage_drag_area,
+    calc_tailplane_drag_area,
     calc_wing_zero_lift_drag_coefficient,
 )
 from formulas.geometry import (
@@ -176,6 +178,58 @@ class ReferenceAircraft:
             mean_aerodynamic_chord=self.mean_aerodynamic_chord,
             rel_thickness=self.data.assumptions.relWingThickness,
             sweep_deg=self.data.assumptions.wingSweepHalfChord,
+        )
+
+    @property
+    def wing_drag_area(self) -> SiValue:
+        """Wing parasite drag area f_wing [m^2]."""
+        return SiValue(
+            self.wing_zero_lift_drag_coefficient * self.data.dimensions.wingArea.si,
+            "m^2",
+        )
+
+    @property
+    def fuselage_drag_area(self) -> SiValue:
+        """Fuselage parasite drag area f_fuselage [m^2]."""
+        b_r = self.data.dimensions.fuselageWidth.si
+        h_r = self.data.dimensions.fuselageHeight.si
+        d_equiv = math.sqrt(4.0 * (b_r * h_r) / math.pi)
+        slenderness = self.data.dimensions.fuselageLength.si / d_equiv
+        return calc_fuselage_drag_area(
+            velocity=self.data.mission.cruiseSpeedTAS.si,
+            altitude=self.data.mission.cruiseAltitude.si,
+            length=self.data.dimensions.fuselageLength.si,
+            slenderness_ratio=slenderness,
+            wetted_area=self.fuselage_wetted_area,
+        )
+
+    @property
+    def empennage_drag_area(self) -> SiValue:
+        """Total empennage (HTP + VTP) parasite drag area f_empennage [m^2]."""
+        f_htp = calc_tailplane_drag_area(
+            velocity=self.data.mission.cruiseSpeedTAS.si,
+            altitude=self.data.mission.cruiseAltitude.si,
+            area=self.data.dimensions.horizontalTailArea.si,
+            aspect_ratio=4.5,
+        )
+        f_vtp = calc_tailplane_drag_area(
+            velocity=self.data.mission.cruiseSpeedTAS.si,
+            altitude=self.data.mission.cruiseAltitude.si,
+            area=self.data.dimensions.verticalTailArea.si,
+            aspect_ratio=1.5,
+        )
+        return SiValue(f_htp + f_vtp, "m^2")
+
+    @property
+    def misc_drag_area(self) -> SiValue:
+        """Remaining reference drag area (nacelles, gear sponsons, interference, excrescence) [m^2]."""
+        total_ref = self.zero_lift_drag_coefficient * self.data.dimensions.wingArea.si
+        return SiValue(
+            total_ref
+            - self.wing_drag_area
+            - self.fuselage_drag_area
+            - self.empennage_drag_area,
+            "m^2",
         )
 
     @property

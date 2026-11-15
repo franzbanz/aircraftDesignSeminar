@@ -1,5 +1,6 @@
 """Battery-powered electric aircraft model with integrated calibrated mass estimation."""
 
+from aerodynamics import AerodynamicDesign
 from constants import GRAVITY
 from data import Constraints, DesignParameters, SiValue
 from empennage import EmpennageDesign
@@ -62,6 +63,17 @@ class BatteryAircraft:
     def empennage(self) -> EmpennageDesign:
         """Empennage sizing and mass calculator bound to current wing state."""
         return EmpennageDesign(self.design, self.ref, self.wing)
+
+    @property
+    def aerodynamics(self) -> AerodynamicDesign:
+        """Whole-aircraft zero-lift drag buildup and cruise polar calculator."""
+        return AerodynamicDesign(
+            self.design,
+            self.ref,
+            self.wing,
+            self.fuselage,
+            self.empennage,
+        )
 
     # --------------------------------------------------------------------------
     # Fixed Operational & Payload Masses
@@ -232,7 +244,7 @@ class BatteryAircraft:
         return calc_electric_range(
             self.battery_pack_energy_density,
             self.eta_electric,
-            self.wing.lift_to_drag_cruise,
+            self.aerodynamics.lift_to_drag_cruise,
             self.m_battery,
             self.mtom,
         )
@@ -245,7 +257,7 @@ class BatteryAircraft:
             self.design,
             self.ref_mission,
             self.mtom,
-            lift_to_drag_cruise=self.wing.lift_to_drag_cruise,
+            lift_to_drag_cruise=self.aerodynamics.lift_to_drag_cruise,
         )
 
     def calc_required_battery_mass(self) -> SiValue:
