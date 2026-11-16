@@ -270,7 +270,7 @@ class SizingDiagram:
 
     def _calc_wing_loading_limits(self) -> None:
         """Evaluates vertical wing-loading limits and initial climb glide ratio."""
-        self.wing_loadings = np.linspace(5, 600, 800)
+        self.wing_loadings = np.linspace(5, 600, 8000)
         self.x_stall = calc_stall_wing_loading(
             self.c_a_max_l, RHO_0, self.constraints.cs23.maxStallSpeed.si
         )

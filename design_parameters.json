@@ -29,7 +29,7 @@
     // the reference aircraft has a very high coefficient, the reference table [Strohmayer I | p. 213] has a maximum value of 1.0
     "maxHorizontalVolumeCoefficient": [1.0, ""],
     // Composite technology factor (0.83-0.88 for CFRP; Raymer Table 15.4, p. 580)
-    "technologyFactor": [1.0, ""]
+    "technologyFactor": [0.88, ""]
   },
   "propulsion": {
     // assumption of engine magni 650 -> to be determined
@@ -59,7 +59,7 @@
     // fuselage-mounted landing gear (+7%)
     "fuselageMassPenaltyFactor": [0.07, ""],
     // Composite technology factor (0.90-0.95 for CFRP; Raymer Table 15.4, p. 580)
-    "technologyFactor": [1.0, ""]
+    "technologyFactor": [0.95, ""]
   },
   "mission": {
     "range": [100, "nm"],
