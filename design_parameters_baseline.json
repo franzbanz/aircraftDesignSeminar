@@ -20,14 +20,17 @@
     "wingMassPenaltyFactor": [-0.10, ""],
     "bendingReliefFactor": [0.0, ""],
     // Baseline uses conventional all-metal structure (factor 1.0)
-    "technologyFactor": [1.0, ""]
+    "technologyFactor": [1.0, ""],
+    "leadingEdgeMeanAerodynamicChordPosition": [5.6, "m"]
   },
   "empennage": {
     // "transport" [Strohmayer II | p. 120] or "small" (v_D < 250 kts)
     "massMethod": "transport",
     // the reference aircraft has a very high coefficient, the reference table [Strohmayer I | p. 213] has a maximum value of 1.0
     "maxHorizontalVolumeCoefficient": [1.5, ""],
-    "technologyFactor": [1.0, ""]
+    "technologyFactor": [1.0, ""],
+    "horizontalTailAspectRatio": [4.5, ""],
+    "verticalTailAspectRatio": [1.6, ""]
   },
   "propulsion": {
     // assumption of engine magni 650 (scaled to 1200kW)

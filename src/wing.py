@@ -63,6 +63,21 @@ class WingDesign:
         return calc_mean_aerodynamic_chord(self.area, self.span)
 
     @property
+    def x_lemac(self) -> SiValue:
+        """Leading edge of the Mean Aerodynamic Chord (LEMAC) station [m]."""
+        return self.design.wing.leadingEdgeMeanAerodynamicChordPosition.si
+
+    @property
+    def x_ac(self) -> SiValue:
+        """Wing aerodynamic center at 25% MAC [m]."""
+        return SiValue(self.x_lemac + 0.25 * self.mean_aerodynamic_chord, "m")
+
+    @property
+    def cog(self) -> SiValue:
+        """Wing structural center of gravity at 42% MAC [m] [Strohmayer - Flugzeugentwurf 2 | p. 131]."""
+        return SiValue(self.x_lemac + 0.42 * self.mean_aerodynamic_chord, "m")
+
+    @property
     def root_thickness(self) -> SiValue:
         """Wing thickness at root t_root = c_mu * rel_thickness [m]."""
         rel_t = self.design.wing.relWingThickness.value

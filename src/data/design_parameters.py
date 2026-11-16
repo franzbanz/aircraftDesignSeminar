@@ -33,6 +33,7 @@ class DesignWingParameters:
     wingMassPenaltyFactor: UnitValue
     bendingReliefFactor: UnitValue
     technologyFactor: UnitValue
+    leadingEdgeMeanAerodynamicChordPosition: UnitValue
 
 
 @dataclass(frozen=True)
@@ -42,6 +43,8 @@ class DesignEmpennageParameters:
     massMethod: str
     maxHorizontalVolumeCoefficient: UnitValue
     technologyFactor: UnitValue
+    horizontalTailAspectRatio: UnitValue
+    verticalTailAspectRatio: UnitValue
 
 
 @dataclass(frozen=True)

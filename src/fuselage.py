@@ -252,6 +252,72 @@ class FuselageDesign:
             "kg",
         )
 
+    @property
+    def cog(self) -> SiValue:
+        """Fuselage structural center of gravity from nose datum [m].
+
+        Uses 39% of fuselage length (midpoint of 38–40% for wing-mounted
+        propeller aircraft) [Strohmayer - Flugzeugentwurf 2 | p. 132].
+        """
+        return SiValue(0.39 * self.length, "m")
+
+    @property
+    def cabin_center(self) -> SiValue:
+        """Longitudinal midpoint of the passenger cabin [m]."""
+        return SiValue(
+            self.design.fuselage.noseLength.si + 0.5 * self.cabin_length, "m"
+        )
+
+    @property
+    def baggage_x_cg(self) -> SiValue:
+        """Effective CG of passenger luggage across underfloor and aft bays [m]."""
+        cabin_start = self.design.fuselage.noseLength.si
+        x_underfloor = cabin_start + 0.5 * self.cabin_length
+        x_aft = cabin_start + self.cabin_length + 0.5 * self.baggage_length
+        req_vol = self.cargo_volume_required
+        if req_vol <= 0:
+            return SiValue(x_aft, "m")
+        underfloor_share = min(1.0, float(self.underfloor_baggage_volume / req_vol))
+        return SiValue(
+            underfloor_share * x_underfloor + (1.0 - underfloor_share) * x_aft, "m"
+        )
+
+    @property
+    def passenger_rows(self) -> list[tuple[int, SiValue]]:
+        """List of (seat_count, x_station) for each cabin row from front to rear."""
+        dfuse = self.design.fuselage
+        x_first_row = dfuse.noseLength.si + dfuse.frontBulkheadClearance.si
+        pitch = dfuse.seatPitch.si
+
+        rows: list[tuple[int, SiValue]] = []
+        for idx in range(self.n_front_rows):
+            rows.append((2, SiValue(x_first_row + (idx + 0.5) * pitch, "m")))
+        rows.append(
+            (
+                self.n_door_seats,
+                SiValue(x_first_row + (self.n_front_rows + 0.5) * pitch, "m"),
+            )
+        )
+        rows.append(
+            (3, SiValue(x_first_row + (self.n_front_rows + 1.5) * pitch, "m"))
+        )
+        return rows
+
+    @property
+    def payload_cog(self) -> SiValue:
+        """Combined CG of seated passengers and luggage [m]."""
+        total_per_pax = self.constraints.payload.weightPerPassenger.si
+        luggage_per_pax = min(15.0, 0.18 * total_per_pax)
+        seat_per_pax = total_per_pax - luggage_per_pax
+
+        pax_moment = sum(
+            count * seat_per_pax * x_row for count, x_row in self.passenger_rows
+        )
+        total_pax = sum(count for count, _ in self.passenger_rows)
+        luggage_moment = total_pax * luggage_per_pax * self.baggage_x_cg
+        total_payload = total_pax * total_per_pax
+        return SiValue((pax_moment + luggage_moment) / total_payload, "m")
+
 
 if __name__ == "__main__":
     from data import load_constraints, load_design_parameters

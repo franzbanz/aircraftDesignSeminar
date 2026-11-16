@@ -98,6 +98,17 @@ def print_aircraft_summary(
         f"Required Take-off Power:     {aircraft.required_takeoff_power.to('kW'):.1f}"
     )
     print(f"Total Installed Power:       {aircraft.total_takeoff_power.to('kW'):.1f}")
+    cog = aircraft.cog
+    mtom_cog = cog.mtom_state
+    print(
+        f"CoG at MTOM:                 {mtom_cog.x_cg:.2f} ({mtom_cog.mac_fraction * 100:.1f}% MAC)"
+    )
+    print(
+        f"CoG Range (Fwd / Aft):       "
+        f"{cog.most_forward_state.mac_fraction * 100:.1f}% / "
+        f"{cog.most_aft_state.mac_fraction * 100:.1f}% MAC "
+        f"(Travel: {cog.cg_travel_mac * 100:.1f}% MAC)"
+    )
 
 
 def plot_mass_breakdown(

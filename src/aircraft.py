@@ -1,5 +1,6 @@
 """Battery-powered electric aircraft model with integrated calibrated mass estimation."""
 
+from cog import CenterOfGravity
 from constants import GRAVITY
 from data import Constraints, DesignParameters, SiValue
 from empennage import EmpennageDesign
@@ -62,6 +63,11 @@ class BatteryAircraft:
     def empennage(self) -> EmpennageDesign:
         """Empennage sizing and mass calculator bound to current wing state."""
         return EmpennageDesign(self.design, self.ref, self.wing)
+
+    @property
+    def cog(self) -> CenterOfGravity:
+        """Longitudinal Center of Gravity (CoG) and loading excursion analyzer."""
+        return CenterOfGravity(self)
 
     # --------------------------------------------------------------------------
     # Fixed Operational & Payload Masses
