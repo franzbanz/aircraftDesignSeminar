@@ -257,15 +257,23 @@ class BatteryAircraft:
         # Detailed segment-by-segment calculation:
         # return self.mission_energy.battery_pack_mass()
 
-        # Simpler approach:
+        # Simpler approach: scale 100 NM reference mission via fuel fractions,
+        # then add any additional cruise range (+ route reserve) via electric Breguet.
         range_fuel = (
             self.ref.data.fuel.climb
             + self.ref.data.fuel.cruise
             + self.ref.data.fuel.descent
         )
-        range_energy = self.mission_energy.cruise_energy(self.design.mission.range.si)
-        energy_per_kg = range_energy / range_fuel
-        e_mission = SiValue(energy_per_kg * self.ref.data.fuel.total, "J")
+        ref_range = self.ref.data.fuel.referenceRange.si
+        ref_range_energy = self.mission_energy.cruise_energy(ref_range)
+        energy_per_kg = ref_range_energy / range_fuel
+        e_ref_mission = energy_per_kg * self.ref.data.fuel.total
+
+        delta_range = SiValue(self.design.mission.range.si - ref_range, "m")
+        e_delta_range = (
+            1.0 + self.constraints.mission.routeReserve
+        ) * self.mission_energy.cruise_energy(delta_range)
+        e_mission = SiValue(e_ref_mission + e_delta_range, "J")
         return self.mission_energy.battery_pack_mass(e_mission)
 
     def converge_mtom(
