@@ -1,5 +1,4 @@
 """Preliminary mass estimation and range calculation for the battery-electric aircraft."""
-
 import argparse
 from pathlib import Path
 
@@ -8,6 +7,7 @@ from data import load_constraints, load_design_parameters
 from reference_aircraft import load_reference_aircraft
 from visualizations import interactive_plot_menu
 from visualizations.aircraft import print_aircraft_summary
+from visualizations.cog import print_cog_summary
 
 
 def _parse_args() -> argparse.Namespace:
@@ -44,6 +44,7 @@ aircraft = BatteryAircraft(constraints, design_params, ref_aircraft)
 aircraft.converge_mtom()
 
 print_aircraft_summary(aircraft, ref_aircraft)
+print_cog_summary(aircraft.cog)
 
 if __name__ == "__main__":
     interactive_plot_menu(aircraft, ref_aircraft)

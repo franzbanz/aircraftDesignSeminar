@@ -21,7 +21,7 @@
     "bendingReliefFactor": [0.0, ""],
     // Baseline uses conventional all-metal structure (factor 1.0)
     "technologyFactor": [1.0, ""],
-    "leadingEdgeMeanAerodynamicChordPosition": [5.6, "m"]
+    "leadingEdgeMeanAerodynamicChordPosition": [6.2, "m"]
   },
   "empennage": {
     // "transport" [Strohmayer II | p. 120] or "small" (v_D < 250 kts)

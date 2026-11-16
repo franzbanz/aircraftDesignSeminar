@@ -9,7 +9,8 @@
     "oswaldFactor": [0.85, ""]
   },
   "wing": {
-    "maxTakeOffLiftCoefficient": [1.7, ""],
+    // 0.6...0.8 Cl_max [Strohmayer Flugzeugentwurf 2 | p. 68]], here 0.7
+    "maxTakeOffLiftCoefficient": [1.82, ""],
     "maxLandingLiftCoefficient": [2.6, ""],
     // maximum 10.63 if wingspan should be lower than 24m with 54.15m^2 wing area
     "aspectRatio": [10.5, ""],
@@ -19,13 +20,13 @@
     // 2 engines (-5%) and no landing gear on wing (-5%)
     "wingMassPenaltyFactor": [-0.10, ""],
     // flat wing bending relief factor (e.g. 0.10-0.20 for wing-mounted batteries; 0.0 = none)
-    "bendingReliefFactor": [0.0, ""],
+    "bendingReliefFactor": [0.1, ""],
     // Composite technology factor (0.85-0.90 for CFRP; Raymer Table 15.4, p. 580)
     "technologyFactor": [0.9, ""],
-    "leadingEdgeMeanAerodynamicChordPosition": [5.6, "m"]
+    "leadingEdgeMeanAerodynamicChordPosition": [6.2, "m"]
   },
   "empennage": {
-    // "transport" [Strohmayer II | p. 120] or "small" (v_D < 250 kts)
+    // "transport" [Strohmayer Flugzeugentwurf 2 | p. 120] or "small" (v_D < 250 kts)
     "massMethod": "transport",
     // the reference aircraft has a very high coefficient, the reference table [Strohmayer I | p. 213] has a maximum value of 1.0
     "maxHorizontalVolumeCoefficient": [1.0, ""],
