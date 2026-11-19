@@ -1,8 +1,8 @@
 """Four landing-gear concepts for the project's high-wing aircraft.
 
 Run with the existing Anaconda Python 3.9 environment:
-    python src/landing_gear_estimation.py
-    python src/landing_gear_estimation.py --mass 8946.28 --track 3.6
+    python scripts/landing_gear_estimation.py
+    python scripts/landing_gear_estimation.py --mass 8946.28 --track 3.6
 
 The default MTOM is BatteryAircraft.mtom after converge_mtom(), following
 the same default workflow as cl_max.py. Wing area and span are read from
