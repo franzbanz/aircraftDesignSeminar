@@ -51,7 +51,7 @@
     "cabinLayout": "dual_door",
     "seatPitch": [0.8, "m"],
     "seatWidth": [0.5, "m"],
-    "aisleWidth": [0.5, "m"],
+    "aisleWidth": [0.52, "m"],
     "wallClearance": [0.05, "m"],
     "wallThickness": [0.05, "m"],
     "aisleHeadroom": [1.65, "m"],
@@ -77,6 +77,7 @@
     "numberOfPassengers": [19, ""]
   },
   "assumptions": {
+    // CS 23.2230 Limit and ultimate loads, CS 23.337 Ammendment 4
     "limitLoad": [3.0, ""]
   }
 }
