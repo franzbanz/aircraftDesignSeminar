@@ -9,14 +9,14 @@ from visualizations.aircraft import (
     plot_mass_breakdown,
     print_aircraft_summary,
 )
-from visualizations.fuel_fractions import (
-    plot_mission_energy,
-    plot_payload_range,
-    print_mission_energy_breakdown,
-)
 from visualizations.fuselage import (
     plot_fuselage_sizing,
     print_fuselage_summary,
+)
+from visualizations.mission_energy import (
+    plot_mission_energy,
+    plot_payload_range,
+    print_mission_energy_breakdown,
 )
 from visualizations.sizing_diagram import plot_sizing_diagram, print_sizing_diagram
 

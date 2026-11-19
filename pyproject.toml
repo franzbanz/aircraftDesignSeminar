@@ -36,7 +36,7 @@ known-first-party = [
     "constants",
     "data",
     "formulas",
-    "fuel_fractions",
+    "mission_energy",
     "sizing_diagram",
     "visualization",
 ]

@@ -267,7 +267,7 @@ class MissionEnergyCalculator:
 
 
 if __name__ == "__main__":
-    from visualizations.fuel_fractions import print_mission_energy_breakdown
+    from visualizations.mission_energy import print_mission_energy_breakdown
 
     constraints = load_constraints()
     ref_mission = ReferenceMissionCalculator(

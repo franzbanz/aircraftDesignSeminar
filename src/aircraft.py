@@ -9,8 +9,8 @@ from formulas.mass import (
     calc_pylons_mass,
     calc_systems_mass,
 )
-from fuel_fractions import MissionEnergyCalculator, ReferenceMissionCalculator
 from fuselage import FuselageDesign
+from mission_energy import MissionEnergyCalculator, ReferenceMissionCalculator
 from reference_aircraft import ReferenceAircraft
 from sizing_diagram import SizingDiagram, SizingMode
 from wing import WingDesign
