@@ -74,27 +74,36 @@ def interactive_plot_menu(
             break
         elif choice in ("1", "1t", "s", "sizing", "thrust"):
             print("Opening Sizing Diagram (Thrust Loading)...")
-            plot_sizing_diagram(aircraft.sizing_diagram(mode="thrust"))
+            diagram = aircraft.sizing_diagram(mode="thrust")
+            print_sizing_diagram(diagram)
+            plot_sizing_diagram(diagram)
         elif choice in ("1p", "power"):
             print("Opening Sizing Diagram (Specific Power)...")
-            plot_sizing_diagram(aircraft.sizing_diagram(mode="power"))
+            diagram = aircraft.sizing_diagram(mode="power")
+            print_sizing_diagram(diagram)
+            plot_sizing_diagram(diagram)
         elif choice in ("2", "m", "mass"):
             print("Opening Mass Breakdown Comparison...")
+            print_aircraft_summary(aircraft, ref_aircraft)
             plot_mass_breakdown(aircraft, ref_aircraft)
         elif choice in ("3", "e", "energy", "simple"):
             print("Opening Mission Energy Breakdown (Simple Variant)...")
+            print_mission_energy_breakdown(aircraft.mission_energy)
             plot_mission_energy(aircraft, ref_aircraft, variant="simple")
         elif choice in ("3d", "detailed"):
             print("Opening Mission Energy Breakdown (Detailed Variant)...")
+            print_mission_energy_breakdown(aircraft.mission_energy)
             plot_mission_energy(aircraft, ref_aircraft, variant="detailed")
         elif choice in ("4", "p", "payload", "range"):
             print("Opening Payload-Range Diagram...")
             plot_payload_range(aircraft)
         elif choice in ("5", "g", "geom", "geometry", "dimensions"):
             print("Opening Aircraft Dimensions & Geometry Comparison...")
+            print_aircraft_summary(aircraft, ref_aircraft)
             plot_aircraft_geometry(aircraft, ref_aircraft)
         elif choice in ("6", "f", "fuse", "fuselage", "cabin"):
             print("Opening Fuselage Sizing & Cabin Layout (1+1)...")
+            print_fuselage_summary(aircraft.fuselage)
             plot_fuselage_sizing(aircraft.fuselage)
         elif choice in ("a", "all"):
             print("Opening all diagrams sequentially...")
