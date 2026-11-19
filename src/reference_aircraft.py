@@ -21,6 +21,7 @@ from formulas.aerodynamics import (
 )
 from formulas.geometry import (
     calc_aspect_ratio,
+    calc_fuselage_wetted_area,
     calc_horizontal_tail_volume_coefficient,
     calc_mean_aerodynamic_chord,
     calc_vertical_tail_volume_coefficient,
@@ -77,11 +78,18 @@ class ReferenceAircraft:
 
     @property
     def fuselage_wetted_area(self) -> SiValue:
-        """Approximate wetted fuselage surface area S_O [m^2] (elliptical cylinder)."""
+        """Fuselage wetted surface area S_O for rounded rectangular box [m^2]."""
         b_r = self.data.dimensions.fuselageWidth.si
         h_r = self.data.dimensions.fuselageHeight.si
         l_r = self.data.dimensions.fuselageLength.si
-        return SiValue(math.pi * ((b_r + h_r) / 2.0) * l_r, "m^2")
+        corner_radius = min(0.20, 0.15 * min(b_r, h_r))
+        frontal_area = b_r * h_r - (4.0 - math.pi) * (corner_radius**2)
+        d_equiv = math.sqrt(4.0 * frontal_area / math.pi)
+        perimeter = SiValue(
+            2.0 * (b_r + h_r) - (8.0 - 2.0 * math.pi) * corner_radius,
+            "m",
+        )
+        return calc_fuselage_wetted_area(perimeter, l_r, l_r / d_equiv)
 
     @property
     def horizontal_tail_lever_arm(self) -> SiValue:

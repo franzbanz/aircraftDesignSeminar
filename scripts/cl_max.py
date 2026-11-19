@@ -1,7 +1,7 @@
 """Invert the project's takeoff, landing-distance and stall constraints.
 
 Run from the project root:
-    python src/cl_max.py
+    python scripts/cl_max.py
 
 The default wing area and takeoff mass come from the project aircraft model.
 Use --wing-area to evaluate a separately selected reference area.
@@ -19,8 +19,10 @@ from importlib.machinery import PathFinder, SourceFileLoader
 from math import isfinite, sqrt
 from pathlib import Path
 
-SOURCE_DIR = Path(__file__).resolve().parent
-ROOT = SOURCE_DIR.parent
+ROOT = Path(__file__).resolve().parent.parent
+SOURCE_DIR = ROOT / "src"
+if str(SOURCE_DIR) not in sys.path:
+    sys.path.insert(0, str(SOURCE_DIR))
 
 
 class ProjectSourceLoader(SourceFileLoader):

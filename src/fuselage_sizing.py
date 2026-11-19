@@ -13,7 +13,7 @@ import math
 from typing import TYPE_CHECKING
 
 from data import SiValue
-from formulas import calc_fuselage_mass
+from formulas import calc_fuselage_mass, calc_fuselage_wetted_area
 
 if TYPE_CHECKING:
     from data import Constraints, DesignParameters
@@ -42,7 +42,6 @@ class FuselageDesign:
         fuse = self.design.fuselage
         return SiValue(
             2.0 * fuse.seatWidth.si
-            + 3.0 * fuse.armrestWidth.si
             + fuse.aisleWidth.si
             + 2.0 * fuse.wallClearance.si,
             "m",
@@ -192,18 +191,14 @@ class FuselageDesign:
 
     @property
     def wetted_area(self) -> SiValue:
-        """Fuselage wetted surface area (Torenbeek/Raymer adapted to rectangular perimeter) [m^2]."""
-        perimeter = (
+        """Fuselage wetted surface area [Torenbeek - Synthesis of Subsonic Airplane Design | Appendix B, Eq. (B-6), p. 447] [m^2]."""
+        perimeter = SiValue(
             2.0 * (self.width + self.height)
-            - (8.0 - 2.0 * math.pi) * self.corner_radius
+            - (8.0 - 2.0 * math.pi) * self.corner_radius,
+            "m",
         )
-        slenderness = self.slenderness_ratio
-        return SiValue(
-            perimeter
-            * self.length
-            * ((1.0 - 2.0 / slenderness) ** 0.67)
-            * (1.0 + 1.0 / (slenderness**2)),
-            "m^2",
+        return calc_fuselage_wetted_area(
+            perimeter, self.length, self.slenderness_ratio
         )
 
     @property

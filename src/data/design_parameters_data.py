@@ -64,7 +64,6 @@ class DesignFuselageParameters:
 
     seatPitch: UnitValue
     seatWidth: UnitValue
-    armrestWidth: UnitValue
     aisleWidth: UnitValue
     wallClearance: UnitValue
     wallThickness: UnitValue

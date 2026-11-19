@@ -27,6 +27,7 @@ from formulas.breguet import (
 )
 from formulas.geometry import (
     calc_aspect_ratio,
+    calc_fuselage_wetted_area,
     calc_horizontal_tail_area,
     calc_horizontal_tail_volume_coefficient,
     calc_mean_aerodynamic_chord,
@@ -78,6 +79,7 @@ __all__ = [
     # Geometry
     "calc_mean_aerodynamic_chord",
     "calc_aspect_ratio",
+    "calc_fuselage_wetted_area",
     "calc_horizontal_tail_area",
     "calc_vertical_tail_area",
     "calc_horizontal_tail_volume_coefficient",
