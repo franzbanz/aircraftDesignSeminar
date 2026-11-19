@@ -15,13 +15,17 @@ def print_cog_summary(cog: CenterOfGravity, label: str = "Electric Aircraft") ->
     print("=" * 78)
     print(f"                  CENTER OF GRAVITY REPORT: {label}")
     print("=" * 78)
-    print(f"Fuselage Length:   {cog.aircraft.fuselage.length:.2f} | LEMAC: {cog.x_lemac:.2f}")
+    print(
+        f"Fuselage Length:   {cog.aircraft.fuselage.length:.2f} | LEMAC: {cog.aircraft.wing.x_lemac:.2f}"
+    )
     print(
         f"Wing MAC (c_mu):   {cog.aircraft.wing.mean_aerodynamic_chord:.2f} | "
-        f"Wing AC (25%): {cog.x_wing_ac:.2f} | HTP AC: {cog.x_htp_ac:.2f}"
+        f"Wing AC (25%): {cog.aircraft.wing.x_ac:.2f} | HTP AC: {cog.aircraft.empennage.x_htp_ac:.2f}"
     )
     print("-" * 78)
-    print(f"{'Component':<28} | {'Mass [kg]':>10} | {'x_CG [m]':>9} | {'Moment [kg*m]':>14}")
+    print(
+        f"{'Component':<28} | {'Mass [kg]':>10} | {'x_CG [m]':>9} | {'Moment [kg*m]':>14}"
+    )
     print("-" * 78)
     for comp in cog.components:
         print(
@@ -37,7 +41,9 @@ def print_cog_summary(cog: CenterOfGravity, label: str = "Electric Aircraft") ->
         cog.most_forward_state,
         cog.most_aft_state,
     ]
-    print(f"{'Loading State':<28} | {'Mass [kg]':>10} | {'x_CG [m]':>9} | {'% MAC':>14}")
+    print(
+        f"{'Loading State':<28} | {'Mass [kg]':>10} | {'x_CG [m]':>9} | {'% MAC':>14}"
+    )
     print("-" * 78)
     for state in states:
         print(
@@ -59,7 +65,9 @@ def print_cog_summary(cog: CenterOfGravity, label: str = "Electric Aircraft") ->
 def plot_cog_excursion(cog: CenterOfGravity, label: str = "Electric Aircraft") -> None:
     """Plots the CoG loading excursion diagram (% MAC) and component CG positions."""
     fig, (ax_load, ax_comp) = plt.subplots(1, 2, figsize=(15, 6.5))
-    fig.suptitle(f"Center of Gravity & Loading Diagram — {label}", fontsize=13, fontweight="bold")
+    fig.suptitle(
+        f"Center of Gravity & Loading Diagram — {label}", fontsize=13, fontweight="bold"
+    )
 
     fwd = cog.forward_loading_curve
     aft = cog.aft_loading_curve
@@ -69,16 +77,36 @@ def plot_cog_excursion(cog: CenterOfGravity, label: str = "Electric Aircraft") -
     aft_mac = [s.mac_fraction * 100.0 for s in aft]
     aft_m = [float(s.mass) for s in aft]
 
-    ax_load.axvspan(15.0, 35.0, color="#2ecc71", alpha=0.12, label="Typical CoG Envelope (15–35% MAC)")
+    ax_load.axvspan(
+        15.0,
+        35.0,
+        color="#2ecc71",
+        alpha=0.12,
+        label="Typical CoG Envelope (15–35% MAC)",
+    )
     ax_load.axvline(15.0, color="#27ae60", linestyle="--", lw=1.0)
     ax_load.axvline(35.0, color="#27ae60", linestyle="--", lw=1.0)
-    ax_load.axvline(25.0, color="#7f8c8d", linestyle=":", lw=1.2, label="25% MAC (Aero Center)")
-
-    line_fwd, = ax_load.plot(
-        fwd_mac, fwd_m, "-o", color="#2980b9", markersize=5, lw=1.8, label="Front-to-Back Loading"
+    ax_load.axvline(
+        25.0, color="#7f8c8d", linestyle=":", lw=1.2, label="25% MAC (Aero Center)"
     )
-    line_aft, = ax_load.plot(
-        aft_mac, aft_m, "-s", color="#e67e22", markersize=5, lw=1.8, label="Back-to-Front Loading"
+
+    (line_fwd,) = ax_load.plot(
+        fwd_mac,
+        fwd_m,
+        "-o",
+        color="#2980b9",
+        markersize=5,
+        lw=1.8,
+        label="Front-to-Back Loading",
+    )
+    (line_aft,) = ax_load.plot(
+        aft_mac,
+        aft_m,
+        "-s",
+        color="#e67e22",
+        markersize=5,
+        lw=1.8,
+        label="Back-to-Front Loading",
     )
 
     empty = cog.zero_payload_state
@@ -93,44 +121,25 @@ def plot_cog_excursion(cog: CenterOfGravity, label: str = "Electric Aircraft") -
         s=90,
         zorder=5,
     )
-    ax_load.annotate(
-        f"Empty + Bat\n({empty.mac_fraction * 100:.1f}% MAC)",
-        (empty.mac_fraction * 100.0, float(empty.mass)),
-        textcoords="offset points",
-        xytext=(10, -10),
-        fontsize=8.5,
-        fontweight="bold",
-        color="#8e44ad",
-    )
-    ax_load.annotate(
-        f"MTOM\n({mtom.mac_fraction * 100:.1f}% MAC)",
-        (mtom.mac_fraction * 100.0, float(mtom.mass)),
-        textcoords="offset points",
-        xytext=(10, -10),
-        fontsize=8.5,
-        fontweight="bold",
-        color="#c0392b",
-    )
-    ax_load.annotate(
-        f"Most Fwd: {most_fwd.name}\n({most_fwd.mac_fraction * 100:.1f}% MAC)",
-        (most_fwd.mac_fraction * 100.0, float(most_fwd.mass)),
-        textcoords="offset points",
-        xytext=(14, 6),
-        ha="left",
-        fontsize=8.0,
-        color="#1f618d",
-        arrowprops={"arrowstyle": "->", "color": "#1f618d", "lw": 0.9},
-    )
-    ax_load.annotate(
-        f"Most Aft: {most_aft.name}\n({most_aft.mac_fraction * 100:.1f}% MAC)",
-        (most_aft.mac_fraction * 100.0, float(most_aft.mass)),
-        textcoords="offset points",
-        xytext=(-14, 6),
-        ha="right",
-        fontsize=8.0,
-        color="#a04000",
-        arrowprops={"arrowstyle": "->", "color": "#a04000", "lw": 0.9},
-    )
+    for label_text, state, offset, ha, color, use_arrow in (
+        ("Empty + Bat", empty, (10, -10), "left", "#8e44ad", False),
+        ("MTOM", mtom, (10, -10), "left", "#c0392b", False),
+        (f"Most Fwd: {most_fwd.name}", most_fwd, (14, 6), "left", "#1f618d", True),
+        (f"Most Aft: {most_aft.name}", most_aft, (-14, 6), "right", "#a04000", True),
+    ):
+        ax_load.annotate(
+            f"{label_text}\n({state.mac_fraction * 100:.1f}% MAC)",
+            (state.mac_fraction * 100.0, float(state.mass)),
+            textcoords="offset points",
+            xytext=offset,
+            ha=ha,
+            fontsize=8.5 if not use_arrow else 8.0,
+            fontweight="bold" if not use_arrow else "normal",
+            color=color,
+            arrowprops={"arrowstyle": "->", "color": color, "lw": 0.9}
+            if use_arrow
+            else None,
+        )
 
     ax_load.set_xlabel("Center of Gravity Position [% MAC]", fontsize=10.5)
     ax_load.set_ylabel("Aircraft Mass [kg]", fontsize=10.5)
@@ -146,12 +155,22 @@ def plot_cog_excursion(cog: CenterOfGravity, label: str = "Electric Aircraft") -
     names = [f"{c.name} ({float(c.mass):.0f} kg)" for c in comps]
 
     l_fus = float(cog.aircraft.fuselage.length)
-    lemac = float(cog.x_lemac)
+    lemac = float(cog.aircraft.wing.x_lemac)
     temac = lemac + float(cog.aircraft.wing.mean_aerodynamic_chord)
 
-    ax_comp.axvspan(lemac, temac, color="#3498db", alpha=0.14, label="Wing MAC (LEMAC–TEMAC)")
-    ax_comp.axvline(float(mtom.x_cg), color="#c0392b", linestyle="--", lw=1.5, label=f"MTOM CoG ({float(mtom.x_cg):.2f} m)")
-    ax_comp.axvline(l_fus, color="#34495e", linestyle="-", lw=1.2, label=f"Tail End ({l_fus:.2f} m)")
+    ax_comp.axvspan(
+        lemac, temac, color="#3498db", alpha=0.14, label="Wing MAC (LEMAC–TEMAC)"
+    )
+    ax_comp.axvline(
+        float(mtom.x_cg),
+        color="#c0392b",
+        linestyle="--",
+        lw=1.5,
+        label=f"MTOM CoG ({float(mtom.x_cg):.2f} m)",
+    )
+    ax_comp.axvline(
+        l_fus, color="#34495e", linestyle="-", lw=1.2, label=f"Tail End ({l_fus:.2f} m)"
+    )
 
     sizes = [max(35.0, m * 0.14) for m in masses]
     comp_scatter = ax_comp.scatter(x_vals, y_pos, s=sizes, color="#2c3e50", zorder=4)
@@ -167,29 +186,27 @@ def plot_cog_excursion(cog: CenterOfGravity, label: str = "Electric Aircraft") -
     ax_comp.grid(axis="x", linestyle=":", alpha=0.6)
     ax_comp.legend(loc="lower right", fontsize=8.5)
 
-    tooltip_load = ax_load.annotate(
-        "",
-        xy=(0, 0),
-        xytext=(12, 12),
-        textcoords="offset points",
-        bbox={"boxstyle": "round,pad=0.4", "fc": "white", "ec": "#34495e", "alpha": 0.95},
-        arrowprops={"arrowstyle": "->", "color": "#34495e", "lw": 0.8},
-        fontsize=8.5,
-        zorder=10,
-    )
-    tooltip_load.set_visible(False)
+    def _create_tooltip(ax):
+        tip = ax.annotate(
+            "",
+            xy=(0, 0),
+            xytext=(12, 12),
+            textcoords="offset points",
+            bbox={
+                "boxstyle": "round,pad=0.4",
+                "fc": "white",
+                "ec": "#34495e",
+                "alpha": 0.95,
+            },
+            arrowprops={"arrowstyle": "->", "color": "#34495e", "lw": 0.8},
+            fontsize=8.5,
+            zorder=10,
+        )
+        tip.set_visible(False)
+        return tip
 
-    tooltip_comp = ax_comp.annotate(
-        "",
-        xy=(0, 0),
-        xytext=(12, 12),
-        textcoords="offset points",
-        bbox={"boxstyle": "round,pad=0.4", "fc": "white", "ec": "#34495e", "alpha": 0.95},
-        arrowprops={"arrowstyle": "->", "color": "#34495e", "lw": 0.8},
-        fontsize=8.5,
-        zorder=10,
-    )
-    tooltip_comp.set_visible(False)
+    tooltip_load = _create_tooltip(ax_load)
+    tooltip_comp = _create_tooltip(ax_comp)
 
     def _on_hover(event) -> None:
         changed = False

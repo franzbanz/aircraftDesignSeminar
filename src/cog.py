@@ -46,30 +46,18 @@ class CenterOfGravity:
     def __init__(self, aircraft: BatteryAircraft) -> None:
         self.aircraft = aircraft
 
-    @property
-    def x_htp_ac(self) -> SiValue:
-        """Horizontal tailplane aerodynamic center station [m]."""
-        return self.aircraft.empennage.x_htp_ac
-
-    @property
-    def x_wing_ac(self) -> SiValue:
-        """Wing 25% MAC aerodynamic center station [m]."""
-        return self.aircraft.wing.x_ac
-
-    @property
-    def x_lemac(self) -> SiValue:
-        """Leading edge of the Mean Aerodynamic Chord (LEMAC) station [m]."""
-        return self.aircraft.wing.x_lemac
-
     def to_mac_fraction(self, x_cg: SiValue) -> float:
         """Converts a longitudinal station [m] to fraction of MAC [-]."""
-        return (x_cg - self.x_lemac) / self.aircraft.wing.mean_aerodynamic_chord
+        return (
+            x_cg - self.aircraft.wing.x_lemac
+        ) / self.aircraft.wing.mean_aerodynamic_chord
 
     @property
     def x_battery_cg(self) -> SiValue:
         """Battery pack CG station [m]."""
         return SiValue(
-            self.x_lemac + self.aircraft.design.wing.batteryLeadingEdgeOffset.si,
+            self.aircraft.wing.x_lemac
+            + self.aircraft.design.wing.batteryLeadingEdgeOffset.si,
             "m",
         )
 
@@ -81,6 +69,7 @@ class CenterOfGravity:
         wing = ac.wing
         emp = ac.empennage
         x_cabin_mid = fuse.cabin_center
+        x_lemac = wing.x_lemac
 
         x_nose_gear = ac.design.landingGear.noseGearPosition.si
         x_main_gear = ac.design.landingGear.mainGearPosition.si
@@ -93,10 +82,10 @@ class CenterOfGravity:
         )
 
         x_pylons = SiValue(
-            self.x_lemac + ac.design.propulsion.pylonLeadingEdgeOffset.si, "m"
+            x_lemac + ac.design.propulsion.pylonLeadingEdgeOffset.si, "m"
         )
         x_engines = SiValue(
-            self.x_lemac + ac.design.propulsion.engineLeadingEdgeOffset.si, "m"
+            x_lemac + ac.design.propulsion.engineLeadingEdgeOffset.si, "m"
         )
 
         crew_mass = min(160.0, ac.m_operator_items)
@@ -160,7 +149,10 @@ class CenterOfGravity:
         """Zero-payload flight state (OEM + Battery Pack)."""
         return self._state_from(
             "Empty + Battery (0 PAX)",
-            [*self.empty_components, ComponentCG("Battery Pack", self.aircraft.m_battery, self.x_battery_cg)],
+            [
+                *self.empty_components,
+                ComponentCG("Battery Pack", self.aircraft.m_battery, self.x_battery_cg),
+            ],
         )
 
     @property
@@ -179,7 +171,11 @@ class CenterOfGravity:
         baggage = fuse.baggage
         fwd_share, underfloor_share, aft_share = baggage.shares
         luggage_bays = [
-            ("Fwd Luggage", SiValue(total_luggage * fwd_share, "kg"), baggage.x_forward),
+            (
+                "Fwd Luggage",
+                SiValue(total_luggage * fwd_share, "kg"),
+                baggage.x_forward,
+            ),
             (
                 "Underfloor Luggage",
                 SiValue(total_luggage * underfloor_share, "kg"),
@@ -189,7 +185,10 @@ class CenterOfGravity:
         ]
         active_bays = [(name, mass, x) for name, mass, x in luggage_bays if mass > 0]
 
-        items = [*self.empty_components, ComponentCG("Battery Pack", self.aircraft.m_battery, self.x_battery_cg)]
+        items = [
+            *self.empty_components,
+            ComponentCG("Battery Pack", self.aircraft.m_battery, self.x_battery_cg),
+        ]
         states = [self.zero_payload_state]
         prefix = "Fwd" if forward else "Aft"
 
@@ -201,11 +200,13 @@ class CenterOfGravity:
             before_bays = [bay for bay in reversed(active_bays) if bay[2] >= x_ref]
             after_bays = [bay for bay in reversed(active_bays) if bay[2] < x_ref]
 
+        def _append_step(item: ComponentCG, state_name: str) -> None:
+            items.append(item)
+            states.append(self._state_from(state_name, items, added_item=item))
+
         for bay_name, bay_mass, bay_x in before_bays:
-            bay_item = ComponentCG(bay_name, bay_mass, bay_x)
-            items.append(bay_item)
-            states.append(
-                self._state_from(f"{prefix} +{bay_name}", items, added_item=bay_item)
+            _append_step(
+                ComponentCG(bay_name, bay_mass, bay_x), f"{prefix} +{bay_name}"
             )
 
         rows = fuse.passenger_rows if forward else reversed(fuse.passenger_rows)
@@ -213,19 +214,14 @@ class CenterOfGravity:
         for count, x_row in rows:
             for _ in range(count):
                 pax_loaded += 1
-                pax_item = ComponentCG(f"PAX {pax_loaded}", seat_mass, x_row)
-                items.append(pax_item)
-                states.append(
-                    self._state_from(
-                        f"{prefix} +{pax_loaded} PAX", items, added_item=pax_item
-                    )
+                _append_step(
+                    ComponentCG(f"PAX {pax_loaded}", seat_mass, x_row),
+                    f"{prefix} +{pax_loaded} PAX",
                 )
 
         for bay_name, bay_mass, bay_x in after_bays:
-            bay_item = ComponentCG(bay_name, bay_mass, bay_x)
-            items.append(bay_item)
-            states.append(
-                self._state_from(f"{prefix} +{bay_name}", items, added_item=bay_item)
+            _append_step(
+                ComponentCG(bay_name, bay_mass, bay_x), f"{prefix} +{bay_name}"
             )
         return states
 
@@ -242,12 +238,18 @@ class CenterOfGravity:
     @property
     def most_forward_state(self) -> LoadingState:
         """Forward-most CoG across all loading scenarios."""
-        return min(self.forward_loading_curve + self.aft_loading_curve, key=lambda s: s.mac_fraction)
+        return min(
+            self.forward_loading_curve + self.aft_loading_curve,
+            key=lambda s: s.mac_fraction,
+        )
 
     @property
     def most_aft_state(self) -> LoadingState:
         """Aft-most CoG across all loading scenarios."""
-        return max(self.forward_loading_curve + self.aft_loading_curve, key=lambda s: s.mac_fraction)
+        return max(
+            self.forward_loading_curve + self.aft_loading_curve,
+            key=lambda s: s.mac_fraction,
+        )
 
     @property
     def cg_travel_mac(self) -> float:
@@ -256,6 +258,14 @@ class CenterOfGravity:
 
     def required_battery_x_cg(self, target_mac_fraction: float = 0.25) -> SiValue:
         """Computes required battery CG station [m] to achieve target MAC% at MTOM."""
-        x_target = self.x_lemac + target_mac_fraction * self.aircraft.wing.mean_aerodynamic_chord
-        non_bat_moment = sum(c.moment for c in self.components if c.name != "Battery Pack")
-        return SiValue((self.aircraft.mtom * x_target - non_bat_moment) / self.aircraft.m_battery, "m")
+        x_target = (
+            self.aircraft.wing.x_lemac
+            + target_mac_fraction * self.aircraft.wing.mean_aerodynamic_chord
+        )
+        non_bat_moment = sum(
+            c.moment for c in self.components if c.name != "Battery Pack"
+        )
+        return SiValue(
+            (self.aircraft.mtom * x_target - non_bat_moment) / self.aircraft.m_battery,
+            "m",
+        )

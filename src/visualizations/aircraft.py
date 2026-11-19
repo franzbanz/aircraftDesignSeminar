@@ -307,16 +307,74 @@ def plot_aircraft_geometry(
     l_nose = aircraft.design.fuselage.noseLength.si
     x_tail_start = l_f - aircraft.fuselage.tail_length
 
-    fuselage_x = [0, l_nose * 0.35, l_nose, x_tail_start, l_f, l_f, x_tail_start, l_nose, l_nose * 0.35, 0]
-    fuselage_y = [0, w_f * 0.36, w_f / 2, w_f / 2, 0.06, -0.06, -w_f / 2, -w_f / 2, -w_f * 0.36, 0]
-    ax1.plot(fuselage_y, fuselage_x, color="dimgray", lw=2, label=f"Electric Fuselage ({l_f:.2f} x {w_f:.2f})")
+    fuselage_x = [
+        0,
+        l_nose * 0.35,
+        l_nose,
+        x_tail_start,
+        l_f,
+        l_f,
+        x_tail_start,
+        l_nose,
+        l_nose * 0.35,
+        0,
+    ]
+    fuselage_y = [
+        0,
+        w_f * 0.36,
+        w_f / 2,
+        w_f / 2,
+        0.06,
+        -0.06,
+        -w_f / 2,
+        -w_f / 2,
+        -w_f * 0.36,
+        0,
+    ]
+    ax1.plot(
+        fuselage_y,
+        fuselage_x,
+        color="dimgray",
+        lw=2,
+        label=f"Electric Fuselage ({l_f:.2f} x {w_f:.2f})",
+    )
     ax1.fill(fuselage_y, fuselage_x, color="lightgray", alpha=0.4)
 
     l_f_ref = ref_aircraft.data.dimensions.fuselageLength.si
     w_f_ref = ref_aircraft.data.dimensions.fuselageWidth.si
-    ref_fuse_x = [0, 0.85, 2.4, l_f_ref - 5.0, l_f_ref, l_f_ref, l_f_ref - 5.0, 2.4, 0.85, 0]
-    ref_fuse_y = [0, w_f_ref * 0.36, w_f_ref / 2, w_f_ref / 2, 0.06, -0.06, -w_f_ref / 2, -w_f_ref / 2, -w_f_ref * 0.36, 0]
-    ax1.plot(ref_fuse_y, ref_fuse_x, color="#2980b9", lw=1.2, ls="--", alpha=0.7, label=f"Do 228 Fuselage ({l_f_ref:.2f} x {w_f_ref:.2f})")
+    ref_fuse_x = [
+        0,
+        0.85,
+        2.4,
+        l_f_ref - 5.0,
+        l_f_ref,
+        l_f_ref,
+        l_f_ref - 5.0,
+        2.4,
+        0.85,
+        0,
+    ]
+    ref_fuse_y = [
+        0,
+        w_f_ref * 0.36,
+        w_f_ref / 2,
+        w_f_ref / 2,
+        0.06,
+        -0.06,
+        -w_f_ref / 2,
+        -w_f_ref / 2,
+        -w_f_ref * 0.36,
+        0,
+    ]
+    ax1.plot(
+        ref_fuse_y,
+        ref_fuse_x,
+        color="#2980b9",
+        lw=1.2,
+        ls="--",
+        alpha=0.7,
+        label=f"Do 228 Fuselage ({l_f_ref:.2f} x {w_f_ref:.2f})",
+    )
 
     b_ref = ref_aircraft.data.dimensions.wingspan.si
     c_ref = ref_aircraft.mean_aerodynamic_chord.si

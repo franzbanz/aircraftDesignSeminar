@@ -167,9 +167,7 @@ class FuselageDesign:
         """Internal cabin width for 1+1 seating layout [m]."""
         fuse = self.design.fuselage
         return SiValue(
-            2.0 * fuse.seatWidth.si
-            + fuse.aisleWidth.si
-            + 2.0 * fuse.wallClearance.si,
+            2.0 * fuse.seatWidth.si + fuse.aisleWidth.si + 2.0 * fuse.wallClearance.si,
             "m",
         )
 
@@ -284,9 +282,7 @@ class FuselageDesign:
             - (8.0 - 2.0 * math.pi) * self.corner_radius,
             "m",
         )
-        return calc_fuselage_wetted_area(
-            perimeter, self.length, self.slenderness_ratio
-        )
+        return calc_fuselage_wetted_area(perimeter, self.length, self.slenderness_ratio)
 
     @property
     def mass(self) -> SiValue:
@@ -343,9 +339,7 @@ class FuselageDesign:
                 SiValue(x_first_row + (rear_door_idx + 0.5) * pitch, "m"),
             )
         )
-        rows.append(
-            (3, SiValue(x_first_row + (rear_door_idx + 1.5) * pitch, "m"))
-        )
+        rows.append((3, SiValue(x_first_row + (rear_door_idx + 1.5) * pitch, "m")))
         return rows
 
     @property

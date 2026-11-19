@@ -1,4 +1,5 @@
 """Preliminary mass estimation and range calculation for the battery-electric aircraft."""
+
 import argparse
 from pathlib import Path
 

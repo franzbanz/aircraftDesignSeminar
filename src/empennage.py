@@ -66,8 +66,7 @@ class EmpennageDesign:
         """Vertical tailplane mean aerodynamic chord c_mu,VTP [m]."""
         return SiValue(
             math.sqrt(
-                self.vertical_tail_area
-                / self.design.empennage.verticalTailAspectRatio
+                self.vertical_tail_area / self.design.empennage.verticalTailAspectRatio
             ),
             "m",
         )
@@ -75,9 +74,7 @@ class EmpennageDesign:
     @property
     def x_htp_ac(self) -> SiValue:
         """Aerodynamic center of the horizontal tailplane at 25% HTP MAC [m]."""
-        return SiValue(
-            self.wing.x_ac + self.ref.horizontal_tail_lever_arm.si, "m"
-        )
+        return SiValue(self.wing.x_ac + self.ref.horizontal_tail_lever_arm.si, "m")
 
     @property
     def htp_cog(self) -> SiValue:
@@ -132,9 +129,7 @@ class EmpennageDesign:
         """Calibrated total empennage mass [kg]."""
         method = self.design.empennage.massMethod
         if method == "transport":
-            return SiValue(
-                self.horizontal_tail_mass + self.vertical_tail_mass, "kg"
-            )
+            return SiValue(self.horizontal_tail_mass + self.vertical_tail_mass, "kg")
         if method == "small":
             n_ult = self.design.assumptions.limitLoad * 1.5
             return self._calibrate_mass(
