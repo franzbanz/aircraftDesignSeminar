@@ -120,3 +120,31 @@ def calc_wingspan(s_ref: SiValue, ar: float) -> SiValue:
         Wingspan b_W [m].
     """
     return SiValue((s_ref * ar) ** 0.5, "m")
+
+
+def calc_fuselage_wetted_area(
+    perimeter: SiValue,
+    length: SiValue,
+    slenderness_ratio: float,
+) -> SiValue:
+    """Calculates fuselage wetted surface area [Torenbeek - Synthesis of Subsonic Airplane Design | Appendix B, Eq. (B-6), p. 447] [m^2].
+
+    Uses Torenbeek's quick method for bodies with cylindrical mid-sections
+    (valid for slenderness_ratio >= 4.5), substituting the cross-sectional
+    perimeter for pi * D_f.
+
+    Args:
+        perimeter: Cross-sectional perimeter (e.g. rounded rectangle or pi * D_equiv) [m].
+        length: Total fuselage length l_f [m].
+        slenderness_ratio: Fuselage fineness / slenderness ratio l_f / d_equiv [-].
+
+    Returns:
+        Fuselage wetted surface area S_wet [m^2].
+    """
+    return SiValue(
+        perimeter
+        * length
+        * ((1.0 - 2.0 / slenderness_ratio) ** (2.0 / 3.0))
+        * (1.0 + 1.0 / (slenderness_ratio**2)),
+        "m^2",
+    )
