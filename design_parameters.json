@@ -23,7 +23,8 @@
     "bendingReliefFactor": [0.1, ""],
     // Composite technology factor (0.85-0.90 for CFRP; Raymer Table 15.4, p. 580)
     "technologyFactor": [0.9, ""],
-    "leadingEdgeMeanAerodynamicChordPosition": [6.5, "m"]
+    "leadingEdgeMeanAerodynamicChordPosition": [6.5, "m"],
+    "batteryLeadingEdgeOffset": [0.94, "m"]
   },
   "empennage": {
     // "transport" [Strohmayer Flugzeugentwurf 2 | p. 120] or "small" (v_D < 250 kts)
@@ -44,7 +45,9 @@
     "etaPropTakeOff": [0.75, ""],
     "etaPropClimb": [0.78, ""],
     "etaPropCruise": [0.85, ""],
-    "etaElectric": [0.85, ""]
+    "etaElectric": [0.85, ""],
+    "engineLeadingEdgeOffset": [-0.78, "m"],
+    "pylonLeadingEdgeOffset": [-0.22, "m"]
   },
   "fuselage": {
     // "single_door" (1x LH rear door) or "dual_door" (1x RH front door + 1x LH rear door, no overwing exits)
@@ -63,12 +66,18 @@
     "underfloorBaggageHeight": [0.0, "m"],
     // usable nose/forward baggage volume (e.g. from CAD); 0.0 = none
     "forwardBaggageVolume": [0.8, "m^3"],
+    "forwardBaggagePosition": [0.84, "m"],
+    "crewPosition": [1.44, "m"],
     // null = calculate via Torenbeek Eq. (B-6), or [value, "m^2"] = CAD override
     "wettedArea": null,
     // fuselage-mounted landing gear (+7%)
     "fuselageMassPenaltyFactor": [0.07, ""],
     // Composite technology factor (0.90-0.95 for CFRP; Raymer Table 15.4, p. 580)
     "technologyFactor": [0.95, ""]
+  },
+  "landingGear": {
+    "noseGearPosition": [1.32, "m"],
+    "mainGearPosition": [7.62, "m"]
   },
   "mission": {
     "range": [100, "nm"],

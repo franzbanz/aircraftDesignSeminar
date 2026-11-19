@@ -34,6 +34,7 @@ class DesignWingParameters:
     bendingReliefFactor: UnitValue
     technologyFactor: UnitValue
     leadingEdgeMeanAerodynamicChordPosition: UnitValue
+    batteryLeadingEdgeOffset: UnitValue
 
 
 @dataclass(frozen=True)
@@ -59,6 +60,8 @@ class DesignPropulsionParameters:
     etaPropClimb: UnitValue
     etaPropCruise: UnitValue
     etaElectric: UnitValue
+    engineLeadingEdgeOffset: UnitValue
+    pylonLeadingEdgeOffset: UnitValue
 
 
 @dataclass(frozen=True)
@@ -79,6 +82,8 @@ class DesignFuselageParameters:
     usableBaggageFactor: UnitValue
     underfloorBaggageHeight: UnitValue
     forwardBaggageVolume: UnitValue
+    forwardBaggagePosition: UnitValue
+    crewPosition: UnitValue
     wettedArea: UnitValue | None
     fuselageMassPenaltyFactor: UnitValue
     technologyFactor: UnitValue
@@ -102,6 +107,14 @@ class DesignAssumptionsParameters:
 
 
 @dataclass(frozen=True)
+class DesignLandingGearParameters:
+    """Landing gear longitudinal CG station parameters."""
+
+    noseGearPosition: UnitValue
+    mainGearPosition: UnitValue
+
+
+@dataclass(frozen=True)
 class DesignParameters:
     """Top-level container for all battery-powered aircraft design parameters."""
 
@@ -111,5 +124,6 @@ class DesignParameters:
     empennage: DesignEmpennageParameters
     propulsion: DesignPropulsionParameters
     fuselage: DesignFuselageParameters
+    landingGear: DesignLandingGearParameters
     mission: DesignMissionParameters
     assumptions: DesignAssumptionsParameters

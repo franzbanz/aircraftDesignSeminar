@@ -67,10 +67,11 @@ class CenterOfGravity:
 
     @property
     def x_battery_cg(self) -> SiValue:
-        """Battery pack CG station [m] (wing-mounted if bending relief active, else at wing AC)."""
-        if self.aircraft.design.wing.bendingReliefFactor.value > 0:
-            return self.aircraft.wing.cog
-        return self.x_wing_ac
+        """Battery pack CG station [m]."""
+        return SiValue(
+            self.x_lemac + self.aircraft.design.wing.batteryLeadingEdgeOffset.si,
+            "m",
+        )
 
     @property
     def empty_components(self) -> list[ComponentCG]:
@@ -79,14 +80,29 @@ class CenterOfGravity:
         fuse = ac.fuselage
         wing = ac.wing
         emp = ac.empennage
-        c_mac = wing.mean_aerodynamic_chord
-        l_nose = ac.design.fuselage.noseLength.si
         x_cabin_mid = fuse.cabin_center
 
-        x_gear = SiValue(0.15 * (0.55 * l_nose) + 0.85 * (self.x_lemac + 0.50 * c_mac), "m")
+        x_nose_gear = ac.design.landingGear.noseGearPosition.si
+        x_main_gear = ac.design.landingGear.mainGearPosition.si
+        m_nose_gear = ac.m_nose_landing_gear
+        m_main_gear = ac.m_main_landing_gear
+        x_gear = SiValue(
+            (m_nose_gear * x_nose_gear + m_main_gear * x_main_gear)
+            / (m_nose_gear + m_main_gear),
+            "m",
+        )
+
+        x_pylons = SiValue(
+            self.x_lemac + ac.design.propulsion.pylonLeadingEdgeOffset.si, "m"
+        )
+        x_engines = SiValue(
+            self.x_lemac + ac.design.propulsion.engineLeadingEdgeOffset.si, "m"
+        )
+
         crew_mass = min(160.0, ac.m_operator_items)
+        x_crew = ac.design.fuselage.crewPosition.si
         x_ops = SiValue(
-            (crew_mass * (0.60 * l_nose) + (ac.m_operator_items - crew_mass) * x_cabin_mid)
+            (crew_mass * x_crew + (ac.m_operator_items - crew_mass) * x_cabin_mid)
             / ac.m_operator_items,
             "m",
         )
@@ -97,8 +113,8 @@ class CenterOfGravity:
             ComponentCG("Horizontal Empennage", emp.horizontal_tail_mass, emp.htp_cog),
             ComponentCG("Vertical Empennage", emp.vertical_tail_mass, emp.vtp_cog),
             ComponentCG("Landing Gear", ac.m_landing_gear, x_gear),
-            ComponentCG("Pylons & Nacelles", ac.m_pylons, SiValue(self.x_lemac - 0.10 * c_mac, "m")),
-            ComponentCG("Engines & Propellers", ac.m_engine, SiValue(self.x_lemac - 0.35 * c_mac, "m")),
+            ComponentCG("Pylons & Nacelles", ac.m_pylons, x_pylons),
+            ComponentCG("Engines & Propellers", ac.m_engine, x_engines),
             ComponentCG("Systems", ac.m_systems, fuse.cog),
             ComponentCG("Furnishings", ac.m_furnishings, x_cabin_mid),
             ComponentCG("Operator Items (Crew)", ac.m_operator_items, x_ops),

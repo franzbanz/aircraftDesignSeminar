@@ -6,7 +6,7 @@ from data import Constraints, DesignParameters, SiValue
 from empennage import EmpennageDesign
 from formulas.breguet import calc_electric_range
 from formulas.mass import (
-    calc_landing_gear_mass,
+    calc_landing_gear_mass_breakdown,
     calc_pylons_mass,
     calc_systems_mass,
 )
@@ -158,10 +158,21 @@ class BatteryAircraft:
     # --------------------------------------------------------------------------
 
     @property
+    def m_main_landing_gear(self) -> SiValue:
+        """Calibrated main landing gear mass [kg]."""
+        raw_main, _ = calc_landing_gear_mass_breakdown(self.mtom)
+        return SiValue(raw_main * self.ref.landing_gear_calibration_factor, "kg")
+
+    @property
+    def m_nose_landing_gear(self) -> SiValue:
+        """Calibrated nose landing gear mass [kg]."""
+        _, raw_nose = calc_landing_gear_mass_breakdown(self.mtom)
+        return SiValue(raw_nose * self.ref.landing_gear_calibration_factor, "kg")
+
+    @property
     def m_landing_gear(self) -> SiValue:
         """Calibrated landing gear mass [kg]."""
-        raw = calc_landing_gear_mass(self.mtom)
-        return SiValue(raw * self.ref.landing_gear_calibration_factor, "kg")
+        return SiValue(self.m_main_landing_gear + self.m_nose_landing_gear, "kg")
 
     @property
     def m_pylons(self) -> SiValue:

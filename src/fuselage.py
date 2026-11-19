@@ -95,7 +95,7 @@ class BaggageDesign:
     @property
     def x_forward(self) -> SiValue:
         """Longitudinal CG station of forward nose baggage bay [m]."""
-        return SiValue(0.35 * self._fuselage.design.fuselage.noseLength.si, "m")
+        return self._fuselage.design.fuselage.forwardBaggagePosition.si
 
     @property
     def x_underfloor(self) -> SiValue:

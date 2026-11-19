@@ -26,6 +26,7 @@ from data.design_parameters import (
     DesignEmpennageParameters,
     DesignFuselageParameters,
     DesignInitialSizingParameters,
+    DesignLandingGearParameters,
     DesignMissionParameters,
     DesignParameters,
     DesignPropulsionParameters,
@@ -221,6 +222,9 @@ def load_design_parameters(path: Path | str | None = None) -> DesignParameters:
         ),
         fuselage=instantiate_dataclass_with_extra_warning(
             DesignFuselageParameters, _parameter_group(data["fuselage"])
+        ),
+        landingGear=instantiate_dataclass_with_extra_warning(
+            DesignLandingGearParameters, _parameter_group(data["landingGear"])
         ),
         mission=instantiate_dataclass_with_extra_warning(
             DesignMissionParameters, _parameter_group(data["mission"])
