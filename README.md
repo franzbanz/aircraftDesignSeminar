@@ -14,14 +14,14 @@ All parameters in the JSON files are stored as `[value, "unit"]` pairs and are l
 - **`read_parameters.py`**: Loads `parameters.json` into typed Python objects.
 - **`read_reference_aircraft.py`**: Loads `reference_aircraft.json` and computes derived geometric properties and calibration factors.
 - **`mass_formulas.py`**: Empirical (Torenbeek) mass estimation and aerodynamic geometry formulas.
-- **`preliminary_estimation.py`**: Main calculation script for calibrated mass breakdown, range estimation, and wing sizing.
+- **`aircraft_design.py`**: Main calculation script for calibrated mass breakdown, range estimation, and wing sizing.
 
 ## Usage
 
 Run the preliminary estimation from the project root:
 
 ```bash
-python src/preliminary_estimation.py
+python src/aircraft_design.py
 ```
 
 Inspect the reference aircraft data and calibration factors:

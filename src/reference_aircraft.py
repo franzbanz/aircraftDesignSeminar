@@ -11,10 +11,10 @@ from typing import TYPE_CHECKING
 
 from data import SiValue
 from data.loader import load_reference_aircraft_data
-from data.reference_aircraft_data import ReferenceAircraftData
+from data.reference_aircraft import ReferenceAircraftData
 
 if TYPE_CHECKING:
-    from data.design_parameters_data import DesignParameters
+    from data.design_parameters import DesignParameters
 from formulas.aerodynamics import (
     calc_cruise_lift_coefficient,
     calc_wing_zero_lift_drag_coefficient,
@@ -26,7 +26,7 @@ from formulas.geometry import (
     calc_mean_aerodynamic_chord,
     calc_vertical_tail_volume_coefficient,
 )
-from formulas.mass_formulas import (
+from formulas.mass import (
     calc_empennage_mass,
     calc_empennage_mass_transport,
     calc_fuselage_mass,

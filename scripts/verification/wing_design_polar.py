@@ -6,12 +6,12 @@ from dataclasses import replace
 from pathlib import Path
 
 if __package__ in (None, ""):
-    sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+    sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent / "src"))
 
 from aircraft import BatteryAircraft
 from data import UnitValue, load_constraints, load_design_parameters
 from reference_aircraft import load_reference_aircraft
-from wing_design import WingDesign
+from wing import WingDesign
 
 
 def verify_wing_design_polar() -> None:

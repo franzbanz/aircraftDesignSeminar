@@ -12,7 +12,7 @@ if __package__ in (None, ""):
 from aircraft import BatteryAircraft
 from constants import GRAVITY
 from data import SiValue, load_constraints, load_design_parameters
-from formulas import calc_wing_mass
+from formulas.mass import calc_wing_mass
 from reference_aircraft import load_reference_aircraft
 
 

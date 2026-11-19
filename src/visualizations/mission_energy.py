@@ -11,7 +11,7 @@ from data import SiValue
 
 if TYPE_CHECKING:
     from aircraft import BatteryAircraft
-    from fuel_fractions import MissionEnergyCalculator
+    from mission_energy import MissionEnergyCalculator
     from reference_aircraft import ReferenceAircraft
 
 

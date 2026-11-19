@@ -9,7 +9,7 @@ from data import (
     load_design_parameters,
     load_reference_aircraft_data,
 )
-from formulas import (
+from formulas.breguet import (
     calc_breguet_fuel_mass_from_endurance,
     calc_breguet_fuel_mass_from_range,
     calc_breguet_range,
@@ -267,7 +267,7 @@ class MissionEnergyCalculator:
 
 
 if __name__ == "__main__":
-    from visualizations.fuel_fractions import print_mission_energy_breakdown
+    from visualizations.mission_energy import print_mission_energy_breakdown
 
     constraints = load_constraints()
     ref_mission = ReferenceMissionCalculator(

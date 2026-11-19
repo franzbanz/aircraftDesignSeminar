@@ -9,36 +9,20 @@ from visualizations.aircraft import (
     plot_mass_breakdown,
     print_aircraft_summary,
 )
-from visualizations.fuel_fractions import (
+from visualizations.fuselage import (
+    plot_fuselage_sizing,
+    print_fuselage_summary,
+)
+from visualizations.mission_energy import (
     plot_mission_energy,
     plot_payload_range,
     print_mission_energy_breakdown,
 )
-from visualizations.fuselage_sizing import (
-    plot_fuselage_sizing,
-    print_fuselage_summary,
-)
-from visualizations.reference_aircraft import print_reference_aircraft
 from visualizations.sizing_diagram import plot_sizing_diagram, print_sizing_diagram
 
 if TYPE_CHECKING:
     from aircraft import BatteryAircraft
     from reference_aircraft import ReferenceAircraft
-
-__all__ = [
-    "interactive_plot_menu",
-    "plot_aircraft_geometry",
-    "plot_fuselage_sizing",
-    "plot_mass_breakdown",
-    "plot_mission_energy",
-    "plot_payload_range",
-    "plot_sizing_diagram",
-    "print_aircraft_summary",
-    "print_fuselage_summary",
-    "print_mission_energy_breakdown",
-    "print_reference_aircraft",
-    "print_sizing_diagram",
-]
 
 
 def interactive_plot_menu(

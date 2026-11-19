@@ -57,7 +57,7 @@
     // from flight manual p. 56
     "limitLoad": [3.16, ""],
     "maxTakeOffLiftCoefficient": [1.7, ""],
-    // fitted from reference drag polar (see src/verification/polar_oswald.py)
+    // fitted from reference drag polar (see scripts/verification/polar_oswald.py)
     "oswaldFactor": [0.9087, ""],
     // 18% maximum thickness
     "relWingThickness": [0.18, ""],
