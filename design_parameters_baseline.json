@@ -53,6 +53,8 @@
     "minBaggageLength": [1, "m"],
     "usableBaggageFactor": [0.75, ""],
     "underfloorBaggageHeight": [0.0, "m"],
+    // null = calculate via Torenbeek Eq. (B-6), or [value, "m^2"] = CAD override
+    "wettedArea": null,
     // fuselage-mounted landing gear (+7%)
     "fuselageMassPenaltyFactor": [0.07, ""],
     "technologyFactor": [1.0, ""]

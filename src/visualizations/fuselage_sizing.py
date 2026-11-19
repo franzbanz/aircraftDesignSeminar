@@ -58,7 +58,8 @@ def print_fuselage_summary(fuselage: FuselageDesign) -> None:
     print("-" * 68)
     print("AERODYNAMIC PROPERTIES:")
     print(f"  Slenderness Ratio (l/d):   {fuselage.slenderness_ratio:.2f}")
-    print(f"  Fuselage Wetted Area:      {fuselage.wetted_area:.2f}")
+    wetted_source = " (CAD override)" if fuselage.design.fuselage.wettedArea is not None else ""
+    print(f"  Fuselage Wetted Area:      {fuselage.wetted_area:.2f}{wetted_source}")
     print("=" * 68)
 
 

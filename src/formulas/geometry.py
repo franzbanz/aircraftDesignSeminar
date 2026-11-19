@@ -127,7 +127,7 @@ def calc_fuselage_wetted_area(
     length: SiValue,
     slenderness_ratio: float,
 ) -> SiValue:
-    """Calculates fuselage wetted surface area [Torenbeek - Synthesis of Subsonic Airplane Design | Appendix B, Eq. (B-6), p. 447] [m^2].
+    """Calculates fuselage wetted surface area [Torenbeek - Synthesis of Subsonic Airplane Design | p. 447] [m^2].
 
     Uses Torenbeek's quick method for bodies with cylindrical mid-sections
     (valid for slenderness_ratio >= 4.5), substituting the cross-sectional

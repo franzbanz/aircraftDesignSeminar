@@ -191,7 +191,9 @@ class FuselageDesign:
 
     @property
     def wetted_area(self) -> SiValue:
-        """Fuselage wetted surface area [Torenbeek - Synthesis of Subsonic Airplane Design | Appendix B, Eq. (B-6), p. 447] [m^2]."""
+        """Fuselage wetted surface area (CAD override if set, else [Torenbeek - Synthesis of Subsonic Airplane Design | p. 447]) [m^2]."""
+        if self.design.fuselage.wettedArea is not None:
+            return self.design.fuselage.wettedArea.si
         perimeter = SiValue(
             2.0 * (self.width + self.height)
             - (8.0 - 2.0 * math.pi) * self.corner_radius,

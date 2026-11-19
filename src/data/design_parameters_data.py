@@ -74,6 +74,7 @@ class DesignFuselageParameters:
     minBaggageLength: UnitValue
     usableBaggageFactor: UnitValue
     underfloorBaggageHeight: UnitValue
+    wettedArea: UnitValue | None
     fuselageMassPenaltyFactor: UnitValue
     technologyFactor: UnitValue
 
