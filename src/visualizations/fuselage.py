@@ -21,9 +21,19 @@ def print_fuselage_summary(fuselage: FuselageDesign) -> None:
         f"             FUSELAGE SIZING REPORT: {fuselage.n_pax}-PAX (1+1 CABIN LAYOUT)"
     )
     print("=" * 68)
+    if fuselage.is_dual_door:
+        layout_desc = (
+            f"1x 1+0 LH at RH front door, {fuselage.n_front_rows}x 1+1, "
+            f"1x 0+{fuselage.n_door_seats} RH at LH rear door, 3-seat rear bench"
+        )
+    else:
+        layout_desc = (
+            f"{fuselage.n_front_rows}x 1+1, 1x 0+{fuselage.n_door_seats} "
+            "RH at LH door, 3-seat rear bench"
+        )
     print(
         f"Passenger Capacity:          {fuselage.n_pax} PAX in {fuselage.n_rows} rows "
-        f"({fuselage.n_front_rows}x 1+1, 1x 0+{fuselage.n_door_seats} RH at LH door, 3-seat rear bench)"
+        f"({layout_desc})"
     )
     print(
         f"Seat Pitch:                  {fuse.seatPitch.si * 100:.1f} cm ({fuse.seatPitch.si / 0.0254:.1f} in)"
@@ -107,24 +117,27 @@ def _plot_planform_shell(ax: Axes, fuselage: FuselageDesign, color: str) -> None
     ax.fill_between(xs, ys_bot, ys_top, color=color, alpha=0.10)
     ax.plot([0.0, x_tail], [0.0, 0.0], color="gray", ls="-.", lw=0.7, alpha=0.35)
 
-    for x_part, label in (
-        (x_cockpit, "Cockpit"),
-        (x_cabin, f"Cabin ({fuselage.n_rows} rows)"),
-        (x_baggage, "Aft Baggage"),
-    ):
+    for x_part in (x_cockpit, x_cabin, x_baggage):
         ax.axvline(x_part, color="gray", ls="--", lw=1.1, alpha=0.8)
+
+    baggage_label = "Aft\nBaggage" if fuselage.baggage_length < 1.6 else "Aft Baggage"
+    for x_mid, label in (
+        (0.5 * x_cockpit, "Cockpit"),
+        (0.5 * (x_cockpit + x_cabin), f"Cabin ({fuselage.n_rows} rows)"),
+        (0.5 * (x_cabin + x_baggage), baggage_label),
+    ):
         ax.text(
-            x_part - 0.15,
+            x_mid,
             w2 + 0.10,
             label,
             va="bottom",
-            ha="right",
+            ha="center",
             fontsize=8.5,
             color="dimgray",
         )
 
     ax.text(
-        x_cockpit + 0.15,
+        x_baggage + 0.25,
         w2 + 0.08,
         "RH (Starboard)",
         fontsize=8,
@@ -132,7 +145,7 @@ def _plot_planform_shell(ax: Axes, fuselage: FuselageDesign, color: str) -> None
         va="bottom",
     )
     ax.text(
-        x_cockpit + 0.15,
+        x_baggage + 0.25,
         -w2 - 0.12,
         "LH (Port)",
         fontsize=8,
@@ -142,20 +155,34 @@ def _plot_planform_shell(ax: Axes, fuselage: FuselageDesign, color: str) -> None
 
 
 def _plot_planform_doors(ax: Axes, fuselage: FuselageDesign) -> None:
-    """Draws the 1-row port (LH) rear passenger entry door in planform."""
+    """Draws the passenger entry doors aligned with their respective row cells."""
     fuse = fuselage.design.fuselage
     w2 = fuselage.width / 2.0
-    row_start = fuse.noseLength.si + fuse.frontBulkheadClearance.si
+    row_start = fuse.noseLength.si + fuse.frontClearance.si
     seat_pitch = fuse.seatPitch.si
-    door_start = row_start + fuselage.n_front_rows * seat_pitch - 0.15
-    door_end = door_start + seat_pitch
+    door_inset = 0.05
+    door_width = seat_pitch - 2.0 * door_inset
 
+    if fuselage.is_dual_door:
+        front_door_start = row_start + door_inset
+        ax.plot(
+            [front_door_start, front_door_start + door_width],
+            [w2, w2],
+            color="#d35400",
+            lw=4.5,
+            label="RH Front Door",
+        )
+
+    rear_door_row_idx = (
+        (1 + fuselage.n_front_rows) if fuselage.is_dual_door else fuselage.n_front_rows
+    )
+    rear_door_start = row_start + rear_door_row_idx * seat_pitch + door_inset
     ax.plot(
-        [door_start, door_end],
+        [rear_door_start, rear_door_start + door_width],
         [-w2, -w2],
         color="#d35400",
         lw=4.5,
-        label="LH Entry Door",
+        label="LH Rear Door" if fuselage.is_dual_door else "LH Entry Door",
     )
 
 
@@ -172,8 +199,11 @@ def _plot_planform_seats(ax: Axes, fuselage: FuselageDesign, color: str) -> None
     for y_crew in (-w2 * 0.55, w2 * 0.55 - 0.36):
         _add_rect(ax, cockpit_x, y_crew, 0.42, 0.36, facecolor="gray", alpha=0.7)
 
-    row_start = nose_length + fuse.frontBulkheadClearance.si
+    row_start = nose_length + fuse.frontClearance.si
     seat_len = min(0.50, 0.65 * seat_pitch)
+    # Place each seat at the aft end of its pitch cell (leaving ~10 cm wall behind the rear bench
+    # and forward legroom ahead of row 1).
+    seat_pitch_offset = max(0.0, seat_pitch - seat_len - 0.10)
     half_cabin = fuselage.cabin_width / 2.0
 
     y_left = -half_cabin + wall_clearance
@@ -184,19 +214,24 @@ def _plot_planform_seats(ax: Axes, fuselage: FuselageDesign, color: str) -> None
     y_door_inner = y_bench_right - seat_width
 
     seat_coords: list[tuple[float, float]] = []
-    for row_idx in range(fuselage.n_front_rows):
-        x_seat = row_start + row_idx * seat_pitch
+    if fuselage.is_dual_door:
+        seat_coords.append((row_start + seat_pitch_offset, y_left))
+
+    first_full_row = 1 if fuselage.is_dual_door else 0
+    for row_idx in range(first_full_row, first_full_row + fuselage.n_front_rows):
+        x_seat = row_start + row_idx * seat_pitch + seat_pitch_offset
         seat_coords.append((x_seat, y_left))
         seat_coords.append((x_seat, y_right))
 
-    x_door_row = row_start + fuselage.n_front_rows * seat_pitch
+    rear_door_row_idx = first_full_row + fuselage.n_front_rows
+    x_door_row = row_start + rear_door_row_idx * seat_pitch + seat_pitch_offset
     door_ys = (
         (y_bench_right, y_door_inner) if fuselage.n_door_seats == 2 else (y_right,)
     )
     for y_seat in door_ys:
         seat_coords.append((x_door_row, y_seat))
 
-    x_bench = row_start + (fuselage.n_rows - 1) * seat_pitch
+    x_bench = row_start + (fuselage.n_rows - 1) * seat_pitch + seat_pitch_offset
     for y_seat in (y_bench_left, y_bench_center, y_bench_right):
         seat_coords.append((x_bench, y_seat))
 

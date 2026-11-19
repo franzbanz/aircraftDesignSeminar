@@ -36,6 +36,10 @@ class FuselageDesign:
         self.n_pax: int = int(self.design.mission.numberOfPassengers.value)
         if self.n_pax < 5:
             raise ValueError(f"Passenger count must be at least 5, got {self.n_pax}.")
+        if self.design.fuselage.cabinLayout not in ("single_door", "dual_door"):
+            raise ValueError(
+                f"cabinLayout must be 'single_door' or 'dual_door', got {self.design.fuselage.cabinLayout!r}."
+            )
 
     @property
     def cabin_width(self) -> SiValue:
@@ -90,29 +94,41 @@ class FuselageDesign:
         return SiValue(math.sqrt(4.0 * self.frontal_area / math.pi), "m")
 
     @property
+    def is_dual_door(self) -> bool:
+        """True if cabin uses front RH + rear LH doors without overwing exits."""
+        return self.design.fuselage.cabinLayout == "dual_door"
+
+    @property
     def n_door_seats(self) -> int:
-        """Starboard seats in the door row (2 if n_pax is odd, 1 if even) [-]."""
+        """Starboard seats in the rear port-door row [-]."""
+        if self.is_dual_door:
+            # Note: 2 seats opposite the rear door may violate the CS-23 escape path for even n_pax.
+            return 1 if self.n_pax % 2 == 1 else 2
         return 2 if self.n_pax % 2 == 1 else 1
 
     @property
     def n_front_rows(self) -> int:
-        """Full 1+1 rows ahead of the port entry door [-]."""
+        """Full 1+1 rows between cockpit/front-door row and rear door row [-]."""
         rear_bench_seats = 3
-        return (self.n_pax - rear_bench_seats - self.n_door_seats) // 2
+        front_door_row_seats = 1 if self.is_dual_door else 0
+        return (
+            self.n_pax - rear_bench_seats - self.n_door_seats - front_door_row_seats
+        ) // 2
 
     @property
     def n_rows(self) -> int:
         """Total passenger seating rows [-]."""
-        door_rows = 1
+        front_door_rows = 1 if self.is_dual_door else 0
+        rear_door_rows = 1
         rear_bench_rows = 1
-        return self.n_front_rows + door_rows + rear_bench_rows
+        return front_door_rows + self.n_front_rows + rear_door_rows + rear_bench_rows
 
     @property
     def cabin_length(self) -> SiValue:
-        """Passenger cabin length including front bulkhead clearance [m]."""
+        """Passenger cabin length including forward clearance [m]."""
         fuse = self.design.fuselage
         return SiValue(
-            self.n_rows * fuse.seatPitch.si + fuse.frontBulkheadClearance.si,
+            self.n_rows * fuse.seatPitch.si + fuse.frontClearance.si,
             "m",
         )
 

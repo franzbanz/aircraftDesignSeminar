@@ -62,6 +62,7 @@ class DesignPropulsionParameters:
 class DesignFuselageParameters:
     """Fuselage geometric dimension and cabin layout parameters."""
 
+    cabinLayout: str
     seatPitch: UnitValue
     seatWidth: UnitValue
     aisleWidth: UnitValue
@@ -70,7 +71,7 @@ class DesignFuselageParameters:
     aisleHeadroom: UnitValue
     floorStructuralDepth: UnitValue
     noseLength: UnitValue
-    frontBulkheadClearance: UnitValue
+    frontClearance: UnitValue
     minBaggageLength: UnitValue
     usableBaggageFactor: UnitValue
     underfloorBaggageHeight: UnitValue

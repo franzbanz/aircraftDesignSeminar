@@ -41,6 +41,8 @@
     "etaElectric": [0.85, ""]
   },
   "fuselage": {
+    // "single_door" (1x LH rear door) or "dual_door" (1x RH front door + 1x LH rear door, no overwing exits)
+    "cabinLayout": "single_door",
     "seatPitch": [0.8, "m"],
     "seatWidth": [0.5, "m"],
     "aisleWidth": [0.5, "m"],
@@ -49,7 +51,7 @@
     "aisleHeadroom": [1.65, "m"],
     "floorStructuralDepth": [0.15, "m"],
     "noseLength": [2.40, "m"],
-    "frontBulkheadClearance": [0.40, "m"],
+    "frontClearance": [0.40, "m"],
     "minBaggageLength": [1, "m"],
     "usableBaggageFactor": [0.75, ""],
     "underfloorBaggageHeight": [0.0, "m"],
