@@ -270,36 +270,48 @@ class FuselageDesign:
 
     @property
     def baggage_x_cg(self) -> SiValue:
-        """Effective CG of passenger luggage across underfloor and aft bays [m]."""
+        """Effective CG of passenger luggage across forward, underfloor, and aft bays [m]."""
         cabin_start = self.design.fuselage.noseLength.si
+        x_forward = 0.35 * cabin_start
         x_underfloor = cabin_start + 0.5 * self.cabin_length
         x_aft = cabin_start + self.cabin_length + 0.5 * self.baggage_length
         req_vol = self.cargo_volume_required
         if req_vol <= 0:
             return SiValue(x_aft, "m")
-        underfloor_share = min(1.0, float(self.underfloor_baggage_volume / req_vol))
+        forward_share = min(1.0, float(self.forward_baggage_volume / req_vol))
+        underfloor_share = min(
+            1.0 - forward_share, float(self.underfloor_baggage_volume / req_vol)
+        )
+        aft_share = max(0.0, 1.0 - forward_share - underfloor_share)
         return SiValue(
-            underfloor_share * x_underfloor + (1.0 - underfloor_share) * x_aft, "m"
+            forward_share * x_forward
+            + underfloor_share * x_underfloor
+            + aft_share * x_aft,
+            "m",
         )
 
     @property
     def passenger_rows(self) -> list[tuple[int, SiValue]]:
         """List of (seat_count, x_station) for each cabin row from front to rear."""
         dfuse = self.design.fuselage
-        x_first_row = dfuse.noseLength.si + dfuse.frontBulkheadClearance.si
+        x_first_row = dfuse.noseLength.si + dfuse.frontClearance.si
         pitch = dfuse.seatPitch.si
 
         rows: list[tuple[int, SiValue]] = []
-        for idx in range(self.n_front_rows):
+        if self.is_dual_door:
+            rows.append((1, SiValue(x_first_row + 0.5 * pitch, "m")))
+        first_full_idx = 1 if self.is_dual_door else 0
+        for idx in range(first_full_idx, first_full_idx + self.n_front_rows):
             rows.append((2, SiValue(x_first_row + (idx + 0.5) * pitch, "m")))
+        rear_door_idx = first_full_idx + self.n_front_rows
         rows.append(
             (
                 self.n_door_seats,
-                SiValue(x_first_row + (self.n_front_rows + 0.5) * pitch, "m"),
+                SiValue(x_first_row + (rear_door_idx + 0.5) * pitch, "m"),
             )
         )
         rows.append(
-            (3, SiValue(x_first_row + (self.n_front_rows + 1.5) * pitch, "m"))
+            (3, SiValue(x_first_row + (rear_door_idx + 1.5) * pitch, "m"))
         )
         return rows
 
