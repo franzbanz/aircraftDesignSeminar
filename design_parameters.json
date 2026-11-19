@@ -57,6 +57,8 @@
     "minBaggageLength": [1, "m"],
     "usableBaggageFactor": [0.75, ""],
     "underfloorBaggageHeight": [0.0, "m"],
+    // usable nose/forward baggage volume (e.g. from CAD); 0.0 = none
+    "forwardBaggageVolume": [0.0, "m^3"],
     // null = calculate via Torenbeek Eq. (B-6), or [value, "m^2"] = CAD override
     "wettedArea": null,
     // fuselage-mounted landing gear (+7%)

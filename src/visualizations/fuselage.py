@@ -63,6 +63,10 @@ def print_fuselage_summary(fuselage: FuselageDesign) -> None:
             f"     Underfloor Hold:        {fuse.underfloorBaggageHeight.si:.2f} height "
             f"(Vol: {fuselage.underfloor_baggage_volume:.2f})"
         )
+    if fuselage.forward_baggage_volume > 0:
+        print(
+            f"     Forward Nose Hold:      Vol: {fuselage.forward_baggage_volume:.2f}"
+        )
     print(f"  4. Tailcone:               {fuselage.tail_length:.2f}")
     print(f"  --> TOTAL FUSELAGE LENGTH: {fuselage.length:.2f}")
     print("-" * 68)

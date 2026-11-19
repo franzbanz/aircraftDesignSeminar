@@ -162,10 +162,18 @@ class FuselageDesign:
         )
 
     @property
+    def forward_baggage_volume(self) -> SiValue:
+        """Usable forward/nose baggage compartment volume [m^3]."""
+        return self.design.fuselage.forwardBaggageVolume.si
+
+    @property
     def baggage_length(self) -> SiValue:
         """Aft baggage compartment length [m]."""
         remaining_volume = max(
-            0.0, self.cargo_volume_required - self.underfloor_baggage_volume
+            0.0,
+            self.cargo_volume_required
+            - self.underfloor_baggage_volume
+            - self.forward_baggage_volume,
         )
         return SiValue(
             max(
@@ -182,8 +190,13 @@ class FuselageDesign:
 
     @property
     def baggage_volume(self) -> SiValue:
-        """Total available baggage volume (aft + underfloor) [m^3]."""
-        return SiValue(self.aft_baggage_volume + self.underfloor_baggage_volume, "m^3")
+        """Total available baggage volume (aft + underfloor + forward) [m^3]."""
+        return SiValue(
+            self.aft_baggage_volume
+            + self.underfloor_baggage_volume
+            + self.forward_baggage_volume,
+            "m^3",
+        )
 
     @property
     def tail_length(self) -> SiValue:
