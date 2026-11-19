@@ -28,22 +28,21 @@ def _parse_args() -> argparse.Namespace:
     return parser.parse_args()
 
 
-args = _parse_args()
-design_path = (
-    Path(__file__).resolve().parent.parent / "design_parameters_baseline.json"
-    if args.baseline
-    else args.design
-)
-
-constraints = load_constraints()
-design_params = load_design_parameters(design_path)
-ref_aircraft = load_reference_aircraft(design=design_params)
-
-# Initialize unified aircraft model at design MTOM
-aircraft = BatteryAircraft(constraints, design_params, ref_aircraft)
-aircraft.converge_mtom()
-
-print_aircraft_summary(aircraft, ref_aircraft)
-
 if __name__ == "__main__":
+    args = _parse_args()
+    design_path = (
+        Path(__file__).resolve().parent.parent / "design_parameters_baseline.json"
+        if args.baseline
+        else args.design
+    )
+
+    constraints = load_constraints()
+    design_params = load_design_parameters(design_path)
+    ref_aircraft = load_reference_aircraft(design=design_params)
+
+    # Initialize unified aircraft model at design MTOM
+    aircraft = BatteryAircraft(constraints, design_params, ref_aircraft)
+    aircraft.converge_mtom()
+
+    print_aircraft_summary(aircraft, ref_aircraft)
     interactive_plot_menu(aircraft, ref_aircraft)
