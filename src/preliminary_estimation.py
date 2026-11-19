@@ -6,7 +6,8 @@ from pathlib import Path
 from aircraft import BatteryAircraft
 from data import load_constraints, load_design_parameters
 from reference_aircraft import load_reference_aircraft
-from visualizations import interactive_plot_menu, print_aircraft_summary
+from visualizations import interactive_plot_menu
+from visualizations.aircraft import print_aircraft_summary
 
 
 def _parse_args() -> argparse.Namespace:

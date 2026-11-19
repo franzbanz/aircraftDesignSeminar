@@ -5,11 +5,10 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 from data import SiValue
-from formulas import (
+from formulas.geometry import calc_horizontal_tail_area, calc_vertical_tail_area
+from formulas.mass import (
     calc_empennage_mass,
     calc_empennage_mass_transport,
-    calc_horizontal_tail_area,
-    calc_vertical_tail_area,
 )
 
 if TYPE_CHECKING:

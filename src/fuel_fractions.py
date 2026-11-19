@@ -9,7 +9,7 @@ from data import (
     load_design_parameters,
     load_reference_aircraft_data,
 )
-from formulas import (
+from formulas.breguet import (
     calc_breguet_fuel_mass_from_endurance,
     calc_breguet_fuel_mass_from_range,
     calc_breguet_range,

@@ -13,7 +13,8 @@ import math
 from typing import TYPE_CHECKING
 
 from data import SiValue
-from formulas import calc_fuselage_mass, calc_fuselage_wetted_area
+from formulas.geometry import calc_fuselage_wetted_area
+from formulas.mass import calc_fuselage_mass
 
 if TYPE_CHECKING:
     from data import Constraints, DesignParameters

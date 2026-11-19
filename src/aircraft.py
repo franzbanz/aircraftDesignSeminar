@@ -3,8 +3,8 @@
 from constants import GRAVITY
 from data import Constraints, DesignParameters, SiValue
 from empennage_sizing import EmpennageDesign
-from formulas import (
-    calc_electric_range,
+from formulas.breguet import calc_electric_range
+from formulas.mass import (
     calc_landing_gear_mass,
     calc_pylons_mass,
     calc_systems_mass,

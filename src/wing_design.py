@@ -6,14 +6,16 @@ import math
 from typing import TYPE_CHECKING
 
 from data import SiValue
-from formulas import (
-    calc_aspect_ratio,
+from formulas.aerodynamics import (
     calc_cruise_lift_coefficient,
-    calc_mean_aerodynamic_chord,
-    calc_wing_mass,
     calc_wing_zero_lift_drag_coefficient,
+)
+from formulas.geometry import (
+    calc_aspect_ratio,
+    calc_mean_aerodynamic_chord,
     calc_wingspan,
 )
+from formulas.mass import calc_wing_mass
 
 if TYPE_CHECKING:
     from data import Constraints, DesignParameters

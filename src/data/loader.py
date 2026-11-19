@@ -12,7 +12,7 @@ import warnings
 from pathlib import Path
 from typing import Any, TypeVar, cast
 
-from data.constraints_data import (
+from data.constraints import (
     BatteryConstraints,
     Constraints,
     Cs23Constraints,
@@ -20,7 +20,7 @@ from data.constraints_data import (
     PayloadConstraints,
     PerformanceConstraints,
 )
-from data.design_parameters_data import (
+from data.design_parameters import (
     DesignAerodynamicParameters,
     DesignAssumptionsParameters,
     DesignEmpennageParameters,
@@ -31,7 +31,7 @@ from data.design_parameters_data import (
     DesignPropulsionParameters,
     DesignWingParameters,
 )
-from data.reference_aircraft_data import (
+from data.reference_aircraft import (
     ReferenceAerodynamicParameters,
     ReferenceAircraftData,
     ReferenceAssumptionsParameters,
