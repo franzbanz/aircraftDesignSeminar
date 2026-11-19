@@ -43,7 +43,6 @@
   "fuselage": {
     "seatPitch": [0.8, "m"],
     "seatWidth": [0.5, "m"],
-    "armrestWidth": [0.05, "m"],
     "aisleWidth": [0.5, "m"],
     "wallClearance": [0.05, "m"],
     "wallThickness": [0.05, "m"],

@@ -165,7 +165,6 @@ def _plot_planform_seats(ax: Axes, fuselage: FuselageDesign, color: str) -> None
     nose_length = fuse.noseLength.si
     seat_pitch = fuse.seatPitch.si
     seat_width = fuse.seatWidth.si
-    armrest_width = fuse.armrestWidth.si
     wall_clearance = fuse.wallClearance.si
 
     cockpit_x = nose_length * 0.55
@@ -176,12 +175,12 @@ def _plot_planform_seats(ax: Axes, fuselage: FuselageDesign, color: str) -> None
     seat_len = min(0.50, 0.65 * seat_pitch)
     half_cabin = fuselage.cabin_width / 2.0
 
-    y_left = -half_cabin + wall_clearance + armrest_width
-    y_right = half_cabin - wall_clearance - armrest_width - seat_width
+    y_left = -half_cabin + wall_clearance
+    y_right = half_cabin - wall_clearance - seat_width
     y_bench_left = -half_cabin + wall_clearance
     y_bench_center = -seat_width / 2.0
     y_bench_right = half_cabin - wall_clearance - seat_width
-    y_door_inner = y_bench_right - armrest_width - seat_width
+    y_door_inner = y_bench_right - seat_width
 
     seat_coords: list[tuple[float, float]] = []
     for row_idx in range(fuselage.n_front_rows):
@@ -325,19 +324,16 @@ def _plot_cross_section_seats(
     fuse = fuselage.design.fuselage
     seat_width = fuse.seatWidth.si
     wall_clearance = fuse.wallClearance.si
-    armrest_width = fuse.armrestWidth.si
 
     half_cabin = fuselage.cabin_width / 2.0
-    left_seat_x = -half_cabin + wall_clearance + armrest_width
-    right_seat_x = half_cabin - wall_clearance - armrest_width - seat_width
+    left_seat_x = -half_cabin + wall_clearance
+    right_seat_x = half_cabin - wall_clearance - seat_width
 
     pedestal_h = 0.35
     cushion_h = 0.10
     backrest_h = 0.67
-    armrest_h = 0.05
-    armrest_y = y_floor + pedestal_h + cushion_h + 0.12
 
-    for seat_x, is_left in ((left_seat_x, True), (right_seat_x, False)):
+    for seat_x in (left_seat_x, right_seat_x):
         for leg_x in (seat_x + 0.08, seat_x + seat_width - 0.12):
             _add_rect(ax, leg_x, y_floor, 0.04, pedestal_h, facecolor="dimgray")
 
@@ -360,14 +356,6 @@ def _plot_cross_section_seats(
             linewidth=1.0,
             alpha=0.75,
         )
-
-        outer_arm_x = seat_x - armrest_width if is_left else seat_x + seat_width
-        inner_arm_x = seat_x + seat_width if is_left else seat_x - armrest_width * 0.5
-        for arm_x, arm_w in (
-            (outer_arm_x, armrest_width),
-            (inner_arm_x, armrest_width * 0.5),
-        ):
-            _add_rect(ax, arm_x, armrest_y, arm_w, armrest_h, facecolor="gray")
 
 
 def _draw_cross_section(ax: Axes, fuselage: FuselageDesign, color: str) -> None:
