@@ -4,14 +4,14 @@ import math
 from typing import TYPE_CHECKING
 
 from data import SiValue
-from formulas import calc_cruise_lift_coefficient
+from formulas.aerodynamics import calc_cruise_lift_coefficient
 
 if TYPE_CHECKING:
     from data import DesignParameters
-    from empennage_sizing import EmpennageDesign
-    from fuselage_sizing import FuselageDesign
+    from empennage import EmpennageDesign
+    from fuselage import FuselageDesign
     from reference_aircraft import ReferenceAircraft
-    from wing_design import WingDesign
+    from wing import WingDesign
 
 
 class AerodynamicDesign:
