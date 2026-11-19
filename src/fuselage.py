@@ -122,10 +122,8 @@ class BaggageDesign:
         req_vol = self.required_volume
         if req_vol <= 0:
             return (0.0, 0.0, 1.0)
-        forward_share = min(1.0, float(self.forward_volume / req_vol))
-        underfloor_share = min(
-            1.0 - forward_share, float(self.underfloor_volume / req_vol)
-        )
+        forward_share = min(1.0, self.forward_volume / req_vol)
+        underfloor_share = min(1.0 - forward_share, self.underfloor_volume / req_vol)
         aft_share = max(0.0, 1.0 - forward_share - underfloor_share)
         return (forward_share, underfloor_share, aft_share)
 

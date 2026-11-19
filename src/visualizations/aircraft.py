@@ -105,8 +105,8 @@ def print_aircraft_summary(
     )
     print(
         f"CoG Range (Fwd / Aft):       "
-        f"{cog.most_forward_state.mac_fraction * 100:.1f}% / "
-        f"{cog.most_aft_state.mac_fraction * 100:.1f}% MAC "
+        f"{cog.extreme_state('forward').mac_fraction * 100:.1f}% / "
+        f"{cog.extreme_state('aft').mac_fraction * 100:.1f}% MAC "
         f"(Travel: {cog.cg_travel_mac * 100:.1f}% MAC)"
     )
 

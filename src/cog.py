@@ -7,7 +7,7 @@ whole-aircraft CoG states (% MAC) and forward/aft loading excursions.
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Literal
 
 from data import SiValue
 
@@ -160,101 +160,72 @@ class CenterOfGravity:
         """Full payload state (MTOM = OEM + Battery + 19 PAX + Luggage)."""
         return self._state_from("MTOM (Full Payload)", self.components)
 
-    def _loading_curve(self, *, forward: bool) -> list[LoadingState]:
+    def loading_curve(
+        self, direction: Literal["forward", "aft"] = "forward"
+    ) -> list[LoadingState]:
         """Generates progressive front-to-back or back-to-front loading excursion."""
         fuse = self.aircraft.fuselage
         total_per_pax = self.aircraft.constraints.payload.weightPerPassenger.si
-        luggage_mass = SiValue(min(15.0, 0.18 * total_per_pax), "kg")
-        seat_mass = SiValue(total_per_pax - luggage_mass, "kg")
-        total_luggage = SiValue(fuse.n_pax * luggage_mass, "kg")
+        luggage_per_pax = min(15.0, 0.18 * total_per_pax)
+        seat_mass = SiValue(total_per_pax - luggage_per_pax, "kg")
+        total_luggage = SiValue(fuse.n_pax * luggage_per_pax, "kg")
 
-        baggage = fuse.baggage
-        fwd_share, underfloor_share, aft_share = baggage.shares
-        luggage_bays = [
-            (
-                "Fwd Luggage",
-                SiValue(total_luggage * fwd_share, "kg"),
-                baggage.x_forward,
-            ),
-            (
-                "Underfloor Luggage",
-                SiValue(total_luggage * underfloor_share, "kg"),
-                baggage.x_underfloor,
-            ),
-            ("Aft Luggage", SiValue(total_luggage * aft_share, "kg"), baggage.x_aft),
+        bag = fuse.baggage
+        bays = [
+            ComponentCG(name, SiValue(total_luggage * share, "kg"), x_cg)
+            for (name, x_cg), share in zip(
+                (
+                    ("Fwd Luggage", bag.x_forward),
+                    ("Underfloor Luggage", bag.x_underfloor),
+                    ("Aft Luggage", bag.x_aft),
+                ),
+                bag.shares,
+            )
+            if total_luggage * share > 0
         ]
-        active_bays = [(name, mass, x) for name, mass, x in luggage_bays if mass > 0]
 
         items = [
             *self.empty_components,
             ComponentCG("Battery Pack", self.aircraft.m_battery, self.x_battery_cg),
         ]
         states = [self.zero_payload_state]
-        prefix = "Fwd" if forward else "Aft"
-
         x_ref = self.zero_payload_state.x_cg
-        if forward:
-            before_bays = [bay for bay in active_bays if bay[2] < x_ref]
-            after_bays = [bay for bay in active_bays if bay[2] >= x_ref]
-        else:
-            before_bays = [bay for bay in reversed(active_bays) if bay[2] >= x_ref]
-            after_bays = [bay for bay in reversed(active_bays) if bay[2] < x_ref]
+        is_fwd = direction == "forward"
+        prefix = "Fwd" if is_fwd else "Aft"
 
-        def _append_step(item: ComponentCG, state_name: str) -> None:
+        def _append(item: ComponentCG, label: str) -> None:
             items.append(item)
-            states.append(self._state_from(state_name, items, added_item=item))
+            states.append(self._state_from(f"{prefix} +{label}", items, added_item=item))
 
-        for bay_name, bay_mass, bay_x in before_bays:
-            _append_step(
-                ComponentCG(bay_name, bay_mass, bay_x), f"{prefix} +{bay_name}"
-            )
+        ordered_bays = bays if is_fwd else list(reversed(bays))
+        for bay in ordered_bays:
+            if (bay.x_cg < x_ref) == is_fwd:
+                _append(bay, bay.name)
 
-        rows = fuse.passenger_rows if forward else reversed(fuse.passenger_rows)
-        pax_loaded = 0
-        for count, x_row in rows:
+        pax_count = 0
+        for count, x_row in fuse.passenger_rows if is_fwd else reversed(fuse.passenger_rows):
             for _ in range(count):
-                pax_loaded += 1
-                _append_step(
-                    ComponentCG(f"PAX {pax_loaded}", seat_mass, x_row),
-                    f"{prefix} +{pax_loaded} PAX",
-                )
+                pax_count += 1
+                _append(ComponentCG(f"PAX {pax_count}", seat_mass, x_row), f"{pax_count} PAX")
 
-        for bay_name, bay_mass, bay_x in after_bays:
-            _append_step(
-                ComponentCG(bay_name, bay_mass, bay_x), f"{prefix} +{bay_name}"
-            )
+        for bay in ordered_bays:
+            if (bay.x_cg < x_ref) != is_fwd:
+                _append(bay, bay.name)
         return states
 
-    @property
-    def forward_loading_curve(self) -> list[LoadingState]:
-        """Progressive front-to-back passenger loading excursion."""
-        return self._loading_curve(forward=True)
-
-    @property
-    def aft_loading_curve(self) -> list[LoadingState]:
-        """Progressive back-to-front passenger loading excursion (luggage first)."""
-        return self._loading_curve(forward=False)
-
-    @property
-    def most_forward_state(self) -> LoadingState:
-        """Forward-most CoG across all loading scenarios."""
-        return min(
-            self.forward_loading_curve + self.aft_loading_curve,
-            key=lambda s: s.mac_fraction,
-        )
-
-    @property
-    def most_aft_state(self) -> LoadingState:
-        """Aft-most CoG across all loading scenarios."""
-        return max(
-            self.forward_loading_curve + self.aft_loading_curve,
-            key=lambda s: s.mac_fraction,
-        )
+    def extreme_state(self, direction: Literal["forward", "aft"]) -> LoadingState:
+        """Forward-most or aft-most CoG across all loading scenarios."""
+        states = self.loading_curve("forward") + self.loading_curve("aft")
+        selector = min if direction == "forward" else max
+        return selector(states, key=lambda s: s.mac_fraction)
 
     @property
     def cg_travel_mac(self) -> float:
         """Total CoG travel range in fraction of MAC [-]."""
-        return self.most_aft_state.mac_fraction - self.most_forward_state.mac_fraction
+        return (
+            self.extreme_state("aft").mac_fraction
+            - self.extreme_state("forward").mac_fraction
+        )
 
     def required_battery_x_cg(self, target_mac_fraction: float = 0.25) -> SiValue:
         """Computes required battery CG station [m] to achieve target MAC% at MTOM."""

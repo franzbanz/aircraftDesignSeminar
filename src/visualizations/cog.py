@@ -38,8 +38,8 @@ def print_cog_summary(cog: CenterOfGravity, label: str = "Electric Aircraft") ->
         cog.oem_state,
         cog.zero_payload_state,
         cog.mtom_state,
-        cog.most_forward_state,
-        cog.most_aft_state,
+        cog.extreme_state("forward"),
+        cog.extreme_state("aft"),
     ]
     print(
         f"{'Loading State':<28} | {'Mass [kg]':>10} | {'x_CG [m]':>9} | {'% MAC':>14}"
@@ -53,7 +53,7 @@ def print_cog_summary(cog: CenterOfGravity, label: str = "Electric Aircraft") ->
     print("-" * 78)
     print(
         f"CoG Travel (Fwd -> Aft):     {cog.cg_travel_mac * 100:.1f}% MAC "
-        f"({float(cog.most_aft_state.x_cg - cog.most_forward_state.x_cg):.2f} m)"
+        f"({cog.extreme_state('aft').x_cg - cog.extreme_state('forward').x_cg:.2f} m)"
     )
     print(
         f"Battery CG for 25.0% MAC:    {cog.required_battery_x_cg(0.25):.2f} "
@@ -69,13 +69,13 @@ def plot_cog_excursion(cog: CenterOfGravity, label: str = "Electric Aircraft") -
         f"Center of Gravity & Loading Diagram — {label}", fontsize=13, fontweight="bold"
     )
 
-    fwd = cog.forward_loading_curve
-    aft = cog.aft_loading_curve
+    fwd = cog.loading_curve("forward")
+    aft = cog.loading_curve("aft")
 
     fwd_mac = [s.mac_fraction * 100.0 for s in fwd]
-    fwd_m = [float(s.mass) for s in fwd]
+    fwd_m = [s.mass for s in fwd]
     aft_mac = [s.mac_fraction * 100.0 for s in aft]
-    aft_m = [float(s.mass) for s in aft]
+    aft_m = [s.mass for s in aft]
 
     ax_load.axvspan(
         15.0,
@@ -111,12 +111,12 @@ def plot_cog_excursion(cog: CenterOfGravity, label: str = "Electric Aircraft") -
 
     empty = cog.zero_payload_state
     mtom = cog.mtom_state
-    most_fwd = cog.most_forward_state
-    most_aft = cog.most_aft_state
+    most_fwd = cog.extreme_state("forward")
+    most_aft = cog.extreme_state("aft")
 
     ax_load.scatter(
         [empty.mac_fraction * 100.0, mtom.mac_fraction * 100.0],
-        [float(empty.mass), float(mtom.mass)],
+        [empty.mass, mtom.mass],
         color=["#8e44ad", "#c0392b"],
         s=90,
         zorder=5,
@@ -129,7 +129,7 @@ def plot_cog_excursion(cog: CenterOfGravity, label: str = "Electric Aircraft") -
     ):
         ax_load.annotate(
             f"{label_text}\n({state.mac_fraction * 100:.1f}% MAC)",
-            (state.mac_fraction * 100.0, float(state.mass)),
+            (state.mac_fraction * 100.0, state.mass),
             textcoords="offset points",
             xytext=offset,
             ha=ha,
@@ -150,26 +150,26 @@ def plot_cog_excursion(cog: CenterOfGravity, label: str = "Electric Aircraft") -
     # Right panel: Component CG locations along fuselage length
     comps = cog.components
     y_pos = list(range(len(comps)))
-    x_vals = [float(c.x_cg) for c in comps]
-    masses = [float(c.mass) for c in comps]
-    names = [f"{c.name} ({float(c.mass):.0f} kg)" for c in comps]
+    x_vals = [c.x_cg for c in comps]
+    masses = [c.mass for c in comps]
+    names = [f"{c.name} ({c.mass:.0f})" for c in comps]
 
-    l_fus = float(cog.aircraft.fuselage.length)
-    lemac = float(cog.aircraft.wing.x_lemac)
-    temac = lemac + float(cog.aircraft.wing.mean_aerodynamic_chord)
+    l_fus = cog.aircraft.fuselage.length
+    lemac = cog.aircraft.wing.x_lemac
+    temac = lemac + cog.aircraft.wing.mean_aerodynamic_chord
 
     ax_comp.axvspan(
         lemac, temac, color="#3498db", alpha=0.14, label="Wing MAC (LEMAC–TEMAC)"
     )
     ax_comp.axvline(
-        float(mtom.x_cg),
+        mtom.x_cg,
         color="#c0392b",
         linestyle="--",
         lw=1.5,
-        label=f"MTOM CoG ({float(mtom.x_cg):.2f} m)",
+        label=f"MTOM CoG ({mtom.x_cg:.2f})",
     )
     ax_comp.axvline(
-        l_fus, color="#34495e", linestyle="-", lw=1.2, label=f"Tail End ({l_fus:.2f} m)"
+        l_fus, color="#34495e", linestyle="-", lw=1.2, label=f"Tail End ({l_fus:.2f})"
     )
 
     sizes = [max(35.0, m * 0.14) for m in masses]
@@ -217,20 +217,20 @@ def plot_cog_excursion(cog: CenterOfGravity, label: str = "Electric Aircraft") -
                 if hit and info.get("ind"):
                     idx = info["ind"][0]
                     state = states[idx]
-                    tooltip_load.xy = (state.mac_fraction * 100.0, float(state.mass))
+                    tooltip_load.xy = (state.mac_fraction * 100.0, state.mass)
                     if state.added_item is not None:
                         added = state.added_item
-                        lever = float(added.x_cg) - float(state.x_cg)
+                        lever = added.x_cg - state.x_cg
                         tooltip_text = (
                             f"{state.name}\n"
-                            f"+{added.name}: {float(added.mass):.1f} kg\n"
-                            f"Station: {float(added.x_cg):.2f} m (Lever: {lever:+.2f} m)"
+                            f"+{added.name}: {added.mass:.1f}\n"
+                            f"Station: {added.x_cg:.2f} (Lever: {lever:+.2f} m)"
                         )
                     else:
                         tooltip_text = (
                             f"{state.name}\n"
-                            f"Mass: {float(state.mass):.1f} kg\n"
-                            f"CoG: {state.mac_fraction * 100:.1f}% MAC ({float(state.x_cg):.2f} m)"
+                            f"Mass: {state.mass:.1f}\n"
+                            f"CoG: {state.mac_fraction * 100:.1f}% MAC ({state.x_cg:.2f})"
                         )
                     tooltip_load.set_text(tooltip_text)
                     tooltip_load.set_visible(True)
@@ -249,11 +249,11 @@ def plot_cog_excursion(cog: CenterOfGravity, label: str = "Electric Aircraft") -
             if hit and info.get("ind"):
                 idx = info["ind"][0]
                 comp = comps[idx]
-                tooltip_comp.xy = (float(comp.x_cg), idx)
+                tooltip_comp.xy = (comp.x_cg, idx)
                 tooltip_comp.set_text(
                     f"{comp.name}\n"
-                    f"Mass: {float(comp.mass):.1f} kg\n"
-                    f"x_CG: {float(comp.x_cg):.2f} m"
+                    f"Mass: {comp.mass:.1f}\n"
+                    f"x_CG: {comp.x_cg:.2f}"
                 )
                 tooltip_comp.set_visible(True)
                 changed = True
