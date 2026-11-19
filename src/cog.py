@@ -37,6 +37,7 @@ class LoadingState:
     mass: SiValue
     x_cg: SiValue
     mac_fraction: float
+    added_item: ComponentCG | None = None
 
 
 class CenterOfGravity:
@@ -116,11 +117,22 @@ class CenterOfGravity:
             ),
         ]
 
-    def _state_from(self, name: str, items: list[ComponentCG]) -> LoadingState:
+    def _state_from(
+        self,
+        name: str,
+        items: list[ComponentCG],
+        added_item: ComponentCG | None = None,
+    ) -> LoadingState:
         """Builds a LoadingState from a list of ComponentCG items."""
         total_mass = SiValue(sum(c.mass for c in items), "kg")
         x_cg = SiValue(sum(c.moment for c in items) / total_mass, "m")
-        return LoadingState(name=name, mass=total_mass, x_cg=x_cg, mac_fraction=self.to_mac_fraction(x_cg))
+        return LoadingState(
+            name=name,
+            mass=total_mass,
+            x_cg=x_cg,
+            mac_fraction=self.to_mac_fraction(x_cg),
+            added_item=added_item,
+        )
 
     @property
     def oem_state(self) -> LoadingState:
@@ -148,25 +160,57 @@ class CenterOfGravity:
         seat_mass = SiValue(total_per_pax - luggage_mass, "kg")
         total_luggage = SiValue(fuse.n_pax * luggage_mass, "kg")
 
+        baggage = fuse.baggage
+        fwd_share, underfloor_share, aft_share = baggage.shares
+        luggage_bays = [
+            ("Fwd Luggage", SiValue(total_luggage * fwd_share, "kg"), baggage.x_forward),
+            (
+                "Underfloor Luggage",
+                SiValue(total_luggage * underfloor_share, "kg"),
+                baggage.x_underfloor,
+            ),
+            ("Aft Luggage", SiValue(total_luggage * aft_share, "kg"), baggage.x_aft),
+        ]
+        active_bays = [(name, mass, x) for name, mass, x in luggage_bays if mass > 0]
+
         items = [*self.empty_components, ComponentCG("Battery Pack", self.aircraft.m_battery, self.x_battery_cg)]
         states = [self.zero_payload_state]
         prefix = "Fwd" if forward else "Aft"
 
-        if not forward:
-            items.append(ComponentCG("Luggage", total_luggage, fuse.baggage_x_cg))
-            states.append(self._state_from("Aft +Luggage", items))
+        x_ref = self.zero_payload_state.x_cg
+        if forward:
+            before_bays = [bay for bay in active_bays if bay[2] < x_ref]
+            after_bays = [bay for bay in active_bays if bay[2] >= x_ref]
+        else:
+            before_bays = [bay for bay in reversed(active_bays) if bay[2] >= x_ref]
+            after_bays = [bay for bay in reversed(active_bays) if bay[2] < x_ref]
+
+        for bay_name, bay_mass, bay_x in before_bays:
+            bay_item = ComponentCG(bay_name, bay_mass, bay_x)
+            items.append(bay_item)
+            states.append(
+                self._state_from(f"{prefix} +{bay_name}", items, added_item=bay_item)
+            )
 
         rows = fuse.passenger_rows if forward else reversed(fuse.passenger_rows)
         pax_loaded = 0
         for count, x_row in rows:
             for _ in range(count):
                 pax_loaded += 1
-                items.append(ComponentCG(f"PAX {pax_loaded}", seat_mass, x_row))
-                states.append(self._state_from(f"{prefix} +{pax_loaded} PAX", items))
+                pax_item = ComponentCG(f"PAX {pax_loaded}", seat_mass, x_row)
+                items.append(pax_item)
+                states.append(
+                    self._state_from(
+                        f"{prefix} +{pax_loaded} PAX", items, added_item=pax_item
+                    )
+                )
 
-        if forward:
-            items.append(ComponentCG("Luggage", total_luggage, fuse.baggage_x_cg))
-            states.append(self._state_from("Fwd Full (+Luggage)", items))
+        for bay_name, bay_mass, bay_x in after_bays:
+            bay_item = ComponentCG(bay_name, bay_mass, bay_x)
+            items.append(bay_item)
+            states.append(
+                self._state_from(f"{prefix} +{bay_name}", items, added_item=bay_item)
+            )
         return states
 
     @property

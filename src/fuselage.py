@@ -21,6 +21,126 @@ if TYPE_CHECKING:
     from reference_aircraft import ReferenceAircraft
 
 
+class BaggageDesign:
+    """Encapsulates forward, underfloor, and aft baggage volume, length, and CG."""
+
+    def __init__(self, fuselage: FuselageDesign) -> None:
+        self._fuselage = fuselage
+
+    @property
+    def required_volume(self) -> SiValue:
+        """Required passenger luggage volume [m^3]."""
+        return SiValue(
+            self._fuselage.n_pax
+            * self._fuselage.constraints.payload.luggageVolumePerPassenger.si,
+            "m^3",
+        )
+
+    @property
+    def _usable_aft_area(self) -> SiValue:
+        """Usable internal cross-sectional area of aft baggage bay [m^2]."""
+        fuse = self._fuselage.design.fuselage
+        return SiValue(
+            fuse.usableBaggageFactor
+            * self._fuselage.cabin_width
+            * fuse.aisleHeadroom.si,
+            "m^2",
+        )
+
+    @property
+    def underfloor_volume(self) -> SiValue:
+        """Usable underfloor baggage compartment volume beneath the cabin [m^3]."""
+        fuse = self._fuselage.design.fuselage
+        return SiValue(
+            fuse.usableBaggageFactor
+            * self._fuselage.cabin_width
+            * fuse.underfloorBaggageHeight.si
+            * self._fuselage.cabin_length,
+            "m^3",
+        )
+
+    @property
+    def forward_volume(self) -> SiValue:
+        """Usable forward/nose baggage compartment volume [m^3]."""
+        return self._fuselage.design.fuselage.forwardBaggageVolume.si
+
+    @property
+    def aft_length(self) -> SiValue:
+        """Aft baggage compartment length [m]."""
+        remaining_volume = max(
+            0.0,
+            self.required_volume - self.underfloor_volume - self.forward_volume,
+        )
+        return SiValue(
+            max(
+                self._fuselage.design.fuselage.minBaggageLength.si,
+                remaining_volume / self._usable_aft_area,
+            ),
+            "m",
+        )
+
+    @property
+    def aft_volume(self) -> SiValue:
+        """Actual available aft baggage compartment volume [m^3]."""
+        return SiValue(self.aft_length * self._usable_aft_area, "m^3")
+
+    @property
+    def total_volume(self) -> SiValue:
+        """Total available baggage volume (aft + underfloor + forward) [m^3]."""
+        return SiValue(
+            self.aft_volume + self.underfloor_volume + self.forward_volume,
+            "m^3",
+        )
+
+    @property
+    def x_forward(self) -> SiValue:
+        """Longitudinal CG station of forward nose baggage bay [m]."""
+        return SiValue(0.35 * self._fuselage.design.fuselage.noseLength.si, "m")
+
+    @property
+    def x_underfloor(self) -> SiValue:
+        """Longitudinal CG station of underfloor baggage bay [m]."""
+        return SiValue(
+            self._fuselage.design.fuselage.noseLength.si
+            + 0.5 * self._fuselage.cabin_length,
+            "m",
+        )
+
+    @property
+    def x_aft(self) -> SiValue:
+        """Longitudinal CG station of aft baggage bay [m]."""
+        return SiValue(
+            self._fuselage.design.fuselage.noseLength.si
+            + self._fuselage.cabin_length
+            + 0.5 * self.aft_length,
+            "m",
+        )
+
+    @property
+    def shares(self) -> tuple[float, float, float]:
+        """Volume-weighted luggage mass shares (forward, underfloor, aft) [-]."""
+        req_vol = self.required_volume
+        if req_vol <= 0:
+            return (0.0, 0.0, 1.0)
+        forward_share = min(1.0, float(self.forward_volume / req_vol))
+        underfloor_share = min(
+            1.0 - forward_share, float(self.underfloor_volume / req_vol)
+        )
+        aft_share = max(0.0, 1.0 - forward_share - underfloor_share)
+        return (forward_share, underfloor_share, aft_share)
+
+    @property
+    def x_cg(self) -> SiValue:
+        """Effective CG of passenger luggage across forward, underfloor, and aft bays [m]."""
+        forward_share, underfloor_share, aft_share = self.shares
+        return SiValue(
+            forward_share * self.x_forward
+            + underfloor_share * self.x_underfloor
+            + aft_share * self.x_aft,
+            "m",
+        )
+
+
 class FuselageDesign:
     """Encapsulates cabin seating, cross-section, longitudinal sizing, and mass."""
 
@@ -40,6 +160,7 @@ class FuselageDesign:
             raise ValueError(
                 f"cabinLayout must be 'single_door' or 'dual_door', got {self.design.fuselage.cabinLayout!r}."
             )
+        self.baggage = BaggageDesign(self)
 
     @property
     def cabin_width(self) -> SiValue:
@@ -133,72 +254,6 @@ class FuselageDesign:
         )
 
     @property
-    def cargo_volume_required(self) -> SiValue:
-        """Required passenger luggage volume [m^3]."""
-        return SiValue(
-            self.n_pax * self.constraints.payload.luggageVolumePerPassenger.si,
-            "m^3",
-        )
-
-    @property
-    def _usable_baggage_area(self) -> SiValue:
-        """Usable internal cross-sectional area of aft baggage bay [m^2]."""
-        fuse = self.design.fuselage
-        return SiValue(
-            fuse.usableBaggageFactor * self.cabin_width * fuse.aisleHeadroom.si,
-            "m^2",
-        )
-
-    @property
-    def underfloor_baggage_volume(self) -> SiValue:
-        """Usable underfloor baggage compartment volume beneath the cabin [m^3]."""
-        fuse = self.design.fuselage
-        return SiValue(
-            fuse.usableBaggageFactor
-            * self.cabin_width
-            * fuse.underfloorBaggageHeight.si
-            * self.cabin_length,
-            "m^3",
-        )
-
-    @property
-    def forward_baggage_volume(self) -> SiValue:
-        """Usable forward/nose baggage compartment volume [m^3]."""
-        return self.design.fuselage.forwardBaggageVolume.si
-
-    @property
-    def baggage_length(self) -> SiValue:
-        """Aft baggage compartment length [m]."""
-        remaining_volume = max(
-            0.0,
-            self.cargo_volume_required
-            - self.underfloor_baggage_volume
-            - self.forward_baggage_volume,
-        )
-        return SiValue(
-            max(
-                self.design.fuselage.minBaggageLength.si,
-                remaining_volume / self._usable_baggage_area,
-            ),
-            "m",
-        )
-
-    @property
-    def aft_baggage_volume(self) -> SiValue:
-        """Actual available aft baggage compartment volume [m^3]."""
-        return SiValue(self.baggage_length * self._usable_baggage_area, "m^3")
-
-    @property
-    def baggage_volume(self) -> SiValue:
-        """Total available baggage volume (aft + underfloor + forward) [m^3]."""
-        return SiValue(
-            self.aft_baggage_volume
-            + self.underfloor_baggage_volume
-            + self.forward_baggage_volume,
-            "m^3",
-        )
-
-    @property
     def tail_length(self) -> SiValue:
         """Aerodynamic tailcone length [m]."""
         return SiValue(2.5 * self._equivalent_diameter, "m")
@@ -209,7 +264,7 @@ class FuselageDesign:
         return SiValue(
             self.design.fuselage.noseLength.si
             + self.cabin_length
-            + self.baggage_length
+            + self.baggage.aft_length
             + self.tail_length,
             "m",
         )
@@ -269,28 +324,6 @@ class FuselageDesign:
         )
 
     @property
-    def baggage_x_cg(self) -> SiValue:
-        """Effective CG of passenger luggage across forward, underfloor, and aft bays [m]."""
-        cabin_start = self.design.fuselage.noseLength.si
-        x_forward = 0.35 * cabin_start
-        x_underfloor = cabin_start + 0.5 * self.cabin_length
-        x_aft = cabin_start + self.cabin_length + 0.5 * self.baggage_length
-        req_vol = self.cargo_volume_required
-        if req_vol <= 0:
-            return SiValue(x_aft, "m")
-        forward_share = min(1.0, float(self.forward_baggage_volume / req_vol))
-        underfloor_share = min(
-            1.0 - forward_share, float(self.underfloor_baggage_volume / req_vol)
-        )
-        aft_share = max(0.0, 1.0 - forward_share - underfloor_share)
-        return SiValue(
-            forward_share * x_forward
-            + underfloor_share * x_underfloor
-            + aft_share * x_aft,
-            "m",
-        )
-
-    @property
     def passenger_rows(self) -> list[tuple[int, SiValue]]:
         """List of (seat_count, x_station) for each cabin row from front to rear."""
         dfuse = self.design.fuselage
@@ -326,7 +359,7 @@ class FuselageDesign:
             count * seat_per_pax * x_row for count, x_row in self.passenger_rows
         )
         total_pax = sum(count for count, _ in self.passenger_rows)
-        luggage_moment = total_pax * luggage_per_pax * self.baggage_x_cg
+        luggage_moment = total_pax * luggage_per_pax * self.baggage.x_cg
         total_payload = total_pax * total_per_pax
         return SiValue((pax_moment + luggage_moment) / total_payload, "m")
 

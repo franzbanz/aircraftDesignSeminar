@@ -23,7 +23,7 @@
     "bendingReliefFactor": [0.1, ""],
     // Composite technology factor (0.85-0.90 for CFRP; Raymer Table 15.4, p. 580)
     "technologyFactor": [0.9, ""],
-    "leadingEdgeMeanAerodynamicChordPosition": [6.2, "m"]
+    "leadingEdgeMeanAerodynamicChordPosition": [6.5, "m"]
   },
   "empennage": {
     // "transport" [Strohmayer Flugzeugentwurf 2 | p. 120] or "small" (v_D < 250 kts)
@@ -62,7 +62,7 @@
     "usableBaggageFactor": [0.75, ""],
     "underfloorBaggageHeight": [0.0, "m"],
     // usable nose/forward baggage volume (e.g. from CAD); 0.0 = none
-    "forwardBaggageVolume": [0.0, "m^3"],
+    "forwardBaggageVolume": [0.8, "m^3"],
     // null = calculate via Torenbeek Eq. (B-6), or [value, "m^2"] = CAD override
     "wettedArea": null,
     // fuselage-mounted landing gear (+7%)

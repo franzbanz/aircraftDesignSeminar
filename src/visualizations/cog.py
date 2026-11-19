@@ -74,11 +74,18 @@ def plot_cog_excursion(cog: CenterOfGravity, label: str = "Electric Aircraft") -
     ax_load.axvline(35.0, color="#27ae60", linestyle="--", lw=1.0)
     ax_load.axvline(25.0, color="#7f8c8d", linestyle=":", lw=1.2, label="25% MAC (Aero Center)")
 
-    ax_load.plot(fwd_mac, fwd_m, "-o", color="#2980b9", markersize=4, lw=1.8, label="Front-to-Back Loading")
-    ax_load.plot(aft_mac, aft_m, "-s", color="#e67e22", markersize=4, lw=1.8, label="Back-to-Front Loading")
+    line_fwd, = ax_load.plot(
+        fwd_mac, fwd_m, "-o", color="#2980b9", markersize=5, lw=1.8, label="Front-to-Back Loading"
+    )
+    line_aft, = ax_load.plot(
+        aft_mac, aft_m, "-s", color="#e67e22", markersize=5, lw=1.8, label="Back-to-Front Loading"
+    )
 
     empty = cog.zero_payload_state
     mtom = cog.mtom_state
+    most_fwd = cog.most_forward_state
+    most_aft = cog.most_aft_state
+
     ax_load.scatter(
         [empty.mac_fraction * 100.0, mtom.mac_fraction * 100.0],
         [float(empty.mass), float(mtom.mass)],
@@ -104,6 +111,26 @@ def plot_cog_excursion(cog: CenterOfGravity, label: str = "Electric Aircraft") -
         fontweight="bold",
         color="#c0392b",
     )
+    ax_load.annotate(
+        f"Most Fwd: {most_fwd.name}\n({most_fwd.mac_fraction * 100:.1f}% MAC)",
+        (most_fwd.mac_fraction * 100.0, float(most_fwd.mass)),
+        textcoords="offset points",
+        xytext=(14, 6),
+        ha="left",
+        fontsize=8.0,
+        color="#1f618d",
+        arrowprops={"arrowstyle": "->", "color": "#1f618d", "lw": 0.9},
+    )
+    ax_load.annotate(
+        f"Most Aft: {most_aft.name}\n({most_aft.mac_fraction * 100:.1f}% MAC)",
+        (most_aft.mac_fraction * 100.0, float(most_aft.mass)),
+        textcoords="offset points",
+        xytext=(-14, 6),
+        ha="right",
+        fontsize=8.0,
+        color="#a04000",
+        arrowprops={"arrowstyle": "->", "color": "#a04000", "lw": 0.9},
+    )
 
     ax_load.set_xlabel("Center of Gravity Position [% MAC]", fontsize=10.5)
     ax_load.set_ylabel("Aircraft Mass [kg]", fontsize=10.5)
@@ -127,7 +154,7 @@ def plot_cog_excursion(cog: CenterOfGravity, label: str = "Electric Aircraft") -
     ax_comp.axvline(l_fus, color="#34495e", linestyle="-", lw=1.2, label=f"Tail End ({l_fus:.2f} m)")
 
     sizes = [max(35.0, m * 0.14) for m in masses]
-    ax_comp.scatter(x_vals, y_pos, s=sizes, color="#2c3e50", zorder=4)
+    comp_scatter = ax_comp.scatter(x_vals, y_pos, s=sizes, color="#2c3e50", zorder=4)
     for x_c, y_c in zip(x_vals, y_pos):
         ax_comp.plot([0, x_c], [y_c, y_c], color="#bdc3c7", lw=0.8, zorder=1)
 
@@ -139,6 +166,91 @@ def plot_cog_excursion(cog: CenterOfGravity, label: str = "Electric Aircraft") -
     ax_comp.set_title("Component Mass & CG Stations", fontsize=11.5, fontweight="bold")
     ax_comp.grid(axis="x", linestyle=":", alpha=0.6)
     ax_comp.legend(loc="lower right", fontsize=8.5)
+
+    tooltip_load = ax_load.annotate(
+        "",
+        xy=(0, 0),
+        xytext=(12, 12),
+        textcoords="offset points",
+        bbox={"boxstyle": "round,pad=0.4", "fc": "white", "ec": "#34495e", "alpha": 0.95},
+        arrowprops={"arrowstyle": "->", "color": "#34495e", "lw": 0.8},
+        fontsize=8.5,
+        zorder=10,
+    )
+    tooltip_load.set_visible(False)
+
+    tooltip_comp = ax_comp.annotate(
+        "",
+        xy=(0, 0),
+        xytext=(12, 12),
+        textcoords="offset points",
+        bbox={"boxstyle": "round,pad=0.4", "fc": "white", "ec": "#34495e", "alpha": 0.95},
+        arrowprops={"arrowstyle": "->", "color": "#34495e", "lw": 0.8},
+        fontsize=8.5,
+        zorder=10,
+    )
+    tooltip_comp.set_visible(False)
+
+    def _on_hover(event) -> None:
+        changed = False
+        if event.inaxes == ax_load:
+            matched = False
+            for artist, states in ((line_fwd, fwd), (line_aft, aft)):
+                hit, info = artist.contains(event)
+                if hit and info.get("ind"):
+                    idx = info["ind"][0]
+                    state = states[idx]
+                    tooltip_load.xy = (state.mac_fraction * 100.0, float(state.mass))
+                    if state.added_item is not None:
+                        added = state.added_item
+                        lever = float(added.x_cg) - float(state.x_cg)
+                        tooltip_text = (
+                            f"{state.name}\n"
+                            f"+{added.name}: {float(added.mass):.1f} kg\n"
+                            f"Station: {float(added.x_cg):.2f} m (Lever: {lever:+.2f} m)"
+                        )
+                    else:
+                        tooltip_text = (
+                            f"{state.name}\n"
+                            f"Mass: {float(state.mass):.1f} kg\n"
+                            f"CoG: {state.mac_fraction * 100:.1f}% MAC ({float(state.x_cg):.2f} m)"
+                        )
+                    tooltip_load.set_text(tooltip_text)
+                    tooltip_load.set_visible(True)
+                    matched = True
+                    changed = True
+                    break
+            if not matched and tooltip_load.get_visible():
+                tooltip_load.set_visible(False)
+                changed = True
+        elif tooltip_load.get_visible():
+            tooltip_load.set_visible(False)
+            changed = True
+
+        if event.inaxes == ax_comp:
+            hit, info = comp_scatter.contains(event)
+            if hit and info.get("ind"):
+                idx = info["ind"][0]
+                comp = comps[idx]
+                tooltip_comp.xy = (float(comp.x_cg), idx)
+                tooltip_comp.set_text(
+                    f"{comp.name}\n"
+                    f"Mass: {float(comp.mass):.1f} kg\n"
+                    f"x_CG: {float(comp.x_cg):.2f} m"
+                )
+                tooltip_comp.set_visible(True)
+                changed = True
+            elif tooltip_comp.get_visible():
+                tooltip_comp.set_visible(False)
+                changed = True
+        elif tooltip_comp.get_visible():
+            tooltip_comp.set_visible(False)
+            changed = True
+
+        if changed:
+            fig.canvas.draw_idle()
+
+    fig.canvas.mpl_connect("motion_notify_event", _on_hover)
 
     plt.tight_layout()
     plt.show()
