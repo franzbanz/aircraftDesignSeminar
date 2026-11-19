@@ -31,7 +31,8 @@ class DesignWingParameters:
     relWingThickness: UnitValue
     wingSweepHalfChord: UnitValue
     wingMassPenaltyFactor: UnitValue
-    bendingReliefFactor: UnitValue
+    batteryWingMassFraction: UnitValue
+    batterySpanwisePosition: UnitValue
     technologyFactor: UnitValue
 
 

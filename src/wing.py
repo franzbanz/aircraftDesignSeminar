@@ -32,12 +32,16 @@ class WingDesign:
         ref: ReferenceAircraft,
         mtom: SiValue,
         wing_loading_design: float,
+        fuselage_width: SiValue = SiValue(0.0, "m"),
+        battery_mass: SiValue = SiValue(0.0, "kg"),
     ) -> None:
         self.constraints = constraints
         self.design = design
         self.ref = ref
         self.mtom = mtom
         self.wing_loading_design = wing_loading_design
+        self.fuselage_width = fuselage_width
+        self.battery_mass = battery_mass
 
     @property
     def area(self) -> SiValue:
@@ -69,24 +73,52 @@ class WingDesign:
         return SiValue(self.mean_aerodynamic_chord * rel_t, "m")
 
     @property
-    def mass(self) -> SiValue:
-        """Calibrated wing structural mass [kg]."""
+    def effective_mzfm(self) -> SiValue:
+        """Effective zero-fuel mass accounting for wing-mounted battery bending relief [kg]."""
+        m_bat_wing = self.design.wing.batteryWingMassFraction * self.battery_mass
+        if m_bat_wing <= 0:
+            return self.mtom
+        y_root = self.fuselage_width / 2.0
+        half_span = self.span / 2.0
+        # Centroid of a quarter-ellipse: aerodynamic center of lift for elliptical distribution
+        y_aero = (4.0 / (3.0 * math.pi)) * half_span
+        # Lever arms relative to the wing-fuselage root attachment y_root
+        r_aero = max(0.0, y_aero - y_root)
+        r_bat = max(0.0, self.design.wing.batterySpanwisePosition.si - y_root)
+        # Ratio of battery relief moment to lift bending moment at wing root
+        kappa_bat = r_bat / r_aero if r_aero > 0 else 0.0
+        return SiValue(max(0.0, self.mtom - kappa_bat * m_bat_wing), "kg")
+
+    def _calc_calibrated_mass(self, mzfm: SiValue) -> SiValue:
         raw = calc_wing_mass(
-            mzfm=self.mtom,
+            mzfm=mzfm,
             b_s=self.span,
             n_ult=self.design.assumptions.limitLoad * 1.5,
             d_root=self.root_thickness,
             s_w=self.area,
             delta_m_F=self.design.wing.wingMassPenaltyFactor.value,
         )
-        relief = 1.0 - self.design.wing.bendingReliefFactor.value
         return SiValue(
-            raw
-            * self.ref.wing_calibration_factor
-            * relief
-            * self.design.wing.technologyFactor,
+            raw * self.ref.wing_calibration_factor * self.design.wing.technologyFactor,
             "kg",
         )
+
+    @property
+    def unrelieved_mass(self) -> SiValue:
+        """Calibrated wing structural mass without battery bending relief [kg]."""
+        return self._calc_calibrated_mass(self.mtom)
+
+    @property
+    def mass(self) -> SiValue:
+        """Calibrated wing structural mass [kg]."""
+        return self._calc_calibrated_mass(self.effective_mzfm)
+
+    @property
+    def bending_relief_factor(self) -> float:
+        """Effective wing bending relief factor resulting from wing battery mass and spanwise lever arm [-]."""
+        if self.effective_mzfm >= self.mtom:
+            return 0.0
+        return 1.0 - self.mass / self.unrelieved_mass
 
     @property
     def wing_zero_lift_drag_coefficient(self) -> float:

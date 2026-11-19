@@ -27,35 +27,61 @@ def print_aircraft_summary(
         "kg",
     )
 
+    wing = aircraft.wing
+    wing_relief_info = ""
+    if wing.bending_relief_factor > 0:
+        delta_wing = wing.mass - wing.unrelieved_mass
+        wing_relief_info = (
+            f" | Relief: -{wing.bending_relief_factor * 100:.1f}% "
+            f"({delta_wing:+.1f} kg, MZFM_eff: {wing.effective_mzfm:.1f})"
+        )
+
+    bat_frac = aircraft.design.wing.batteryWingMassFraction
+    bat_wing_info = ""
+    if bat_frac > 0:
+        m_bat_wing = SiValue(bat_frac * aircraft.m_battery, "kg")
+        y_bat = aircraft.design.wing.batterySpanwisePosition.si
+        bat_wing_info = (
+            f" (Wing: {bat_frac * 100:.0f}% [{m_bat_wing:.1f}] @ y = {y_bat:.2f})"
+        )
+
     print("----- MASS BREAKDOWN -----")
-    print(f"Payload mass: {aircraft.m_payload}")
+    print(f"Payload mass: {aircraft.m_payload:.1f}")
     print(
-        f"Operator items mass: {aircraft.m_operator_items} (Ref: {ref_aircraft.data.mass.operatorItems})"
+        f"Operator items mass: {aircraft.m_operator_items:.1f} (Ref: {ref_aircraft.data.mass.operatorItems:.1f})"
     )
-    print(f"Structure mass: {aircraft.m_structure} (Ref: {m_structure_ref})")
-    print(f"  - Wing: {aircraft.wing.mass} (Ref: {ref_aircraft.data.mass.wing})")
+    print(f"Structure mass: {aircraft.m_structure:.1f} (Ref: {m_structure_ref:.1f})")
     print(
-        f"  - Fuselage: {aircraft.fuselage.mass} (Ref: {ref_aircraft.data.mass.fuselage})"
-    )
-    print(
-        f"  - Landing gear: {aircraft.m_landing_gear} (Ref: {ref_aircraft.data.mass.landingGear})"
+        f"  - Wing: {wing.mass:.1f} (Ref: {ref_aircraft.data.mass.wing:.1f}{wing_relief_info})"
     )
     print(
-        f"  - Empennage: {aircraft.empennage.mass} (Ref: {ref_aircraft.data.mass.empennage})"
+        f"  - Fuselage: {aircraft.fuselage.mass:.1f} (Ref: {ref_aircraft.data.mass.fuselage:.1f})"
     )
-    print(f"  - Pylons: {aircraft.m_pylons} (Ref: {ref_aircraft.data.mass.pylons})")
-    print(f"Engine mass: {aircraft.m_engine} (Ref: {ref_aircraft.data.mass.engine})")
-    print(f"Systems mass: {aircraft.m_systems} (Ref: {ref_aircraft.data.mass.systems})")
     print(
-        f"Furnishings mass: {aircraft.m_furnishings} (Ref: {ref_aircraft.data.mass.furnishings})"
+        f"  - Landing gear: {aircraft.m_landing_gear:.1f} (Ref: {ref_aircraft.data.mass.landingGear:.1f})"
     )
-    print(f"Battery mass: {aircraft.m_battery}")
     print(
-        f"Total Takeoff Mass (MTOM): {aircraft.mtom} (Ref: {ref_aircraft.data.mass.takeOffMassMax})\n"
+        f"  - Empennage: {aircraft.empennage.mass:.1f} (Ref: {ref_aircraft.data.mass.empennage:.1f})"
+    )
+    print(
+        f"  - Pylons: {aircraft.m_pylons:.1f} (Ref: {ref_aircraft.data.mass.pylons:.1f})"
+    )
+    print(
+        f"Engine mass: {aircraft.m_engine:.1f} (Ref: {ref_aircraft.data.mass.engine:.1f})"
+    )
+    print(
+        f"Systems mass: {aircraft.m_systems:.1f} (Ref: {ref_aircraft.data.mass.systems:.1f})"
+    )
+    print(
+        f"Furnishings mass: {aircraft.m_furnishings:.1f} (Ref: {ref_aircraft.data.mass.furnishings:.1f})"
+    )
+    print(f"Battery mass: {aircraft.m_battery:.1f}{bat_wing_info}")
+    print(
+        f"Total Takeoff Mass (MTOM): {aircraft.mtom:.1f} (Ref: {ref_aircraft.data.mass.takeOffMassMax:.1f})\n"
     )
 
-    print(f"Range: {aircraft.range.to('km')}")
-    print(f"Range: {aircraft.range.to('NM')}")
+    print(f"Range: {aircraft.range.to('km'):.1f}")
+    print(f"Range: {aircraft.range.to('NM'):.1f}")
     print(
         f"Cruise L/D (at {aircraft.design.mission.cruiseSpeedTAS}): "
         f"{aircraft.wing.lift_to_drag_cruise:.2f} "

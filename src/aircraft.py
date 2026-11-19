@@ -34,6 +34,7 @@ class BatteryAircraft:
         self.mtom: SiValue = (
             mtom if mtom is not None else design.initialSizing.maximumTakeOffMass.si
         )
+        self.m_battery_required: SiValue = SiValue(0.0, "kg")
         self.sizing_mode: SizingMode = sizing_mode
         self._sizing_diagrams: dict[tuple[SizingMode, float], SizingDiagram] = {}
 
@@ -51,6 +52,8 @@ class BatteryAircraft:
             self.ref,
             self.mtom,
             self.wing_loading_design,
+            self.fuselage.width,
+            self.m_battery_required,
         )
 
     @property
@@ -294,9 +297,9 @@ class BatteryAircraft:
         history = [self.mtom]
 
         for _ in range(max_iterations):
-            m_bat_req = self.calc_required_battery_mass()
+            self.m_battery_required = self.calc_required_battery_mass()
             new_mtom = SiValue(
-                self.m_operating_empty + self.m_payload + m_bat_req,
+                self.m_operating_empty + self.m_payload + self.m_battery_required,
                 "kg",
             )
             history.append(new_mtom)
