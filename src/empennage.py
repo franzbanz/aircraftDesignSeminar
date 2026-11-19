@@ -14,7 +14,7 @@ from formulas.mass import (
 if TYPE_CHECKING:
     from data import DesignParameters
     from reference_aircraft import ReferenceAircraft
-    from wing_design import WingDesign
+    from wing import WingDesign
 
 
 class EmpennageDesign:

@@ -227,7 +227,7 @@ class FuselageDesign:
 if __name__ == "__main__":
     from data import load_constraints, load_design_parameters
     from reference_aircraft import load_reference_aircraft
-    from visualizations.fuselage_sizing import (
+    from visualizations.fuselage import (
         plot_fuselage_sizing,
         print_fuselage_summary,
     )

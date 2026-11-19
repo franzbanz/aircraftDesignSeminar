@@ -11,7 +11,7 @@ if __package__ in (None, ""):
 from aircraft import BatteryAircraft
 from data import UnitValue, load_constraints, load_design_parameters
 from reference_aircraft import load_reference_aircraft
-from wing_design import WingDesign
+from wing import WingDesign
 
 
 def verify_wing_design_polar() -> None:

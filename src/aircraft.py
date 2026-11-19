@@ -2,7 +2,7 @@
 
 from constants import GRAVITY
 from data import Constraints, DesignParameters, SiValue
-from empennage_sizing import EmpennageDesign
+from empennage import EmpennageDesign
 from formulas.breguet import calc_electric_range
 from formulas.mass import (
     calc_landing_gear_mass,
@@ -10,10 +10,10 @@ from formulas.mass import (
     calc_systems_mass,
 )
 from fuel_fractions import MissionEnergyCalculator, ReferenceMissionCalculator
-from fuselage_sizing import FuselageDesign
+from fuselage import FuselageDesign
 from reference_aircraft import ReferenceAircraft
 from sizing_diagram import SizingDiagram, SizingMode
-from wing_design import WingDesign
+from wing import WingDesign
 
 
 class BatteryAircraft:

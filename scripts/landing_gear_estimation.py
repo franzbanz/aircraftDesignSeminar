@@ -329,7 +329,7 @@ def main():
         f"Design iteration seed: {project.initial_sizing_mass:.1f} kg; "
         f"specified MTOM limit: {project.mass_limit:.1f} kg"
     )
-    print("Wing area/span source: aircraft.BatteryAircraft.wing -> wing_design.WingDesign.")
+    print("Wing area/span source: aircraft.BatteryAircraft.wing -> wing.WingDesign.")
     print("Wing area/span are read directly from the same aircraft state as the MTOM.")
     print("The shared WingDesign retains its configured mass and span constraints.")
     print(f"Gravity source: constants.GRAVITY = {project.gravity:g} m/s^2")

@@ -14,7 +14,7 @@ from visualizations.fuel_fractions import (
     plot_payload_range,
     print_mission_energy_breakdown,
 )
-from visualizations.fuselage_sizing import (
+from visualizations.fuselage import (
     plot_fuselage_sizing,
     print_fuselage_summary,
 )

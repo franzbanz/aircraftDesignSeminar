@@ -10,7 +10,7 @@ import matplotlib.pyplot as plt
 if TYPE_CHECKING:
     from matplotlib.axes import Axes
 
-    from fuselage_sizing import FuselageDesign
+    from fuselage import FuselageDesign
 
 
 def print_fuselage_summary(fuselage: FuselageDesign) -> None:
