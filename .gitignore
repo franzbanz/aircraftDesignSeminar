@@ -3,3 +3,4 @@ __pycache__
 .ruff_cache
 .vscode
 /scripts/xfoil_results
+GEMINI.md
