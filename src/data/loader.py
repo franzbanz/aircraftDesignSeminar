@@ -1,120 +1,278 @@
-"""JSON loaders for target aircraft parameters and reference aircraft data.
+"""JSON loaders for target aircraft design constraints, parameters, and reference aircraft data.
 
-Provides ``load_parameters`` and ``load_reference_aircraft`` to read
-``parameters.json`` and ``reference_aircraft.json`` into typed dataclasses.
+Provides ``load_constraints``, ``load_design_parameters``, and ``load_reference_aircraft`` to read
+``constraints.json``, ``design_parameters.json``, and ``reference_aircraft.json`` into typed dataclasses.
 """
 
+import dataclasses
+import inspect
 import json
+import re
+import warnings
 from pathlib import Path
+from typing import Any, TypeVar, cast
 
-from data.parameters_data import (
-    BatteryParameters,
-    MissionParameters,
-    Parameters,
-    PayloadParameters,
-    PerformanceParameters,
-    _parameter_group,
-    instantiate_dataclass_with_extra_warning,
+from data.constraints import (
+    BatteryConstraints,
+    Constraints,
+    Cs23Constraints,
+    MissionConstraints,
+    PayloadConstraints,
+    PerformanceConstraints,
 )
-from data.reference_aircraft_data import (
+from data.design_parameters import (
+    DesignAerodynamicParameters,
+    DesignAssumptionsParameters,
+    DesignEmpennageParameters,
+    DesignFuselageParameters,
+    DesignInitialSizingParameters,
+    DesignMissionParameters,
+    DesignParameters,
+    DesignPropulsionParameters,
+    DesignWingParameters,
+)
+from data.reference_aircraft import (
     ReferenceAerodynamicParameters,
-    ReferenceAircraft,
+    ReferenceAircraftData,
     ReferenceAssumptionsParameters,
     ReferenceDimensionsParameters,
     ReferenceFuelParameters,
     ReferenceMassParameters,
-    ReferencePerformanceParameters,
+    ReferenceMissionParameters,
     ReferencePropulsionParameters,
 )
+from data.unit_value import UnitValue
+
+T = TypeVar("T")
 
 _PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent
 
 
-def _find_parameters_file() -> Path:
-    """Resolves the path to ``parameters.json`` in the project root."""
-    return _PROJECT_ROOT / "parameters.json"
+def _parameter_group(raw_group: dict[str, Any]) -> dict[str, Any]:
+    """Converts a JSON dictionary of ``[value, unit]`` pairs into ``UnitValue`` objects."""
+    return {
+        key: UnitValue(val[0], val[1])
+        if isinstance(val, list) and len(val) == 2
+        else val
+        for key, val in raw_group.items()
+    }
+
+
+def _sync_dataclass_fields_in_source(cls: type, json_keys: list[str]) -> bool:
+    """Updates the ``field: UnitValue`` declarations of ``cls`` in its Python source file.
+
+    Preserves class docstrings and any ``@property`` or method definitions on the class.
+
+    Args:
+        cls: Dataclass type whose source definition should be updated.
+        json_keys: Ordered list of field names from the JSON section.
+
+    Returns:
+        ``True`` if the source file was modified, ``False`` otherwise.
+    """
+    source_file = inspect.getsourcefile(cls)
+    if not source_file or not json_keys:
+        return False
+
+    path = Path(source_file)
+    content = path.read_text(encoding="utf-8")
+    newline = "\r\n" if "\r\n" in content else "\n"
+
+    pattern = re.compile(
+        rf"(class {re.escape(cls.__name__)}:\r?\n"
+        rf'(?:    """.*?"""\r?\n\r?\n)?)'
+        rf"((?:    \w+:\s*(?:UnitValue|Parameter)\r?\n)+)",
+        re.DOTALL,
+    )
+    new_fields_block = "".join(f"    {key}: UnitValue{newline}" for key in json_keys)
+    new_content, count = pattern.subn(rf"\g<1>{new_fields_block}", content, count=1)
+
+    if count > 0 and new_content != content:
+        path.write_text(new_content, encoding="utf-8")
+        return True
+    return False
+
+
+def instantiate_dataclass_with_extra_warning(
+    cls: type[T], data: dict[str, UnitValue]
+) -> T:
+    """Instantiates a frozen dataclass and auto-syncs its source definition if JSON keys changed.
+
+    If the JSON keys differ from the fields declared on ``cls`` (fields added, removed,
+    or reordered), the dataclass definition in the Python source file is automatically
+    updated for IDE autocompletion, a ``UserWarning`` is emitted, and all JSON attributes
+    are attached dynamically so the current run succeeds without a restart.
+
+    Args:
+        cls: Target dataclass type.
+        data: Dictionary of parsed ``UnitValue`` instances.
+
+    Returns:
+        Instantiated dataclass of type ``cls``.
+    """
+    declared_fields = [f.name for f in dataclasses.fields(cast(Any, cls))]
+    json_keys = list(data.keys())
+
+    if declared_fields != json_keys:
+        added = [k for k in json_keys if k not in declared_fields]
+        removed = [k for k in declared_fields if k not in json_keys]
+        synced = _sync_dataclass_fields_in_source(cls, json_keys)
+        sync_note = (
+            "Python dataclass source file updated automatically."
+            if synced
+            else "Attached dynamically."
+        )
+        warnings.warn(
+            f"{cls.__name__}: JSON keys changed (added={added}, removed={removed}). {sync_note}",
+            UserWarning,
+            stacklevel=2,
+        )
+
+        instance = object.__new__(cls)
+        for key, val in data.items():
+            object.__setattr__(instance, key, val)
+        return instance
+
+    return cls(**data)
+
+
+def _find_constraints_file() -> Path:
+    """Resolves the path to ``constraints.json`` in the project root."""
+    return _PROJECT_ROOT / "constraints.json"
+
+
+def _find_design_parameters_file() -> Path:
+    """Resolves the path to ``design_parameters.json`` in the project root."""
+    return _PROJECT_ROOT / "design_parameters.json"
 
 
 def _find_reference_file() -> Path:
     """Resolves the path to the reference aircraft JSON file in the project root."""
-    for filename in ("reference_aircraft.json", "referenceAircraft.json"):
-        path = _PROJECT_ROOT / filename
-        if path.exists():
-            return path
     return _PROJECT_ROOT / "reference_aircraft.json"
 
 
-def load_parameters(path: Path | str | None = None) -> Parameters:
-    """Loads target aircraft design parameters from ``parameters.json``.
+def _load_json_with_comments(file_path: Path) -> dict:
+    """Loads a JSON file, stripping single-line (//) and block (/* ... */) comments."""
+    content = file_path.read_text(encoding="utf-8")
+    pattern = re.compile(r'("(?:\\.|[^"\\])*")|(/\*[\s\S]*?\*/)|(//[^\r\n]*)')
+    cleaned = pattern.sub(lambda m: m.group(1) if m.group(1) else "", content)
+    cleaned = re.sub(r",\s*([\]}])", r"\1", cleaned)
+    return json.loads(cleaned)
+
+
+def load_constraints(path: Path | str | None = None) -> Constraints:
+    """Loads target aircraft design constraints from ``constraints.json``.
 
     Args:
-        path: Optional explicit path to ``parameters.json``.
+        path: Optional explicit path to ``constraints.json``.
 
     Returns:
-        Populated ``Parameters`` dataclass instance.
+        Populated ``Constraints`` dataclass instance.
     """
-    file_path = Path(path) if path else _find_parameters_file()
-    with file_path.open(encoding="utf-8") as file:
-        data = json.load(file)
+    file_path = Path(path) if path else _find_constraints_file()
+    data = _load_json_with_comments(file_path)
 
-    return Parameters(
-        payload=instantiate_dataclass_with_extra_warning(PayloadParameters, _parameter_group(data["payload"])),
-        mission=instantiate_dataclass_with_extra_warning(MissionParameters, _parameter_group(data["mission"])),
-        performance=instantiate_dataclass_with_extra_warning(PerformanceParameters, _parameter_group(data["performance"])),
-        battery=instantiate_dataclass_with_extra_warning(BatteryParameters, _parameter_group(data["battery"])),
+    return Constraints(
+        payload=instantiate_dataclass_with_extra_warning(
+            PayloadConstraints, _parameter_group(data["payload"])
+        ),
+        mission=instantiate_dataclass_with_extra_warning(
+            MissionConstraints, _parameter_group(data["mission"])
+        ),
+        performance=instantiate_dataclass_with_extra_warning(
+            PerformanceConstraints, _parameter_group(data["performance"])
+        ),
+        battery=instantiate_dataclass_with_extra_warning(
+            BatteryConstraints, _parameter_group(data["battery"])
+        ),
+        cs23=instantiate_dataclass_with_extra_warning(
+            Cs23Constraints, _parameter_group(data["cs23"])
+        ),
     )
 
 
-def load_reference_aircraft(
+def load_design_parameters(path: Path | str | None = None) -> DesignParameters:
+    """Loads target aircraft design parameters from ``design_parameters.json``.
+
+    Args:
+        path: Optional explicit path to ``design_parameters.json``.
+
+    Returns:
+        Populated ``DesignParameters`` dataclass instance.
+    """
+    file_path = Path(path) if path else _find_design_parameters_file()
+    data = _load_json_with_comments(file_path)
+
+    return DesignParameters(
+        initialSizing=instantiate_dataclass_with_extra_warning(
+            DesignInitialSizingParameters, _parameter_group(data["initialSizing"])
+        ),
+        aerodynamics=instantiate_dataclass_with_extra_warning(
+            DesignAerodynamicParameters, _parameter_group(data["aerodynamics"])
+        ),
+        wing=instantiate_dataclass_with_extra_warning(
+            DesignWingParameters, _parameter_group(data["wing"])
+        ),
+        empennage=instantiate_dataclass_with_extra_warning(
+            DesignEmpennageParameters, _parameter_group(data["empennage"])
+        ),
+        propulsion=instantiate_dataclass_with_extra_warning(
+            DesignPropulsionParameters, _parameter_group(data["propulsion"])
+        ),
+        fuselage=instantiate_dataclass_with_extra_warning(
+            DesignFuselageParameters, _parameter_group(data["fuselage"])
+        ),
+        mission=instantiate_dataclass_with_extra_warning(
+            DesignMissionParameters, _parameter_group(data["mission"])
+        ),
+        assumptions=instantiate_dataclass_with_extra_warning(
+            DesignAssumptionsParameters, _parameter_group(data["assumptions"])
+        ),
+    )
+
+
+def load_reference_aircraft_data(
     path: Path | str | None = None,
-    r_H: float = 8.8,
-    r_V: float = 8.8,
-    delta_m_F: float = 0.07,
-) -> ReferenceAircraft:
-    """Loads reference aircraft parameters from JSON and computes derived ``calculatedValues``.
+) -> ReferenceAircraftData:
+    """Loads reference aircraft parameters from JSON into a typed ``ReferenceAircraftData`` dataclass.
 
     Args:
         path: Optional explicit path to the reference aircraft JSON file.
-        r_H: Horizontal tail lever arm [m].
-        r_V: Vertical tail lever arm [m].
-        delta_m_F: Fuselage mass penalty factor [-].
 
     Returns:
-        Populated ``ReferenceAircraft`` instance.
+        Populated ``ReferenceAircraftData`` instance.
     """
     file_path = Path(path) if path else _find_reference_file()
-    with file_path.open(encoding="utf-8") as file:
-        data = json.load(file)
+    data = _load_json_with_comments(file_path)
 
-    mass = instantiate_dataclass_with_extra_warning(ReferenceMassParameters, _parameter_group(data["mass"]))
-    dimensions = instantiate_dataclass_with_extra_warning(ReferenceDimensionsParameters, _parameter_group(data["dimensions"]))
-    performance = instantiate_dataclass_with_extra_warning(ReferencePerformanceParameters, _parameter_group(data["performance"]))
-    assumptions = instantiate_dataclass_with_extra_warning(ReferenceAssumptionsParameters, _parameter_group(data["assumptions"]))
-    aerodynamics = instantiate_dataclass_with_extra_warning(ReferenceAerodynamicParameters, _parameter_group(data["aerodynamics"]))
-    propulsion = instantiate_dataclass_with_extra_warning(ReferencePropulsionParameters, _parameter_group(data["propulsion"]))
-    fuel = instantiate_dataclass_with_extra_warning(ReferenceFuelParameters, _parameter_group(data["fuel"]))
-
-    from reference_aircraft_calculation import calc_reference_aircraft_values
-
-    calculatedValues = calc_reference_aircraft_values(
-        mass=mass,
-        dimensions=dimensions,
-        performance=performance,
-        assumptions=assumptions,
-        propulsion=propulsion,
-        r_H=r_H,
-        r_V=r_V,
-        delta_m_F=delta_m_F,
+    mass = instantiate_dataclass_with_extra_warning(
+        ReferenceMassParameters, _parameter_group(data["mass"])
+    )
+    dimensions = instantiate_dataclass_with_extra_warning(
+        ReferenceDimensionsParameters, _parameter_group(data["dimensions"])
+    )
+    mission = instantiate_dataclass_with_extra_warning(
+        ReferenceMissionParameters, _parameter_group(data["mission"])
+    )
+    assumptions = instantiate_dataclass_with_extra_warning(
+        ReferenceAssumptionsParameters, _parameter_group(data["assumptions"])
+    )
+    aerodynamics = instantiate_dataclass_with_extra_warning(
+        ReferenceAerodynamicParameters, _parameter_group(data["aerodynamics"])
+    )
+    propulsion = instantiate_dataclass_with_extra_warning(
+        ReferencePropulsionParameters, _parameter_group(data["propulsion"])
+    )
+    fuel = instantiate_dataclass_with_extra_warning(
+        ReferenceFuelParameters, _parameter_group(data["fuel"])
     )
 
-    return ReferenceAircraft(
+    return ReferenceAircraftData(
         mass=mass,
         dimensions=dimensions,
-        performance=performance,
+        mission=mission,
         assumptions=assumptions,
         aerodynamics=aerodynamics,
         propulsion=propulsion,
         fuel=fuel,
-        calculatedValues=calculatedValues,
     )
-

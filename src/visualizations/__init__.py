@@ -1,0 +1,104 @@
+"""Visualization and terminal reporting package for aircraft sizing, mass, energy, and geometry."""
+
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
+
+from visualizations.aircraft import (
+    plot_aircraft_geometry,
+    plot_mass_breakdown,
+    print_aircraft_summary,
+)
+from visualizations.fuselage import (
+    plot_fuselage_sizing,
+    print_fuselage_summary,
+)
+from visualizations.mission_energy import (
+    plot_mission_energy,
+    plot_payload_range,
+    print_mission_energy_breakdown,
+)
+from visualizations.sizing_diagram import plot_sizing_diagram, print_sizing_diagram
+
+if TYPE_CHECKING:
+    from aircraft import BatteryAircraft
+    from reference_aircraft import ReferenceAircraft
+
+
+def interactive_plot_menu(
+    aircraft: BatteryAircraft, ref_aircraft: ReferenceAircraft
+) -> None:
+    """CLI selection menu allowing the user to select which visualization to display."""
+    menu_text = """
+======================================================================
+               AIRCRAFT DESIGN - PLOT MENU
+======================================================================
+  [1]  Sizing Diagram (Thrust Loading T/G)
+  [1p] Sizing Diagram (Specific Power P_0/m_0)
+  [2]  Mass Breakdown (Comparison with Do 228)
+  [3] Mission Energy Breakdown (Simple Variant - matches active MTOM)
+  [3d] Mission Energy Breakdown (Detailed Variant - analytical segments)
+  [4] Payload-Range Diagram
+  [5] Aircraft Dimensions & 2D Geometry Comparison
+  [6] Fuselage Sizing & Cabin Layout (1+1)
+  [A] Show All Plots
+  [Q] Exit Menu
+======================================================================
+"""
+    while True:
+        print(menu_text)
+        try:
+            choice = input("Select a diagram (number/letter): ").strip().lower()
+        except (EOFError, KeyboardInterrupt):
+            print("\nExiting plot menu.")
+            break
+
+        if choice in ("q", "quit", "exit", "0"):
+            print("Plot menu exited.")
+            break
+        elif choice in ("1", "1t", "s", "sizing", "thrust"):
+            print("Opening Sizing Diagram (Thrust Loading)...")
+            diagram = aircraft.sizing_diagram(mode="thrust")
+            print_sizing_diagram(diagram)
+            plot_sizing_diagram(diagram)
+        elif choice in ("1p", "power"):
+            print("Opening Sizing Diagram (Specific Power)...")
+            diagram = aircraft.sizing_diagram(mode="power")
+            print_sizing_diagram(diagram)
+            plot_sizing_diagram(diagram)
+        elif choice in ("2", "m", "mass"):
+            print("Opening Mass Breakdown Comparison...")
+            print_aircraft_summary(aircraft, ref_aircraft)
+            plot_mass_breakdown(aircraft, ref_aircraft)
+        elif choice in ("3", "e", "energy", "simple"):
+            print("Opening Mission Energy Breakdown (Simple Variant)...")
+            print_mission_energy_breakdown(aircraft.mission_energy)
+            plot_mission_energy(aircraft, ref_aircraft, variant="simple")
+        elif choice in ("3d", "detailed"):
+            print("Opening Mission Energy Breakdown (Detailed Variant)...")
+            print_mission_energy_breakdown(aircraft.mission_energy)
+            plot_mission_energy(aircraft, ref_aircraft, variant="detailed")
+        elif choice in ("4", "p", "payload", "range"):
+            print("Opening Payload-Range Diagram...")
+            plot_payload_range(aircraft)
+        elif choice in ("5", "g", "geom", "geometry", "dimensions"):
+            print("Opening Aircraft Dimensions & Geometry Comparison...")
+            print_aircraft_summary(aircraft, ref_aircraft)
+            plot_aircraft_geometry(aircraft, ref_aircraft)
+        elif choice in ("6", "f", "fuse", "fuselage", "cabin"):
+            print("Opening Fuselage Sizing & Cabin Layout (1+1)...")
+            print_fuselage_summary(aircraft.fuselage)
+            plot_fuselage_sizing(aircraft.fuselage)
+        elif choice in ("a", "all"):
+            print("Opening all diagrams sequentially...")
+            plot_sizing_diagram(aircraft.sizing_diagram(mode="thrust"))
+            plot_sizing_diagram(aircraft.sizing_diagram(mode="power"))
+            plot_mass_breakdown(aircraft, ref_aircraft)
+            plot_mission_energy(aircraft, ref_aircraft, variant="simple")
+            plot_payload_range(aircraft)
+            plot_aircraft_geometry(aircraft, ref_aircraft)
+            plot_fuselage_sizing(aircraft.fuselage)
+        else:
+            print(
+                f"Unknown option '{choice}'. Please choose 1, 1p, 2, 3, 3d, 4, 5, 6, A or Q."
+            )

@@ -1,5 +1,8 @@
 {
-  "[json]": {
+  "[jsonc]": {
     "editor.formatOnSave": false
+  },
+  "files.associations": {
+    "*.json": "jsonc"
   }
 }

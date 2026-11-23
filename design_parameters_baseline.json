@@ -1,0 +1,74 @@
+{
+  "initialSizing": {
+    "maximumTakeOffMass": [8618, "kg"]
+  },
+  "aerodynamics": {
+    // Baseline uses the reference aircraft cruise L/D (12.1)
+    "liftToDragRatioCruise": "reference",
+    "liftToDragRatioLoiter": [15.7, ""],
+    "oswaldFactor": [0.85, ""]
+  },
+  "wing": {
+    "maxTakeOffLiftCoefficient": [1.7, ""],
+    "maxLandingLiftCoefficient": [2.6, ""],
+    // maximum 10.63 if wingspan should be lower than 24m with 54.15m^2 wing area
+    "aspectRatio": [10.5, ""],
+    "relWingThickness": [0.18, ""],
+    // rectangular wing
+    "wingSweepHalfChord": [0.0, "deg"],
+    // 2 engines (-5%) and no landing gear on wing (-5%)
+    "wingMassPenaltyFactor": [-0.10, ""],
+    "batteryWingMassFraction": [0.0, ""],
+    "batterySpanwisePosition": [0.0, "m"],
+    // Baseline uses conventional all-metal structure (factor 1.0)
+    "technologyFactor": [1.0, ""]
+  },
+  "empennage": {
+    // "transport" [Strohmayer II | p. 120] or "small" (v_D < 250 kts)
+    "massMethod": "transport",
+    // the reference aircraft has a very high coefficient, the reference table [Strohmayer I | p. 213] has a maximum value of 1.0
+    "maxHorizontalVolumeCoefficient": [1.5, ""],
+    "technologyFactor": [1.0, ""]
+  },
+  "propulsion": {
+    // assumption of engine magni 650 (scaled to 1200kW)
+    "engineTakeOffPower": [1200, "kW"],
+    "engineMaxContinousPower": [875, "kW"],
+    "engineMass": [350, "kg"],
+    "numberOfEngines": [2, ""],
+    "etaPropTakeOff": [0.75, ""],
+    "etaPropClimb": [0.78, ""],
+    "etaPropCruise": [0.85, ""],
+    "etaElectric": [0.85, ""]
+  },
+  "fuselage": {
+    // "single_door" (1x LH rear door) or "dual_door" (1x RH front door + 1x LH rear door, no overwing exits)
+    "cabinLayout": "single_door",
+    "seatPitch": [0.8, "m"],
+    "seatWidth": [0.5, "m"],
+    "aisleWidth": [0.5, "m"],
+    "wallClearance": [0.05, "m"],
+    "wallThickness": [0.05, "m"],
+    "aisleHeadroom": [1.65, "m"],
+    "floorStructuralDepth": [0.15, "m"],
+    "noseLength": [2.40, "m"],
+    "frontClearance": [0.40, "m"],
+    "minBaggageLength": [1, "m"],
+    "usableBaggageFactor": [0.75, ""],
+    "underfloorBaggageHeight": [0.0, "m"],
+    // null = calculate via Torenbeek Eq. (B-6), or [value, "m^2"] = CAD override
+    "wettedArea": null,
+    // fuselage-mounted landing gear (+7%)
+    "fuselageMassPenaltyFactor": [0.07, ""],
+    "technologyFactor": [1.0, ""]
+  },
+  "mission": {
+    "range": [100, "nm"],
+    "cruiseSpeedTAS": [170, "kts"],
+    "cruiseAltitude": [10000, "ft"],
+    "numberOfPassengers": [19, ""]
+  },
+  "assumptions": {
+    "limitLoad": [3.0, ""]
+  }
+}

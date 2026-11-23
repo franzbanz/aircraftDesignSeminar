@@ -1,5 +1,6 @@
 {
   "mass": {
+    // Certified baseline is "all-metal construction" (EASA TCDS No. A.359, Section B.III, Item 2, p. 13)
     "takeOffMassMax": [6400, "kg"],
     "landingMassMax": [6100, "kg"],
     "zeroFuelMassMax": [5940, "kg"],
@@ -13,7 +14,8 @@
     "engine": [585, "kg"],
     "systems": [675, "kg"],
     "furnishings": [270, "kg"],
-    "operatorItems": [435, "kg"]
+    "operatorItems": [435, "kg"],
+    "payload": [1710, "kg"]
   },
   "dimensions": {
     "wingArea": [32.0, "m^2"],
@@ -24,14 +26,15 @@
     "horizontalTailArea": [8.3, "m^2"],
     "verticalTailArea": [6.0, "m^2"]
   },
-  "performance": {
+  "mission": {
     "cruiseSpeedTAS": [200, "kts"],
     "cruiseAltitude": [10000, "ft"]
   },
   "aerodynamics": {
     "liftToDragRatioCruise": [12.1, ""],
     "liftToDragRatioLoiter": [15.7, ""],
-    "maxLandingLiftCoefficient": [2.6, ""]
+    "maxLandingLiftCoefficient": [2.6, ""],
+    "zeroLiftDragCoefficient": [0.0260, ""]
   },
   "propulsion": {
     "engineTakeOffPower": [580, "kW"],
@@ -40,7 +43,7 @@
   },
   "fuel": {
     "energyDensity": [42.8, "MJ/kg"],
-    "referenceRange": [185200, "m"],
+    "referenceRange": [100, "nm"],
     "referenceMass": [5950, "kg"],
     "taxiOutAndTakeOff": [24, "kg"],
     "climb": [36, "kg"],
@@ -48,13 +51,27 @@
     "descent": [9, "kg"],
     "approachLandingAndTaxiIn": [17, "kg"],
     "reserve": [186, "kg"],
-    "total": [339, "kg"]
+    "total": [350, "kg"]
   },
   "assumptions": {
-    "limitLoad": [3.0, ""],
+    // from flight manual p. 56
+    "limitLoad": [3.16, ""],
     "maxTakeOffLiftCoefficient": [1.7, ""],
-    "wingRootThickness": [0.33, "m"],
+    // fitted from reference drag polar (see scripts/verification/polar_oswald.py)
+    "oswaldFactor": [0.9087, ""],
+    // 18% maximum thickness
+    "relWingThickness": [0.18, ""],
+    // rectangular wing
     "wingSweepHalfChord": [0.0, "deg"],
-    "wingMassPenaltyFactor": [-0.10, ""]
-    }
+    // 2 engines (-5%) and no landing gear on wing (-5%)
+    "wingMassPenaltyFactor": [-0.10, ""],
+    // fuselage-mounted landing gear (+7%)
+    "fuselageMassPenaltyFactor": [0.07, ""],
+    // from 25% MAC to 25% MAC horizontal stabilizer
+    "horizontalTailLeverArm": [9.15, "m"],
+    // from 25% MAC to 25% vertical stabilizer
+    "verticalTailLeverArm": [8.5, "m"],
+    // sideview ~ 2*27.50m^2 + topview ~ 2*21.0mm^2
+    "wettedSurface": [97, "m^2"]
+  }
 }
