@@ -13,8 +13,6 @@ def isaDensity(h, rho0):
 def getSizingDiagram():
     with open("parameters.json") as f:
         par = json.load(f, object_hook=hook)
-    with open("reference_aircraft.json") as f:
-        ref = json.load(f, object_hook=hook)
     with open("battery_aircraft.json") as f:
         bat = json.load(f, object_hook=hook)
 

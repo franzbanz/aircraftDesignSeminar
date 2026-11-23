@@ -137,18 +137,18 @@ def instantiate_dataclass_with_extra_warning(
 
 
 def _find_constraints_file() -> Path:
-    """Resolves the path to ``constraints.json`` in the project root."""
-    return _PROJECT_ROOT / "constraints.json"
+    """Resolves the path to ``config/constraints.json`` in the project root."""
+    return _PROJECT_ROOT / "config" / "constraints.json"
 
 
 def _find_design_parameters_file() -> Path:
-    """Resolves the path to ``design_parameters.json`` in the project root."""
-    return _PROJECT_ROOT / "design_parameters.json"
+    """Resolves the path to ``config/design_parameters.json`` in the project root."""
+    return _PROJECT_ROOT / "config" / "design_parameters.json"
 
 
 def _find_reference_file() -> Path:
-    """Resolves the path to the reference aircraft JSON file in the project root."""
-    return _PROJECT_ROOT / "reference_aircraft.json"
+    """Resolves the path to ``config/reference_aircraft.json`` in the project root."""
+    return _PROJECT_ROOT / "config" / "reference_aircraft.json"
 
 
 def _load_json_with_comments(file_path: Path) -> dict:

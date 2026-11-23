@@ -1,6 +1,19 @@
 import json
+from pathlib import Path
+import re
 import numpy as np
 from types import SimpleNamespace
+
+_CONFIG_DIR = Path(__file__).resolve().parent.parent / "config"
+
+
+def _load_json(path: Path):
+    content = path.read_text(encoding="utf-8")
+    pattern = re.compile(r'("(?:\\.|[^"\\])*")|(/\*[\s\S]*?\*/)|(//[^\r\n]*)')
+    cleaned = pattern.sub(lambda m: m.group(1) if m.group(1) else "", content)
+    cleaned = re.sub(r",\s*([\]}])", r"\1", cleaned)
+    return json.loads(cleaned, object_hook=hook)
+
 
 def hook(d):
     return SimpleNamespace(**{k: v[0] if isinstance(v, list) and len(v) == 2 else v
@@ -9,8 +22,7 @@ def hook(d):
 def getTotalMass():
     with open("parameters.json") as f:
         par = json.load(f, object_hook=hook)
-    with open("reference_aircraft.json") as f:  
-        ref = json.load(f, object_hook=hook)
+    ref = _load_json(_CONFIG_DIR / "reference_aircraft.json")
     with open("battery_aircraft.json") as f:
         bat = json.load(f, object_hook=hook)
 
@@ -23,7 +35,7 @@ def getTotalMass():
     mtowRef = ref.mass.takeOffMassMax
     ldRef = ref.aerodynamics.liftToDragRatioCruise
     fuelMassRef = ref.fuel.total
-    flightSpeedRef = ref.performance.cruiseSpeedTAS * 0.5144 # convert to SI
+    flightSpeedRef = ref.mission.cruiseSpeedTAS * 0.5144 # convert to SI
     tsfcRef = ref.propulsion.tsfcCruise * 2.833 * 10 ** (-5) # convert to SI
     energyDensityRef = ref.fuel.energyDensity * 10 ** 6 # convert to SI
 

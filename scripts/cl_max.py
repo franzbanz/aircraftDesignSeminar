@@ -173,7 +173,9 @@ def main() -> None:
     design_files = parser.add_mutually_exclusive_group()
     design_files.add_argument("--design", type=Path, help="custom design JSON")
     design_files.add_argument("--baseline", action="store_true", help="use baseline design JSON")
-    parser.add_argument("--constraints", type=Path, default=ROOT / "constraints.json")
+    parser.add_argument(
+        "--constraints", type=Path, default=ROOT / "config" / "constraints.json"
+    )
     parser.add_argument(
         "--takeoff-mass", type=float, help="override the converged project takeoff mass, kg"
     )
@@ -196,7 +198,9 @@ def main() -> None:
         sync_fields = loader._sync_dataclass_fields_in_source
         try:
             loader._sync_dataclass_fields_in_source = lambda cls, keys: False
-            design = loader.load_design_parameters(args.design or ROOT / design_name)
+            design = loader.load_design_parameters(
+                args.design or ROOT / "config" / design_name
+            )
             constraints = loader.load_constraints(args.constraints)
             reference = load_reference_aircraft(design=design)
         finally:

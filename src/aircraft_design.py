@@ -31,7 +31,9 @@ def _parse_args() -> argparse.Namespace:
 if __name__ == "__main__":
     args = _parse_args()
     design_path = (
-        Path(__file__).resolve().parent.parent / "design_parameters_baseline.json"
+        Path(__file__).resolve().parent.parent
+        / "config"
+        / "design_parameters_baseline.json"
         if args.baseline
         else args.design
     )

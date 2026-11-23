@@ -290,8 +290,12 @@ def load_project(design_path, constraints_path, mass_override):
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
-    parser.add_argument("--design", type=Path, default=ROOT / "design_parameters.json")
-    parser.add_argument("--constraints", type=Path, default=ROOT / "constraints.json")
+    parser.add_argument(
+        "--design", type=Path, default=ROOT / "config" / "design_parameters.json"
+    )
+    parser.add_argument(
+        "--constraints", type=Path, default=ROOT / "config" / "constraints.json"
+    )
     parser.add_argument(
         "--mass", type=float,
         help="optional MTOM override, kg; default from the converged project aircraft model"
