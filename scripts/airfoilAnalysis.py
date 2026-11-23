@@ -9,10 +9,11 @@ import numpy as np
 import pandas as pd
 
 XFOIL = r"C:\Users\franz\Documents\Xfoil\xfoil.exe"
-RESULTS = Path("xfoil_results")
-AIRFOILS = {"Airfoil A": "airfoils/airfoil_A.dat",
-            "Airfoil B": "airfoils/airfoil_B.dat",
-            "Airfoil C": "airfoils/airfoil_C.dat"}
+DIR = Path(__file__).resolve().parent  # the scripts/ folder
+RESULTS = DIR / "xfoil_results"
+AIRFOILS = {"Airfoil A": DIR / "airfoils" / "airfoil_A.dat",
+            "Airfoil B": DIR / "airfoils" / "airfoil_B.dat",
+            "Airfoil C": DIR / "airfoils" / "airfoil_C.dat"}
 FLAPS = {"takeOff": 15, "approach": 30, "cruise": 0} # flap deflection in deg, 0 = clean
 HINGE_X = 0.70 # flap hinge position in x/c
 ALPHA = (-4.0, 16.0, 0.5) # min, max, step in deg
@@ -23,7 +24,7 @@ def hook(d):
                               for k, v in d.items()})
 
 def getFlightConditions():
-    with open("battery_aircraft.json") as f:
+    with open(DIR / "config" / "battery_aircraft.json") as f:
         bat = json.load(f, object_hook=hook)
 
     # aircraft
@@ -68,27 +69,54 @@ def getFlightConditions():
 
     return cond
 
-def runXfoil(airfoil, file, c):
+def runXfoil(airfoil, file, c, use_flap=True):
     runDir = RESULTS / f"{airfoil.replace(' ', '_')}_{c.name}"
     runDir.mkdir(parents=True, exist_ok=True)
     shutil.copy(file, runDir / "airfoil.dat")
-    (runDir / "polar.txt").unlink(missing_ok=True) # old polar would make xfoil ask to overwrite
+    (runDir / "polar.txt").unlink(missing_ok=True)
 
-    flap = FLAPS[c.name]
-    commands = ["LOAD airfoil.dat"] # G F: no graphics window
+    flap = FLAPS[c.name] if use_flap else 0
+
+    commands = ["LOAD airfoil.dat"]  # G F: no graphics window
     if flap:
         commands += ["GDES", "FLAP", HINGE_X, 0, flap, ""]
-    commands += ["PANE", "OPER", f"VISC {c.re:.0f}", f"MACH {c.mach:.4f}", "ITER 200",
-                 "PACC", "polar.txt", "", "ASEQ " + " ".join(map(str, ALPHA)), "PACC", "", "QUIT"]
 
-    log = subprocess.run([XFOIL], input="\n".join(map(str, commands)) + "\n", text=True, cwd=runDir,
-                         stdout=subprocess.PIPE, stderr=subprocess.STDOUT, timeout=120).stdout
+    commands += [
+        "PANE", "OPER",
+        f"VISC {c.re:.0f}",
+        f"MACH {c.mach:.4f}",
+        "ITER 200",
+        "PACC", "polar.txt", "",
+        "ASEQ " + " ".join(map(str, ALPHA)),
+        "PACC", "",
+        "QUIT"
+    ]
+
+    log = subprocess.run(
+        [XFOIL],
+        input="\n".join(map(str, commands)) + "\n",
+        text=True,
+        cwd=runDir,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.STDOUT,
+        timeout=120
+    ).stdout
+
     (runDir / "xfoil.log").write_text(log)
 
     try:
-        polar = pd.read_csv(runDir / "polar.txt", sep=r"\s+", skiprows=12, names=COLUMNS)
+        polar = pd.read_csv(
+            runDir / "polar.txt",
+            sep=r"\s+",
+            skiprows=12,
+            names=COLUMNS
+        )
     except (FileNotFoundError, pd.errors.EmptyDataError):
-        raise RuntimeError(f"XFOIL failed for {airfoil}, {c.name}. Check {runDir / 'xfoil.log'}")
+        raise RuntimeError(
+            f"XFOIL failed for {airfoil}, {c.name}. "
+            f"Check {runDir / 'xfoil.log'}"
+        )
+
     polar["L/D"] = polar.CL / polar.CD
     return polar
 
@@ -105,12 +133,12 @@ def evaluatePolar(polar, clReq):
         res["L/D"] = clReq / res["CD"]
     return res
 
-def compareAirfoils(cond):
+def compareAirfoils(cond, flaps=True):
     results, polars = [], {}
     for airfoil, file in AIRFOILS.items():
         for name, c in cond.items():
             print(f"Analyzing {airfoil}, {name}, flap {FLAPS[name]} deg")
-            polars[airfoil, name] = runXfoil(airfoil, file, c)
+            polars[airfoil, name] = runXfoil(airfoil, file, c, flaps)
             results.append({"Airfoil": airfoil, "Condition": name, "Flap": FLAPS[name],
                             **evaluatePolar(polars[airfoil, name], c.cl)})
 
@@ -156,5 +184,5 @@ def plotResults(df, polars):
 
 if __name__ == "__main__":
     cond = getFlightConditions()
-    df, polars = compareAirfoils(cond)
+    df, polars = compareAirfoils(cond, False)
     plotResults(df, polars)

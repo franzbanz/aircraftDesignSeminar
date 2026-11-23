@@ -1,8 +1,8 @@
 {
   "mass": {
-    "takeOffMassMax": [8616, "kg"],
-    "landingMassMax": [8616, "kg"],
-    "zeroFuelMassMax": [8616, "kg"],
+    "takeOffMassMax": [6400, "kg"],
+    "landingMassMax": [6100, "kg"],
+    "zeroFuelMassMax": [5940, "kg"],
     "mwe": [3480, "kg"],
     "wing": [645, "kg"],
     "fuselage": [765, "kg"],
@@ -13,33 +13,28 @@
     "engine": [585, "kg"],
     "systems": [675, "kg"],
     "furnishings": [270, "kg"],
-    "operatorItems": [435, "kg"]
+    "operatorItems": [435, "kg"],
+    "payload": [1710, "kg"]
   },
   "dimensions": {
-    "wingArea": [53.93 , "m^2"],
-    "wingspan": [23.8, "m"],
+    "wingArea": [32.0, "m^2"],
+    "wingspan": [17, "m"],
     "fuselageLength": [16.6, "m"],
     "fuselageWidth": [1.7, "m"],
     "fuselageHeight": [2.0, "m"],
     "horizontalTailArea": [8.3, "m^2"],
     "verticalTailArea": [6.0, "m^2"],
-    "meanAerodynamicChord": [2.27, "m"]
+    "leadingEdgeMeanAerodynamicChordPosition": [6.2, "m"]
   },
-  "performance": {
-    "takeOffSpeed": [75.42, "kts"],
-    "approachSpeed": [60.99, "kts"],
+  "mission": {
     "cruiseSpeedTAS": [200, "kts"],
-    "cruiseAltitude": [10000, "ft"],
-    "cruiseMachNumber": [0.27, ""]
+    "cruiseAltitude": [10000, "ft"]
   },
   "aerodynamics": {
-    "liftToDragRatioCruise": [15, ""],
+    "liftToDragRatioCruise": [12.1, ""],
     "liftToDragRatioLoiter": [15.7, ""],
     "maxLandingLiftCoefficient": [2.6, ""],
-      "drag": {
-        "EquivalentDragParameter": [0.0045, ""],
-        "fuselageInterfereceParameter": [1.0, ""]
-      }
+    "zeroLiftDragCoefficient": [0.0260, ""]
   },
   "propulsion": {
     "engineTakeOffPower": [580, "kW"],
@@ -48,7 +43,7 @@
   },
   "fuel": {
     "energyDensity": [42.8, "MJ/kg"],
-    "referenceRange": [185200, "m"],
+    "referenceRange": [100, "nm"],
     "referenceMass": [5950, "kg"],
     "taxiOutAndTakeOff": [24, "kg"],
     "climb": [36, "kg"],
@@ -56,24 +51,18 @@
     "descent": [9, "kg"],
     "approachLandingAndTaxiIn": [17, "kg"],
     "reserve": [186, "kg"],
-    "total": [339, "kg"]
+    "total": [350, "kg"]
   },
   "assumptions": {
-    "limitLoad": [3.0, ""],
+    "limitLoad": [3.16, ""],
     "maxTakeOffLiftCoefficient": [1.7, ""],
-    "wingRootThickness": [0.33, "m"],
+    "oswaldFactor": [0.9087, ""],
+    "relWingThickness": [0.18, ""],
     "wingSweepHalfChord": [0.0, "deg"],
     "wingMassPenaltyFactor": [-0.10, ""],
-    "kTakeOff": [2.45, "m^3/kg"],
-    "maxStallSpeed": [61, "kts"],
-    "obstacleClearance": [183.0, "m"],
-    "reverseThrustFactorA": [1.0, ""],
-    "minClimbGradient": [0.015, ""],
-    "massClimbRatio": [1.0, ""],
-    "oswaldFactor": [0.8, ""],
-    "maxThrustOverCruiseThrustRatio": [4.0, ""],
-    "maxMassOverCruiseMassRatio": [1.0, ""],
-    "maxMassOverLandingMassRatio": [1.0, ""],
-    "electricFuelEfficiency": [0.75, ""]
-    }
+    "fuselageMassPenaltyFactor": [0.07, ""],
+    "horizontalTailLeverArm": [9.15, "m"],
+    "verticalTailLeverArm": [8.5, "m"],
+    "wettedSurface": [97, "m^2"]
+  }
 }
