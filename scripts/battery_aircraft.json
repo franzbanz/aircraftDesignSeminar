@@ -1,8 +1,8 @@
 {
   "mass": {
-    "takeOffMassMax": [6400, "kg"],
-    "landingMassMax": [6100, "kg"],
-    "zeroFuelMassMax": [5940, "kg"],
+    "takeOffMassMax": [8616, "kg"],
+    "landingMassMax": [8616, "kg"],
+    "zeroFuelMassMax": [8616, "kg"],
     "mwe": [3480, "kg"],
     "wing": [645, "kg"],
     "fuselage": [765, "kg"],
@@ -16,15 +16,18 @@
     "operatorItems": [435, "kg"]
   },
   "dimensions": {
-    "wingArea": [32.0, "m^2"],
-    "wingspan": [17, "m"],
+    "wingArea": [53.93 , "m^2"],
+    "wingspan": [23.8, "m"],
     "fuselageLength": [16.6, "m"],
     "fuselageWidth": [1.7, "m"],
     "fuselageHeight": [2.0, "m"],
     "horizontalTailArea": [8.3, "m^2"],
-    "verticalTailArea": [6.0, "m^2"]
+    "verticalTailArea": [6.0, "m^2"],
+    "meanAerodynamicChord": [2.27, "m"]
   },
   "performance": {
+    "takeOffSpeed": [75.42, "kts"],
+    "approachSpeed": [60.99, "kts"],
     "cruiseSpeedTAS": [200, "kts"],
     "cruiseAltitude": [10000, "ft"],
     "cruiseMachNumber": [0.27, ""]
