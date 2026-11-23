@@ -9,7 +9,8 @@
     "oswaldFactor": [0.85, ""]
   },
   "wing": {
-    "maxTakeOffLiftCoefficient": [1.7, ""],
+    // 0.6...0.8 Cl_max [Strohmayer Flugzeugentwurf 2 | p. 68]], here 0.7
+    "maxTakeOffLiftCoefficient": [1.82, ""],
     "maxLandingLiftCoefficient": [2.6, ""],
     // maximum 10.63 if wingspan should be lower than 24m with 54.15m^2 wing area
     "aspectRatio": [10.5, ""],
@@ -22,15 +23,19 @@
     "batteryWingMassFraction": [1.0, ""],
     "batterySpanwisePosition": [2.47, "m"],
     // Composite technology factor (0.85-0.90 for CFRP; Raymer Table 15.4, p. 580)
-    "technologyFactor": [0.9, ""]
+    "technologyFactor": [0.9, ""],
+    "leadingEdgeMeanAerodynamicChordPosition": [6.5, "m"],
+    "batteryLeadingEdgeOffset": [0.94, "m"]
   },
   "empennage": {
-    // "transport" [Strohmayer II | p. 120] or "small" (v_D < 250 kts)
+    // "transport" [Strohmayer Flugzeugentwurf 2 | p. 120] or "small" (v_D < 250 kts)
     "massMethod": "transport",
     // the reference aircraft has a very high coefficient, the reference table [Strohmayer I | p. 213] has a maximum value of 1.0
     "maxHorizontalVolumeCoefficient": [1.0, ""],
     // Composite technology factor (0.83-0.88 for CFRP; Raymer Table 15.4, p. 580)
-    "technologyFactor": [0.88, ""]
+    "technologyFactor": [0.88, ""],
+    "horizontalTailAspectRatio": [4.5, ""],
+    "verticalTailAspectRatio": [1.6, ""]
   },
   "propulsion": {
     // assumption of engine magni 650 -> to be determined
@@ -41,14 +46,16 @@
     "etaPropTakeOff": [0.75, ""],
     "etaPropClimb": [0.78, ""],
     "etaPropCruise": [0.85, ""],
-    "etaElectric": [0.85, ""]
+    "etaElectric": [0.85, ""],
+    "engineLeadingEdgeOffset": [-0.78, "m"],
+    "pylonLeadingEdgeOffset": [-0.22, "m"]
   },
   "fuselage": {
     // "single_door" (1x LH rear door) or "dual_door" (1x RH front door + 1x LH rear door, no overwing exits)
     "cabinLayout": "dual_door",
     "seatPitch": [0.8, "m"],
     "seatWidth": [0.5, "m"],
-    "aisleWidth": [0.5, "m"],
+    "aisleWidth": [0.52, "m"],
     "wallClearance": [0.05, "m"],
     "wallThickness": [0.05, "m"],
     "aisleHeadroom": [1.65, "m"],
@@ -58,12 +65,20 @@
     "minBaggageLength": [1, "m"],
     "usableBaggageFactor": [0.75, ""],
     "underfloorBaggageHeight": [0.0, "m"],
+    // usable nose/forward baggage volume (e.g. from CAD); 0.0 = none
+    "forwardBaggageVolume": [0.8, "m^3"],
+    "forwardBaggagePosition": [0.84, "m"],
+    "crewPosition": [1.44, "m"],
     // null = calculate via Torenbeek Eq. (B-6), or [value, "m^2"] = CAD override
     "wettedArea": null,
     // fuselage-mounted landing gear (+7%)
     "fuselageMassPenaltyFactor": [0.07, ""],
     // Composite technology factor (0.90-0.95 for CFRP; Raymer Table 15.4, p. 580)
     "technologyFactor": [0.95, ""]
+  },
+  "landingGear": {
+    "noseGearPosition": [1.32, "m"],
+    "mainGearPosition": [7.62, "m"]
   },
   "mission": {
     "range": [100, "nm"],
@@ -72,6 +87,7 @@
     "numberOfPassengers": [19, ""]
   },
   "assumptions": {
+    // CS 23.2230 Limit and ultimate loads, CS 23.337 Ammendment 4
     "limitLoad": [3.0, ""]
   }
 }

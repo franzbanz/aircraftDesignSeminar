@@ -50,6 +50,38 @@ def calc_wing_mass(
     return SiValue(base_mass * (1.0 + delta_m_F), "kg")
 
 
+def calc_landing_gear_mass_breakdown(
+    mtom: SiValue, k_fw: float = 1.08
+) -> tuple[SiValue, SiValue]:
+    """Calculates main and nose landing gear masses separately based on MTOM [kg].
+
+    Uses Torenbeek formula [Strohmayer - Flugzeugentwurf 2 | p. 124] for commuter/transport aircraft.
+
+    Args:
+        mtom: Maximum take-off mass [kg].
+        k_fw: Wing configuration factor [-] (1.08 for high-wing aircraft, 1.0 for low-wing aircraft).
+
+    Returns:
+        Tuple of (main_gear_mass, nose_gear_mass) [kg].
+    """
+
+    def calc_single_landing_gear_mass(
+        k: float, m: float, a: float, b: float, c: float, d: float
+    ) -> float:
+        return k * (a + b * m**0.75 + c * m + d * m**1.5)
+
+    coeff_main_gear = [18.1, 0.131, 0.019, 2.23e-5]
+    coeff_nose_gear = [9.1, 0.082, 0.0, 2.97e-6]
+
+    m_main_gear = SiValue(
+        calc_single_landing_gear_mass(k_fw, mtom, *coeff_main_gear), "kg"
+    )
+    m_nose_gear = SiValue(
+        calc_single_landing_gear_mass(k_fw, mtom, *coeff_nose_gear), "kg"
+    )
+    return m_main_gear, m_nose_gear
+
+
 def calc_landing_gear_mass(mtom: SiValue, k_fw: float = 1.08) -> SiValue:
     """Calculates total landing gear mass based on MTOM [kg].
 
@@ -62,27 +94,7 @@ def calc_landing_gear_mass(mtom: SiValue, k_fw: float = 1.08) -> SiValue:
     Returns:
         Total landing gear mass (main gear + nose gear) [kg].
     """
-
-    def calc_single_landing_gear_mass(
-        k: float, m: float, a: float, b: float, c: float, d: float
-    ) -> float:
-        """Calculates the mass of a single landing gear group (main or nose gear) [kg].
-
-        Args:
-            k: Wing configuration factor k_fw [-].
-            m: Maximum take-off mass (MTOM) [kg].
-            a, b, c, d: Empirical Torenbeek regression coefficients for the respective landing gear group.
-
-        Returns:
-            Mass of the single landing gear group [kg].
-        """
-        return k * (a + b * m**0.75 + c * m + d * m**1.5)
-
-    coeff_main_gear = [18.1, 0.131, 0.019, 2.23e-5]
-    coeff_nose_gear = [9.1, 0.082, 0.0, 2.97e-6]
-
-    m_main_gear = calc_single_landing_gear_mass(k_fw, mtom, *coeff_main_gear)
-    m_nose_gear = calc_single_landing_gear_mass(k_fw, mtom, *coeff_nose_gear)
+    m_main_gear, m_nose_gear = calc_landing_gear_mass_breakdown(mtom, k_fw)
     return SiValue(m_main_gear + m_nose_gear, "kg")
 
 

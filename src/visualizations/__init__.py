@@ -9,6 +9,7 @@ from visualizations.aircraft import (
     plot_mass_breakdown,
     print_aircraft_summary,
 )
+from visualizations.cog import plot_cog_excursion, print_cog_summary
 from visualizations.fuselage import (
     plot_fuselage_sizing,
     print_fuselage_summary,
@@ -41,6 +42,7 @@ def interactive_plot_menu(
   [4] Payload-Range Diagram
   [5] Aircraft Dimensions & 2D Geometry Comparison
   [6] Fuselage Sizing & Cabin Layout (1+1)
+  [7] Center of Gravity (CoG) & Loading Diagram
   [A] Show All Plots
   [Q] Exit Menu
 ======================================================================
@@ -89,6 +91,10 @@ def interactive_plot_menu(
             print("Opening Fuselage Sizing & Cabin Layout (1+1)...")
             print_fuselage_summary(aircraft.fuselage)
             plot_fuselage_sizing(aircraft.fuselage)
+        elif choice in ("7", "c", "cog", "cg"):
+            print("Opening Center of Gravity & Loading Diagram...")
+            print_cog_summary(aircraft.cog)
+            plot_cog_excursion(aircraft.cog)
         elif choice in ("a", "all"):
             print("Opening all diagrams sequentially...")
             plot_sizing_diagram(aircraft.sizing_diagram(mode="thrust"))
@@ -98,7 +104,8 @@ def interactive_plot_menu(
             plot_payload_range(aircraft)
             plot_aircraft_geometry(aircraft, ref_aircraft)
             plot_fuselage_sizing(aircraft.fuselage)
+            plot_cog_excursion(aircraft.cog)
         else:
             print(
-                f"Unknown option '{choice}'. Please choose 1, 1p, 2, 3, 3d, 4, 5, 6, A or Q."
+                f"Unknown option '{choice}'. Please choose 1, 1p, 2, 3, 3d, 4, 5, 6, 7, A or Q."
             )

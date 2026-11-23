@@ -49,6 +49,7 @@ class ReferenceDimensionsParameters:
     fuselageHeight: UnitValue
     horizontalTailArea: UnitValue
     verticalTailArea: UnitValue
+    leadingEdgeMeanAerodynamicChordPosition: UnitValue
 
 
 @dataclass(frozen=True)

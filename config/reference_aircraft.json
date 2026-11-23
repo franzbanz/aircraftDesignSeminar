@@ -24,7 +24,8 @@
     "fuselageWidth": [1.7, "m"],
     "fuselageHeight": [2.0, "m"],
     "horizontalTailArea": [8.3, "m^2"],
-    "verticalTailArea": [6.0, "m^2"]
+    "verticalTailArea": [6.0, "m^2"],
+    "leadingEdgeMeanAerodynamicChordPosition": [6.2, "m"]
   },
   "mission": {
     "cruiseSpeedTAS": [200, "kts"],

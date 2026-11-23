@@ -124,6 +124,17 @@ def print_aircraft_summary(
         f"Required Take-off Power:     {aircraft.required_takeoff_power.to('kW'):.1f}"
     )
     print(f"Total Installed Power:       {aircraft.total_takeoff_power.to('kW'):.1f}")
+    cog = aircraft.cog
+    mtom_cog = cog.mtom_state
+    print(
+        f"CoG at MTOM:                 {mtom_cog.x_cg:.2f} ({mtom_cog.mac_fraction * 100:.1f}% MAC)"
+    )
+    print(
+        f"CoG Range (Fwd / Aft):       "
+        f"{cog.extreme_state('forward').mac_fraction * 100:.1f}% / "
+        f"{cog.extreme_state('aft').mac_fraction * 100:.1f}% MAC "
+        f"(Travel: {cog.cg_travel_mac * 100:.1f}% MAC)"
+    )
 
 
 def plot_mass_breakdown(
@@ -319,17 +330,82 @@ def plot_aircraft_geometry(
 
     l_f = aircraft.fuselage.length
     w_f = aircraft.fuselage.width
+    l_nose = aircraft.design.fuselage.noseLength.si
+    x_tail_start = l_f - aircraft.fuselage.tail_length
 
-    fuselage_x = [0, 1.5, l_f - 3.0, l_f, l_f - 3.0, 1.5, 0]
-    fuselage_y = [0, w_f / 2, w_f / 2, 0, -w_f / 2, -w_f / 2, 0]
-    ax1.plot(fuselage_y, fuselage_x, color="dimgray", lw=2, label="Fuselage (19 PAX)")
+    fuselage_x = [
+        0,
+        l_nose * 0.35,
+        l_nose,
+        x_tail_start,
+        l_f,
+        l_f,
+        x_tail_start,
+        l_nose,
+        l_nose * 0.35,
+        0,
+    ]
+    fuselage_y = [
+        0,
+        w_f * 0.36,
+        w_f / 2,
+        w_f / 2,
+        0.06,
+        -0.06,
+        -w_f / 2,
+        -w_f / 2,
+        -w_f * 0.36,
+        0,
+    ]
+    ax1.plot(
+        fuselage_y,
+        fuselage_x,
+        color="dimgray",
+        lw=2,
+        label=f"Electric Fuselage ({l_f:.2f} x {w_f:.2f})",
+    )
     ax1.fill(fuselage_y, fuselage_x, color="lightgray", alpha=0.4)
 
-    x_qc = 6.0
+    l_f_ref = ref_aircraft.data.dimensions.fuselageLength.si
+    w_f_ref = ref_aircraft.data.dimensions.fuselageWidth.si
+    ref_fuse_x = [
+        0,
+        0.85,
+        2.4,
+        l_f_ref - 5.0,
+        l_f_ref,
+        l_f_ref,
+        l_f_ref - 5.0,
+        2.4,
+        0.85,
+        0,
+    ]
+    ref_fuse_y = [
+        0,
+        w_f_ref * 0.36,
+        w_f_ref / 2,
+        w_f_ref / 2,
+        0.06,
+        -0.06,
+        -w_f_ref / 2,
+        -w_f_ref / 2,
+        -w_f_ref * 0.36,
+        0,
+    ]
+    ax1.plot(
+        ref_fuse_y,
+        ref_fuse_x,
+        color="#2980b9",
+        lw=1.2,
+        ls="--",
+        alpha=0.7,
+        label=f"Do 228 Fuselage ({l_f_ref:.2f} x {w_f_ref:.2f})",
+    )
 
     b_ref = ref_aircraft.data.dimensions.wingspan.si
     c_ref = ref_aircraft.mean_aerodynamic_chord.si
-    x_w_ref_le = x_qc - 0.25 * c_ref
+    x_w_ref_le = ref_aircraft.data.dimensions.leadingEdgeMeanAerodynamicChordPosition.si
+    x_qc_ref = x_w_ref_le + 0.25 * c_ref
     x_w_ref_te = x_w_ref_le + c_ref
     ax1.fill(
         [-b_ref / 2, b_ref / 2, b_ref / 2, -b_ref / 2],
@@ -344,7 +420,7 @@ def plot_aircraft_geometry(
 
     b_el = aircraft.wing.span
     c_el = aircraft.wing.mean_aerodynamic_chord
-    x_w_el_le = x_qc - 0.25 * c_el
+    x_w_el_le = aircraft.wing.x_lemac
     x_w_el_te = x_w_el_le + c_el
     ax1.fill(
         [-b_el / 2, b_el / 2, b_el / 2, -b_el / 2],
@@ -366,17 +442,18 @@ def plot_aircraft_geometry(
     )
     ax1.axvline(b_max / 2, color="red", ls=":", lw=1.5)
 
-    x_qc_ht = 15.0
+    ar_ht = aircraft.design.empennage.horizontalTailAspectRatio
+    x_qc_ht_ref = x_qc_ref + ref_aircraft.horizontal_tail_lever_arm.si
     s_ht_ref = ref_aircraft.data.dimensions.horizontalTailArea.si
-    b_ht_ref = (s_ht_ref * 4.0) ** 0.5
+    b_ht_ref = (s_ht_ref * ar_ht) ** 0.5
     c_ht_ref = s_ht_ref / b_ht_ref
     ax1.fill(
         [-b_ht_ref / 2, b_ht_ref / 2, b_ht_ref / 2, -b_ht_ref / 2],
         [
-            x_qc_ht - 0.25 * c_ht_ref,
-            x_qc_ht - 0.25 * c_ht_ref,
-            x_qc_ht + 0.75 * c_ht_ref,
-            x_qc_ht + 0.75 * c_ht_ref,
+            x_qc_ht_ref - 0.25 * c_ht_ref,
+            x_qc_ht_ref - 0.25 * c_ht_ref,
+            x_qc_ht_ref + 0.75 * c_ht_ref,
+            x_qc_ht_ref + 0.75 * c_ht_ref,
         ],
         color="#3498db",
         alpha=0.35,
@@ -385,22 +462,33 @@ def plot_aircraft_geometry(
         ls="--",
     )
 
+    x_qc_ht_el = aircraft.empennage.x_htp_ac
     s_ht_el = aircraft.empennage.horizontal_tail_area
-    b_ht_el = (s_ht_el * 4.0) ** 0.5
-    c_ht_el = s_ht_el / b_ht_el
+    c_ht_el = aircraft.empennage.horizontal_tail_mac
+    b_ht_el = s_ht_el / c_ht_el
     ax1.fill(
         [-b_ht_el / 2, b_ht_el / 2, b_ht_el / 2, -b_ht_el / 2],
         [
-            x_qc_ht - 0.25 * c_ht_el,
-            x_qc_ht - 0.25 * c_ht_el,
-            x_qc_ht + 0.75 * c_ht_el,
-            x_qc_ht + 0.75 * c_ht_el,
+            x_qc_ht_el - 0.25 * c_ht_el,
+            x_qc_ht_el - 0.25 * c_ht_el,
+            x_qc_ht_el + 0.75 * c_ht_el,
+            x_qc_ht_el + 0.75 * c_ht_el,
         ],
         color="#27ae60",
         alpha=0.35,
         edgecolor="#1e8449",
         lw=2,
         label=f"Horizontal Tail (Do: {s_ht_ref:.1f} vs. El: {s_ht_el:.1f})",
+    )
+
+    mtom_cog = aircraft.cog.mtom_state
+    ax1.scatter(
+        [0.0],
+        [mtom_cog.x_cg],
+        color="#c0392b",
+        s=70,
+        zorder=6,
+        label=f"MTOM CoG ({mtom_cog.x_cg:.2f}, {mtom_cog.mac_fraction * 100:.1f}% MAC)",
     )
 
     ax1.set_aspect("equal", "datalim")
@@ -411,7 +499,7 @@ def plot_aircraft_geometry(
         "Top-Down 2D Planform Schematic Comparison", fontsize=12, fontweight="bold"
     )
     ax1.grid(True, linestyle=":", alpha=0.6)
-    ax1.legend(loc="upper left", fontsize=8.5, framealpha=0.95)
+    ax1.legend(loc="upper left", ncol=2, fontsize=8, framealpha=0.95)
 
     labels = [
         "Wing Area [m²]",
@@ -420,6 +508,8 @@ def plot_aircraft_geometry(
         "Mean Chord (MAC) [m]",
         "HTP Area [m²]",
         "VTP Area [m²]",
+        "Fuselage Length [m]",
+        "Fuselage Width [m]",
     ]
     ref_vals = [
         ref_aircraft.data.dimensions.wingArea.si,
@@ -428,6 +518,8 @@ def plot_aircraft_geometry(
         ref_aircraft.mean_aerodynamic_chord.si,
         ref_aircraft.data.dimensions.horizontalTailArea.si,
         ref_aircraft.data.dimensions.verticalTailArea.si,
+        ref_aircraft.data.dimensions.fuselageLength.si,
+        ref_aircraft.data.dimensions.fuselageWidth.si,
     ]
     el_vals = [
         aircraft.wing.area,
@@ -436,6 +528,8 @@ def plot_aircraft_geometry(
         aircraft.wing.mean_aerodynamic_chord,
         aircraft.empennage.horizontal_tail_area,
         aircraft.empennage.vertical_tail_area,
+        aircraft.fuselage.length,
+        aircraft.fuselage.width,
     ]
 
     y = np.arange(len(labels))

@@ -21,14 +21,18 @@
     "batteryWingMassFraction": [0.0, ""],
     "batterySpanwisePosition": [0.0, "m"],
     // Baseline uses conventional all-metal structure (factor 1.0)
-    "technologyFactor": [1.0, ""]
+    "technologyFactor": [1.0, ""],
+    "leadingEdgeMeanAerodynamicChordPosition": [6.2, "m"],
+    "batteryLeadingEdgeOffset": [0.57, "m"]
   },
   "empennage": {
     // "transport" [Strohmayer II | p. 120] or "small" (v_D < 250 kts)
     "massMethod": "transport",
     // the reference aircraft has a very high coefficient, the reference table [Strohmayer I | p. 213] has a maximum value of 1.0
     "maxHorizontalVolumeCoefficient": [1.5, ""],
-    "technologyFactor": [1.0, ""]
+    "technologyFactor": [1.0, ""],
+    "horizontalTailAspectRatio": [4.5, ""],
+    "verticalTailAspectRatio": [1.6, ""]
   },
   "propulsion": {
     // assumption of engine magni 650 (scaled to 1200kW)
@@ -39,7 +43,9 @@
     "etaPropTakeOff": [0.75, ""],
     "etaPropClimb": [0.78, ""],
     "etaPropCruise": [0.85, ""],
-    "etaElectric": [0.85, ""]
+    "etaElectric": [0.85, ""],
+    "engineLeadingEdgeOffset": [-0.79, "m"],
+    "pylonLeadingEdgeOffset": [-0.23, "m"]
   },
   "fuselage": {
     // "single_door" (1x LH rear door) or "dual_door" (1x RH front door + 1x LH rear door, no overwing exits)
@@ -56,11 +62,19 @@
     "minBaggageLength": [1, "m"],
     "usableBaggageFactor": [0.75, ""],
     "underfloorBaggageHeight": [0.0, "m"],
+    // usable nose/forward baggage volume (e.g. from CAD); 0.0 = none
+    "forwardBaggageVolume": [0.0, "m^3"],
+    "forwardBaggagePosition": [0.84, "m"],
+    "crewPosition": [1.44, "m"],
     // null = calculate via Torenbeek Eq. (B-6), or [value, "m^2"] = CAD override
     "wettedArea": null,
     // fuselage-mounted landing gear (+7%)
     "fuselageMassPenaltyFactor": [0.07, ""],
     "technologyFactor": [1.0, ""]
+  },
+  "landingGear": {
+    "noseGearPosition": [1.32, "m"],
+    "mainGearPosition": [7.33, "m"]
   },
   "mission": {
     "range": [100, "nm"],

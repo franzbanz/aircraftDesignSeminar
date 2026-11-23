@@ -55,20 +55,26 @@ def print_fuselage_summary(fuselage: FuselageDesign) -> None:
         f"  2. Passenger Cabin:        {fuselage.cabin_length:.2f} ({fuselage.n_rows} rows)"
     )
     print(
-        f"  3. Aft Baggage:            {fuselage.baggage_length:.2f} "
-        f"(Vol: {fuselage.aft_baggage_volume:.2f}, Total: {fuselage.baggage_volume:.2f}, Req: {fuselage.cargo_volume_required:.2f})"
+        f"  3. Aft Baggage:            {fuselage.baggage.aft_length:.2f} "
+        f"(Vol: {fuselage.baggage.aft_volume:.2f}, Total: {fuselage.baggage.total_volume:.2f}, Req: {fuselage.baggage.required_volume:.2f})"
     )
     if fuse.underfloorBaggageHeight.si > 0:
         print(
             f"     Underfloor Hold:        {fuse.underfloorBaggageHeight.si:.2f} height "
-            f"(Vol: {fuselage.underfloor_baggage_volume:.2f})"
+            f"(Vol: {fuselage.baggage.underfloor_volume:.2f})"
+        )
+    if fuselage.baggage.forward_volume > 0:
+        print(
+            f"     Forward Nose Hold:      Vol: {fuselage.baggage.forward_volume:.2f}"
         )
     print(f"  4. Tailcone:               {fuselage.tail_length:.2f}")
     print(f"  --> TOTAL FUSELAGE LENGTH: {fuselage.length:.2f}")
     print("-" * 68)
     print("AERODYNAMIC PROPERTIES:")
     print(f"  Slenderness Ratio (l/d):   {fuselage.slenderness_ratio:.2f}")
-    wetted_source = " (CAD override)" if fuselage.design.fuselage.wettedArea is not None else ""
+    wetted_source = (
+        " (CAD override)" if fuselage.design.fuselage.wettedArea is not None else ""
+    )
     print(f"  Fuselage Wetted Area:      {fuselage.wetted_area:.2f}{wetted_source}")
     print("=" * 68)
 
@@ -105,7 +111,7 @@ def _plot_planform_shell(ax: Axes, fuselage: FuselageDesign, color: str) -> None
     x_nose_taper = nose_length * 0.35
     x_cockpit = nose_length
     x_cabin = x_cockpit + fuselage.cabin_length
-    x_baggage = x_cabin + fuselage.baggage_length
+    x_baggage = x_cabin + fuselage.baggage.aft_length
     x_tail = fuselage.length
 
     xs = [0.0, x_nose_taper, x_cockpit, x_baggage, x_tail]
@@ -120,7 +126,9 @@ def _plot_planform_shell(ax: Axes, fuselage: FuselageDesign, color: str) -> None
     for x_part in (x_cockpit, x_cabin, x_baggage):
         ax.axvline(x_part, color="gray", ls="--", lw=1.1, alpha=0.8)
 
-    baggage_label = "Aft\nBaggage" if fuselage.baggage_length < 1.6 else "Aft Baggage"
+    baggage_label = (
+        "Aft\nBaggage" if fuselage.baggage.aft_length < 1.6 else "Aft Baggage"
+    )
     for x_mid, label in (
         (0.5 * x_cockpit, "Cockpit"),
         (0.5 * (x_cockpit + x_cabin), f"Cabin ({fuselage.n_rows} rows)"),
