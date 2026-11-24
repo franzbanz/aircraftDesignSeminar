@@ -179,8 +179,8 @@ def main() -> None:
     design_files = parser.add_mutually_exclusive_group()
     design_files.add_argument("--design", type=Path, help="custom design JSON")
     design_files.add_argument("--baseline", action="store_true", help="use baseline design JSON")
-    parser.add_argument("--constraints", type=Path, default=ROOT / "constraints.json")
-    parser.add_argument("--reference", type=Path, default=ROOT / "reference_aircraft.json")
+    parser.add_argument("--constraints", type=Path, default=ROOT / "config" / "constraints.json")
+    parser.add_argument("--reference", type=Path, default=ROOT / "config" / "reference_aircraft.json")
     parser.add_argument(
         "--takeoff-mass", type=float, help="override the converged project takeoff mass, kg"
     )
