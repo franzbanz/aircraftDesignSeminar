@@ -16,11 +16,13 @@ import typing
 from contextlib import contextmanager
 from dataclasses import dataclass
 from importlib.machinery import PathFinder, SourceFileLoader
-from math import isfinite, sqrt
+from math import isfinite
 from pathlib import Path
 
+# Resolve project modules and configuration independently of the working directory.
 ROOT = Path(__file__).resolve().parent.parent
 SOURCE_DIR = ROOT / "src"
+sys.dont_write_bytecode = True
 if str(SOURCE_DIR) not in sys.path:
     sys.path.insert(0, str(SOURCE_DIR))
 
@@ -69,14 +71,15 @@ def project_imports():
 
 
 with project_imports():
-    from constants import GRAVITY, RHO_0, isa_density
-
-# Coefficients from sizing_diagram.py. Kept here so the requirement
-# calculation remains independent of how the reference wing area was obtained.
-TAKEOFF_FACTORS = {2: 2.45, 3: 2.26, 4: 2.06}
-TAKEOFF_SAFETY_SPEED_RATIO = 1.2
-LANDING_AIR_DISTANCE_M = 183.0
-LANDING_DISTANCE_FACTOR = 0.51  # Wheel-braking factor A = 1.0.
+    from constants import RHO_0, isa_density
+    from data import SiValue
+    from sizing_diagram import (
+        calc_landing_wing_loading,
+        calc_power_loading_from_thrust_loading,
+        calc_stall_wing_loading,
+        calc_takeoff_safety_speed,
+        calc_takeoff_thrust_loading,
+    )
 
 
 @dataclass(frozen=True)
@@ -94,7 +97,10 @@ def required_cl_max(
     mass_kg: float, area_m2: float, speed_mps: float, rho: float
 ) -> float:
     """Return the aircraft lift coefficient needed for a 1-g stall limit."""
-    return 2 * mass_kg * GRAVITY / (rho * area_m2 * speed_mps**2)
+    unit_cl_loading = calc_stall_wing_loading(
+        1.0, SiValue(rho, "kg/m^3"), SiValue(speed_mps, "m/s")
+    )
+    return mass_kg / area_m2 / unit_cl_loading
 
 
 def calculate_requirements(
@@ -110,7 +116,7 @@ def calculate_requirements(
     engine_takeoff_power_w: float,
     takeoff_propeller_efficiency: float,
 ) -> LiftRequirements:
-    """Return three lower bounds on the aircraft lift coefficients."""
+    """Invert shared constraints [Strohmayer - Flugzeugentwurf 2 | pp. 82, 105-106]."""
     positive_inputs = {
         "wing area": wing_area_m2,
         "takeoff mass": takeoff_mass_kg,
@@ -128,37 +134,37 @@ def calculate_requirements(
         raise ValueError("takeoff propeller efficiency must be in (0, 1]")
     if landing_mass_kg > takeoff_mass_kg:
         raise ValueError("landing mass must not exceed takeoff mass")
-    if engine_count not in TAKEOFF_FACTORS:
+    if engine_count not in (2, 3, 4):
         raise ValueError("the project takeoff model defines factors for 2, 3 or 4 motors")
-    if landing_field_length_m <= LANDING_AIR_DISTANCE_M:
-        raise ValueError("landing field length must exceed the model's 183 m air segment")
 
-    density_ratio = airfield_density / RHO_0
     takeoff_wing_loading = takeoff_mass_kg / wing_area_m2
     landing_wing_loading = landing_mass_kg / wing_area_m2
+    density = SiValue(airfield_density, "kg/m^3")
 
     # In the matching chart, T/W scales as CL_max^(-1) and V2 as
     # CL_max^(-1/2). With P/m = (T/W) * g * V2 / eta, invert at rated power.
-    thrust_loading_at_unit_cl = (
-        TAKEOFF_FACTORS[engine_count] * takeoff_wing_loading
-        / (density_ratio * takeoff_field_length_m)
+    thrust_loading_at_unit_cl = calc_takeoff_thrust_loading(
+        engine_count, 1.0, density,
+        SiValue(takeoff_field_length_m, "m"), takeoff_wing_loading,
     )
-    safety_speed_at_unit_cl = TAKEOFF_SAFETY_SPEED_RATIO * sqrt(
-        2 * GRAVITY * takeoff_wing_loading / airfield_density
+    safety_speed_at_unit_cl = calc_takeoff_safety_speed(
+        takeoff_wing_loading, density, 1.0
     )
-    required_power_loading_at_unit_cl = (
-        thrust_loading_at_unit_cl * GRAVITY * safety_speed_at_unit_cl
-        / takeoff_propeller_efficiency
+    required_power_loading_at_unit_cl = calc_power_loading_from_thrust_loading(
+        thrust_loading_at_unit_cl, safety_speed_at_unit_cl,
+        takeoff_propeller_efficiency,
     )
     available_power_loading = engine_count * engine_takeoff_power_w / takeoff_mass_kg
     takeoff_cl = (required_power_loading_at_unit_cl / available_power_loading) ** (2 / 3)
 
     # Same as inverting the matching chart's landing relation with
     # mlw_ratio = takeoff_mass / landing_mass.
-    landing_distance_cl = (
-        LANDING_DISTANCE_FACTOR * GRAVITY * landing_wing_loading
-        / ((landing_field_length_m - LANDING_AIR_DISTANCE_M) * density_ratio)
+    unit_cl_landing_loading = calc_landing_wing_loading(
+        SiValue(landing_field_length_m, "m"), density, 1.0
     )
+    if not isfinite(unit_cl_landing_loading) or unit_cl_landing_loading <= 0:
+        raise ValueError("landing field length must exceed the shared model's air segment")
+    landing_distance_cl = landing_wing_loading / unit_cl_landing_loading
     landing_stall_cl = required_cl_max(
         landing_mass_kg, wing_area_m2, stall_speed_mps, RHO_0
     )
@@ -174,6 +180,7 @@ def main() -> None:
     design_files.add_argument("--design", type=Path, help="custom design JSON")
     design_files.add_argument("--baseline", action="store_true", help="use baseline design JSON")
     parser.add_argument("--constraints", type=Path, default=ROOT / "constraints.json")
+    parser.add_argument("--reference", type=Path, default=ROOT / "reference_aircraft.json")
     parser.add_argument(
         "--takeoff-mass", type=float, help="override the converged project takeoff mass, kg"
     )
@@ -198,7 +205,7 @@ def main() -> None:
             loader._sync_dataclass_fields_in_source = lambda cls, keys: False
             design = loader.load_design_parameters(args.design or ROOT / design_name)
             constraints = loader.load_constraints(args.constraints)
-            reference = load_reference_aircraft(design=design)
+            reference = load_reference_aircraft(path=args.reference, design=design)
         finally:
             loader._sync_dataclass_fields_in_source = sync_fields
 
@@ -211,7 +218,13 @@ def main() -> None:
         )
         aircraft = BatteryAircraft(constraints, design, reference, mtom=mass_override)
         if mass_override is None:
-            aircraft.converge_mtom()
+            history = aircraft.converge_mtom()
+            if (
+                len(history) < 2
+                or not all(isfinite(value) and value > 0 for value in history)
+                or abs(history[-1] - history[-2]) >= 0.1
+            ):
+                raise ValueError("shared MTOM iteration did not converge within 0.1 kg")
         takeoff_mass = float(aircraft.mtom)
         wing_area = args.wing_area if args.wing_area is not None else float(aircraft.wing.area)
         landing_mass = args.landing_mass if args.landing_mass is not None else takeoff_mass
@@ -234,7 +247,7 @@ def main() -> None:
         )
     except ImportError as error:
         parser.error(f"could not import the project aircraft model: {error}")
-    except (OSError, ValueError, KeyError, TypeError) as error:
+    except (OSError, ValueError, KeyError, TypeError, AttributeError) as error:
         parser.error(str(error))
 
     area_source = "manual override" if args.wing_area is not None else "project wing model"
@@ -242,11 +255,11 @@ def main() -> None:
     print(
         f"Wing area: {wing_area:g} m^2 ({area_source}) | "
         f"Takeoff mass: {takeoff_mass:g} kg ({mass_source}) | "
-        f"Landing mass: {landing_mass:g} kg | Airfield altitude: {airfield_altitude:g} m"
+        f"Landing mass: {landing_mass:g} kg | Airfield altitude: {airfield_altitude:g}"
     )
     mass_limit = performance.takeOffMassMax.si
     if takeoff_mass > mass_limit:
-        print(f"Takeoff mass exceeds the project limit of {mass_limit:g} kg.")
+        print(f"Takeoff mass exceeds the project limit of {mass_limit:g}.")
     print(f"Required takeoff CL_max (field length):        {results.takeoff_field_length:.3f}")
     print(f"Required landing CL_max (field length):        {results.landing_field_length:.3f}")
     print(f"Required landing CL_max (sea-level stall):      {results.landing_stall_speed:.3f}")
