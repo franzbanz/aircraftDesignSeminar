@@ -157,7 +157,7 @@ def read_project(
             design = loader.load_design_parameters(design_path)
             constraints = loader.load_constraints(constraints_path)
             reference = load_reference_aircraft(
-                path=reference_path if reference_path is not None else ROOT / "reference_aircraft.json",
+                path=reference_path if reference_path is not None else ROOT / "config" / "reference_aircraft.json",
                 design=design,
             )
             aircraft = BatteryAircraft(
@@ -351,9 +351,9 @@ def calculate(p, a, vmcg=None):
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
-    parser.add_argument("--design", type=Path, default=ROOT / "design_parameters.json")
-    parser.add_argument("--constraints", type=Path, default=ROOT / "constraints.json")
-    parser.add_argument("--reference", type=Path, default=ROOT / "reference_aircraft.json")
+    parser.add_argument("--design", type=Path, default=ROOT / "config" / "design_parameters.json")
+    parser.add_argument("--constraints", type=Path, default=ROOT / "config" / "constraints.json")
+    parser.add_argument("--reference", type=Path, default=ROOT / "config" / "reference_aircraft.json")
     parser.add_argument("--mass", "--takeoff-mass", type=float, help="override converged MTOM, kg")
     for name in ("area", "span", "eta", "clmax", "cd0", "rho", "wing_height"):
         parser.add_argument("--" + name.replace("_", "-"), type=float)

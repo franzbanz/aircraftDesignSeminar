@@ -499,9 +499,9 @@ def make_parser():
     """Create the command-line interface without loading the aircraft model."""
     a = Assumptions()
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
-    parser.add_argument("--design", type=Path, default=ROOT / "design_parameters.json")
-    parser.add_argument("--constraints", type=Path, default=ROOT / "constraints.json")
-    parser.add_argument("--reference", type=Path, default=ROOT / "reference_aircraft.json")
+    parser.add_argument("--design", type=Path, default=ROOT / "config" / "design_parameters.json")
+    parser.add_argument("--constraints", type=Path, default=ROOT / "config" / "constraints.json")
+    parser.add_argument("--reference", type=Path, default=ROOT / "config" / "reference_aircraft.json")
     parser.add_argument("--mass", type=float, help="optional kg override; default is converged shared MTOM")
     parser.add_argument("--belly-clearance", type=float, default=a.belly_clearance)
     parser.add_argument("--wheel-radius", type=float, default=a.wheel_radius, help="loaded radius, m")
