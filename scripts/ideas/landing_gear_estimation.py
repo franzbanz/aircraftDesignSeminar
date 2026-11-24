@@ -45,7 +45,7 @@ sys.dont_write_bytecode = True
 from cl_max import project_imports
 
 
-ROOT = Path(__file__).resolve().parent.parent
+ROOT = Path(__file__).resolve().parent.parent.parent
 HIGH_WING_FACTOR = 1.08
 FIXED_MAIN = (9.1, 0.082, 0.019, 0.0)
 FIXED_NOSE = (11.3, 0.0, 0.0024, 0.0)

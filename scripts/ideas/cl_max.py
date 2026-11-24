@@ -19,7 +19,7 @@ from importlib.machinery import PathFinder, SourceFileLoader
 from math import isfinite, sqrt
 from pathlib import Path
 
-ROOT = Path(__file__).resolve().parent.parent
+ROOT = Path(__file__).resolve().parent.parent.parent
 SOURCE_DIR = ROOT / "src"
 if str(SOURCE_DIR) not in sys.path:
     sys.path.insert(0, str(SOURCE_DIR))
