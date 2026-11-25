@@ -167,7 +167,7 @@ class CenterOfGravity:
         """Generates progressive front-to-back or back-to-front loading excursion."""
         fuse = self.aircraft.fuselage
         total_per_pax = self.aircraft.constraints.payload.weightPerPassenger.si
-        luggage_per_pax = min(15.0, 0.18 * total_per_pax)
+        luggage_per_pax = self.aircraft.design.mission.baggageMassPerPassenger.si
         seat_mass = SiValue(total_per_pax - luggage_per_pax, "kg")
         total_luggage = SiValue(fuse.n_pax * luggage_per_pax, "kg")
 
