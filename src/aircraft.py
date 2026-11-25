@@ -1,5 +1,7 @@
 """Battery-powered electric aircraft model with integrated calibrated mass estimation."""
 
+from __future__ import annotations
+
 from cog import CenterOfGravity
 from constants import GRAVITY
 from data import Constraints, DesignParameters, SiValue
@@ -15,6 +17,120 @@ from mission_energy import MissionEnergyCalculator, ReferenceMissionCalculator
 from reference_aircraft import ReferenceAircraft
 from sizing_diagram import SizingDiagram, SizingMode
 from wing import WingDesign
+
+
+class AircraftMass:
+    """Aggregates calibrated structural, systems, payload, and group masses."""
+
+    def __init__(self, aircraft: BatteryAircraft) -> None:
+        self._ac = aircraft
+
+    @property
+    def payload(self) -> SiValue:
+        """Passenger and luggage payload mass [kg]."""
+        return SiValue(
+            self._ac.constraints.payload.weightPerPassenger.si
+            * self._ac.design.mission.numberOfPassengers,
+            "kg",
+        )
+
+    @property
+    def operator_items(self) -> SiValue:
+        """Operator items mass [kg] (adopted from reference aircraft)."""
+        return self._ac.ref.data.mass.operatorItems.si
+
+    @property
+    def furnishings(self) -> SiValue:
+        """Cabin furnishings mass [kg] (adopted from reference aircraft)."""
+        return self._ac.ref.data.mass.furnishings.si
+
+    @property
+    def engine(self) -> SiValue:
+        """Propulsion engine mass [kg] (scaled by number of engines)."""
+        return SiValue(
+            self._ac.design.propulsion.numberOfEngines.value
+            * self._ac.design.propulsion.engineMass.si,
+            "kg",
+        )
+
+    @property
+    def wing(self) -> SiValue:
+        """Calibrated wing structural mass [kg]."""
+        return self._ac.wing.mass
+
+    @property
+    def fuselage(self) -> SiValue:
+        """Calibrated fuselage mass [kg]."""
+        return self._ac.fuselage.mass
+
+    @property
+    def empennage(self) -> SiValue:
+        """Calibrated empennage mass [kg]."""
+        return self._ac.empennage.mass
+
+    @property
+    def main_landing_gear(self) -> SiValue:
+        """Calibrated main landing gear mass [kg]."""
+        raw_main, _ = calc_landing_gear_mass_breakdown(self._ac.mtom)
+        return SiValue(raw_main * self._ac.ref.landing_gear_calibration_factor, "kg")
+
+    @property
+    def nose_landing_gear(self) -> SiValue:
+        """Calibrated nose landing gear mass [kg]."""
+        _, raw_nose = calc_landing_gear_mass_breakdown(self._ac.mtom)
+        return SiValue(raw_nose * self._ac.ref.landing_gear_calibration_factor, "kg")
+
+    @property
+    def landing_gear(self) -> SiValue:
+        """Calibrated landing gear mass [kg]."""
+        return SiValue(self.main_landing_gear + self.nose_landing_gear, "kg")
+
+    @property
+    def pylons(self) -> SiValue:
+        """Calibrated engine pylons/cowling mass [kg]."""
+        p_to = SiValue(
+            self._ac.design.propulsion.engineTakeOffPower.si
+            * self._ac.design.propulsion.numberOfEngines,
+            "W",
+        )
+        raw = calc_pylons_mass(p_to)
+        return SiValue(raw * self._ac.ref.pylons_calibration_factor, "kg")
+
+    @property
+    def structure(self) -> SiValue:
+        """Total airframe structure mass [kg]."""
+        return SiValue(
+            self.wing
+            + self.fuselage
+            + self.landing_gear
+            + self.empennage
+            + self.pylons,
+            "kg",
+        )
+
+    @property
+    def systems(self) -> SiValue:
+        """Calibrated aircraft systems mass [kg]."""
+        raw = calc_systems_mass(self._ac.mtom)
+        return SiValue(raw * self._ac.ref.systems_calibration_factor, "kg")
+
+    @property
+    def empty(self) -> SiValue:
+        """Manufacturer's Empty Weight (MEW) excluding battery [kg]."""
+        return SiValue(
+            self.structure + self.engine + self.systems + self.furnishings,
+            "kg",
+        )
+
+    @property
+    def operating_empty(self) -> SiValue:
+        """Operating Empty Mass (OEM) excluding battery [kg]."""
+        return SiValue(self.empty + self.operator_items, "kg")
+
+    @property
+    def battery(self) -> SiValue:
+        """Remaining mass budget for the battery pack at current MTOM [kg]."""
+        return SiValue(self._ac.mtom - self.operating_empty - self.payload, "kg")
 
 
 class BatteryAircraft:
@@ -72,41 +188,10 @@ class BatteryAircraft:
         """Longitudinal Center of Gravity (CoG) and loading excursion analyzer."""
         return CenterOfGravity(self)
 
-    # --------------------------------------------------------------------------
-    # Fixed Operational & Payload Masses
-    # --------------------------------------------------------------------------
-
     @property
-    def m_payload(self) -> SiValue:
-        """Passenger and luggage payload mass [kg]."""
-        return SiValue(
-            self.constraints.payload.weightPerPassenger.si
-            * self.design.mission.numberOfPassengers,
-            "kg",
-        )
-
-    @property
-    def m_operator_items(self) -> SiValue:
-        """Operator items mass [kg] (adopted from reference aircraft)."""
-        return self.ref.data.mass.operatorItems.si
-
-    @property
-    def m_furnishings(self) -> SiValue:
-        """Cabin furnishings mass [kg] (adopted from reference aircraft)."""
-        return self.ref.data.mass.furnishings.si
-
-    @property
-    def m_engine(self) -> SiValue:
-        """Propulsion engine mass [kg] (scaled by number of engines)."""
-        return SiValue(
-            self.design.propulsion.numberOfEngines.value
-            * self.design.propulsion.engineMass.si,
-            "kg",
-        )
-
-    # --------------------------------------------------------------------------
-    # Geometric Dimensions & Sizing
-    # --------------------------------------------------------------------------
+    def mass(self) -> AircraftMass:
+        """Calibrated component and group mass breakdown bound to current aircraft state."""
+        return AircraftMass(self)
 
     def sizing_diagram(self, mode: SizingMode | None = None) -> SizingDiagram:
         """Builds or returns a cached sizing diagram for the active mode and MTOM."""
@@ -156,87 +241,6 @@ class BatteryAircraft:
             "W",
         )
 
-    # --------------------------------------------------------------------------
-    # Calibrated Structural Component Masses
-    # --------------------------------------------------------------------------
-
-    @property
-    def m_main_landing_gear(self) -> SiValue:
-        """Calibrated main landing gear mass [kg]."""
-        raw_main, _ = calc_landing_gear_mass_breakdown(self.mtom)
-        return SiValue(raw_main * self.ref.landing_gear_calibration_factor, "kg")
-
-    @property
-    def m_nose_landing_gear(self) -> SiValue:
-        """Calibrated nose landing gear mass [kg]."""
-        _, raw_nose = calc_landing_gear_mass_breakdown(self.mtom)
-        return SiValue(raw_nose * self.ref.landing_gear_calibration_factor, "kg")
-
-    @property
-    def m_landing_gear(self) -> SiValue:
-        """Calibrated landing gear mass [kg]."""
-        return SiValue(self.m_main_landing_gear + self.m_nose_landing_gear, "kg")
-
-    @property
-    def m_pylons(self) -> SiValue:
-        """Calibrated engine pylons/cowling mass [kg]."""
-        p_to = SiValue(
-            self.design.propulsion.engineTakeOffPower.si
-            * self.design.propulsion.numberOfEngines,
-            "W",
-        )
-        raw = calc_pylons_mass(p_to)
-        return SiValue(raw * self.ref.pylons_calibration_factor, "kg")
-
-    @property
-    def m_structure(self) -> SiValue:
-        """Total airframe structure mass [kg]."""
-        return SiValue(
-            self.wing.mass
-            + self.fuselage.mass
-            + self.m_landing_gear
-            + self.empennage.mass
-            + self.m_pylons,
-            "kg",
-        )
-
-    # --------------------------------------------------------------------------
-    # Calibrated Systems & Group Masses
-    # --------------------------------------------------------------------------
-
-    @property
-    def m_systems(self) -> SiValue:
-        """Calibrated aircraft systems mass [kg]."""
-        raw = calc_systems_mass(self.mtom)
-        return SiValue(raw * self.ref.systems_calibration_factor, "kg")
-
-    @property
-    def m_empty(self) -> SiValue:
-        """Manufacturer's Empty Weight (MEW) excluding battery [kg]."""
-        return SiValue(
-            self.m_structure + self.m_engine + self.m_systems + self.m_furnishings,
-            "kg",
-        )
-
-    @property
-    def m_operating_empty(self) -> SiValue:
-        """Operating Empty Mass (OEM) excluding battery [kg]."""
-        return SiValue(self.m_empty + self.m_operator_items, "kg")
-
-    @property
-    def m_battery_available(self) -> SiValue:
-        """Remaining mass budget for the battery pack at current MTOM [kg]."""
-        return SiValue(self.mtom - self.m_operating_empty - self.m_payload, "kg")
-
-    @property
-    def m_battery(self) -> SiValue:
-        """Battery mass [kg] (alias for m_battery_available)."""
-        return self.m_battery_available
-
-    # --------------------------------------------------------------------------
-    # Performance & Range
-    # --------------------------------------------------------------------------
-
     @property
     def battery_pack_energy_density(self) -> SiValue:
         """Gravimetric battery pack energy density [J/kg]."""
@@ -253,7 +257,7 @@ class BatteryAircraft:
             self.battery_pack_energy_density,
             self.eta_electric,
             self.wing.lift_to_drag_cruise,
-            self.m_battery,
+            self.mass.battery,
             self.mtom,
         )
 
@@ -316,7 +320,7 @@ class BatteryAircraft:
         for _ in range(max_iterations):
             self.m_battery_required = self.calc_required_battery_mass()
             new_mtom = SiValue(
-                self.m_operating_empty + self.m_payload + self.m_battery_required,
+                self.mass.operating_empty + self.mass.payload + self.m_battery_required,
                 "kg",
             )
             history.append(new_mtom)

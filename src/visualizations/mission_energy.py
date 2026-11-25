@@ -249,7 +249,7 @@ def plot_mission_energy(
         textprops=dict(fontsize=10, fontweight="bold"),
     )
     ax2.set_title(
-        f"Total Mission Energy: {total_energy_kwh:.1f} kWh\n(Battery Mass: {aircraft.m_battery:.0f})",
+        f"Total Mission Energy: {total_energy_kwh:.1f} kWh\n(Battery Mass: {aircraft.mass.battery:.0f})",
         fontsize=11,
         fontweight="bold",
     )
@@ -262,7 +262,7 @@ def plot_payload_range(aircraft: BatteryAircraft) -> None:
     """Plots Payload-Range diagram for the electric aircraft."""
     pax_max = 19
     pax_weight = 90.0  # kg
-    nominal_payload = aircraft.m_payload
+    nominal_payload = aircraft.mass.payload
     mtom = aircraft.mtom
     nominal_range_nm = aircraft.range.to("NM")
 

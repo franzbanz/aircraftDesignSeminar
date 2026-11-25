@@ -169,8 +169,8 @@ def calc_wing_bending_relief(
     lever_ratio_kappa_bat = r_bat / r_aero if r_aero > 0 else 0.0
     lever_ratio_kappa_eng = r_eng / r_aero if r_aero > 0 else 0.0
 
-    m_bat_wing = SiValue(battery_wing_fraction * aircraft.m_battery, "kg")
-    m_nacelle = SiValue(aircraft.m_engine + aircraft.m_pylons, "kg")
+    m_bat_wing = SiValue(battery_wing_fraction * aircraft.mass.battery, "kg")
+    m_nacelle = SiValue(aircraft.mass.engine + aircraft.mass.pylons, "kg")
     n_ult_flight = aircraft.design.assumptions.limitLoad * 1.5
 
     # Root bending moment of one wing half in flight (+n_ult pull-up maneuver)
@@ -292,7 +292,7 @@ def print_wing_bending_study(
     m_nacelle_ref = SiValue(
         aircraft.ref.data.mass.engine.si + aircraft.ref.data.mass.pylons.si, "kg"
     )
-    m_nacelle_el = SiValue(aircraft.m_engine + aircraft.m_pylons, "kg")
+    m_nacelle_el = SiValue(aircraft.mass.engine + aircraft.mass.pylons, "kg")
 
     print("WING ROOT BENDING MOMENT & ENGINE + BATTERY RELIEF STUDY")
     print(
@@ -302,7 +302,7 @@ def print_wing_bending_study(
     )
     print(
         f"Electric Aircraft: MTOM = {aircraft.mtom:.1f}, m_eng+pyl = {m_nacelle_el:.1f}, "
-        f"m_bat = {aircraft.m_battery:.1f}, Baseline Wing Mass (-10% rule): {aircraft.wing.mass:.1f}"
+        f"m_bat = {aircraft.mass.battery:.1f}, Baseline Wing Mass (-10% rule): {aircraft.wing.mass:.1f}"
     )
     print(f"Wing Geometry:     b = {b_w:.2f}, c_mu = {c_mu:.2f}, t_root = {t_root:.3f}")
     print(

@@ -39,18 +39,18 @@ def print_aircraft_summary(
     bat_frac = aircraft.design.wing.batteryWingMassFraction
     bat_wing_info = ""
     if bat_frac > 0:
-        m_bat_wing = SiValue(bat_frac * aircraft.m_battery, "kg")
+        m_bat_wing = SiValue(bat_frac * aircraft.mass.battery, "kg")
         y_bat = aircraft.design.wing.batterySpanwisePosition.si
         bat_wing_info = (
             f" (Wing: {bat_frac * 100:.0f}% [{m_bat_wing:.1f}] @ y = {y_bat:.2f})"
         )
 
     print("----- MASS BREAKDOWN -----")
-    print(f"Payload mass: {aircraft.m_payload:.1f}")
+    print(f"Payload mass: {aircraft.mass.payload:.1f}")
     print(
-        f"Operator items mass: {aircraft.m_operator_items:.1f} (Ref: {ref_aircraft.data.mass.operatorItems:.1f})"
+        f"Operator items mass: {aircraft.mass.operator_items:.1f} (Ref: {ref_aircraft.data.mass.operatorItems:.1f})"
     )
-    print(f"Structure mass: {aircraft.m_structure:.1f} (Ref: {m_structure_ref:.1f})")
+    print(f"Structure mass: {aircraft.mass.structure:.1f} (Ref: {m_structure_ref:.1f})")
     print(
         f"  - Wing: {wing.mass:.1f} (Ref: {ref_aircraft.data.mass.wing:.1f}{wing_relief_info})"
     )
@@ -58,24 +58,24 @@ def print_aircraft_summary(
         f"  - Fuselage: {aircraft.fuselage.mass:.1f} (Ref: {ref_aircraft.data.mass.fuselage:.1f})"
     )
     print(
-        f"  - Landing gear: {aircraft.m_landing_gear:.1f} (Ref: {ref_aircraft.data.mass.landingGear:.1f})"
+        f"  - Landing gear: {aircraft.mass.landing_gear:.1f} (Ref: {ref_aircraft.data.mass.landingGear:.1f})"
     )
     print(
         f"  - Empennage: {aircraft.empennage.mass:.1f} (Ref: {ref_aircraft.data.mass.empennage:.1f})"
     )
     print(
-        f"  - Pylons: {aircraft.m_pylons:.1f} (Ref: {ref_aircraft.data.mass.pylons:.1f})"
+        f"  - Pylons: {aircraft.mass.pylons:.1f} (Ref: {ref_aircraft.data.mass.pylons:.1f})"
     )
     print(
-        f"Engine mass: {aircraft.m_engine:.1f} (Ref: {ref_aircraft.data.mass.engine:.1f})"
+        f"Engine mass: {aircraft.mass.engine:.1f} (Ref: {ref_aircraft.data.mass.engine:.1f})"
     )
     print(
-        f"Systems mass: {aircraft.m_systems:.1f} (Ref: {ref_aircraft.data.mass.systems:.1f})"
+        f"Systems mass: {aircraft.mass.systems:.1f} (Ref: {ref_aircraft.data.mass.systems:.1f})"
     )
     print(
-        f"Furnishings mass: {aircraft.m_furnishings:.1f} (Ref: {ref_aircraft.data.mass.furnishings:.1f})"
+        f"Furnishings mass: {aircraft.mass.furnishings:.1f} (Ref: {ref_aircraft.data.mass.furnishings:.1f})"
     )
-    print(f"Battery mass: {aircraft.m_battery:.1f}{bat_wing_info}")
+    print(f"Battery mass: {aircraft.mass.battery:.1f}{bat_wing_info}")
     print(
         f"Total Takeoff Mass (MTOM): {aircraft.mtom:.1f} (Ref: {ref_aircraft.data.mass.takeOffMassMax:.1f})\n"
     )
@@ -154,25 +154,25 @@ def plot_mass_breakdown(
         + ref_aircraft.data.mass.pylons.si,
         "kg",
     )
-    el_struct = aircraft.m_structure
+    el_struct = aircraft.mass.structure
 
     ref_prop = ref_aircraft.data.mass.engine.si
-    el_prop = aircraft.m_engine
+    el_prop = aircraft.mass.engine
 
     ref_sys = SiValue(
         ref_aircraft.data.mass.systems.si + ref_aircraft.data.mass.furnishings.si,
         "kg",
     )
-    el_sys = SiValue(aircraft.m_systems + aircraft.m_furnishings, "kg")
+    el_sys = SiValue(aircraft.mass.systems + aircraft.mass.furnishings, "kg")
 
     ref_ops = ref_aircraft.data.mass.operatorItems.si
-    el_ops = aircraft.m_operator_items
+    el_ops = aircraft.mass.operator_items
 
     ref_pay = ref_aircraft.data.mass.payload
-    el_pay = aircraft.m_payload
+    el_pay = aircraft.mass.payload
 
     ref_energy = ref_aircraft.data.fuel.total.si
-    el_energy = aircraft.m_battery
+    el_energy = aircraft.mass.battery
 
     ref_total = SiValue(
         ref_struct + ref_prop + ref_sys + ref_ops + ref_pay + ref_energy,
@@ -266,9 +266,9 @@ def plot_mass_breakdown(
     el_parts = [
         aircraft.wing.mass,
         aircraft.fuselage.mass,
-        aircraft.m_landing_gear,
+        aircraft.mass.landing_gear,
         aircraft.empennage.mass,
-        aircraft.m_pylons,
+        aircraft.mass.pylons,
     ]
 
     y_pos = np.arange(len(struct_parts))
