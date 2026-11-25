@@ -46,7 +46,9 @@ def print_aircraft_summary(
         )
 
     print("----- MASS BREAKDOWN -----")
-    print(f"Payload mass: {aircraft.mass.payload:.1f}")
+    print(
+        f"Payload mass (Mission / Max Structural): {aircraft.mass.payload:.1f} / {aircraft.mass.max_structural_payload:.1f}"
+    )
     print(
         f"Operator items mass: {aircraft.mass.operator_items:.1f} (Ref: {ref_aircraft.data.mass.operatorItems:.1f})"
     )
@@ -76,6 +78,7 @@ def print_aircraft_summary(
         f"Furnishings mass: {aircraft.mass.furnishings:.1f} (Ref: {ref_aircraft.data.mass.furnishings:.1f})"
     )
     print(f"Battery mass: {aircraft.mass.battery:.1f}{bat_wing_info}")
+    print(f"Mission Takeoff Mass (90 kg/PAX): {aircraft.mass.mission_takeoff:.1f}")
     print(
         f"Total Takeoff Mass (MTOM): {aircraft.mtom:.1f} (Ref: {ref_aircraft.data.mass.takeOffMassMax:.1f})\n"
     )
@@ -169,7 +172,7 @@ def plot_mass_breakdown(
     el_ops = aircraft.mass.operator_items
 
     ref_pay = ref_aircraft.data.mass.payload
-    el_pay = aircraft.mass.payload
+    el_pay = aircraft.mass.max_structural_payload
 
     ref_energy = ref_aircraft.data.fuel.total.si
     el_energy = aircraft.mass.battery

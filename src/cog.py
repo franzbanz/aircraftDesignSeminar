@@ -238,6 +238,6 @@ class CenterOfGravity:
             c.moment for c in self.components if c.name != "Battery Pack"
         )
         return SiValue(
-            (self.aircraft.mtom * x_target - non_bat_moment) / self.aircraft.mass.battery,
+            (self.mtom_state.mass * x_target - non_bat_moment) / self.aircraft.mass.battery,
             "m",
         )

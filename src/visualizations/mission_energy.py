@@ -263,14 +263,14 @@ def plot_payload_range(aircraft: BatteryAircraft) -> None:
     pax_max = 19
     pax_weight = 90.0  # kg
     nominal_payload = aircraft.mass.payload
-    mtom = aircraft.mtom
+    mission_tom = aircraft.mass.mission_takeoff
     nominal_range_nm = aircraft.range.to("NM")
 
     pax_range = np.arange(0, 20)
     payload_vals = pax_range * pax_weight
-    masses = mtom - (nominal_payload - payload_vals)
+    masses = mission_tom - (nominal_payload - payload_vals)
 
-    ranges_fixed_nm = nominal_range_nm * (mtom / masses)
+    ranges_fixed_nm = nominal_range_nm * (mission_tom / masses)
 
     _fig, ax1 = plt.subplots(figsize=(10, 6))
 

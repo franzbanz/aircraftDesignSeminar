@@ -27,9 +27,18 @@ class AircraftMass:
 
     @property
     def payload(self) -> SiValue:
-        """Passenger and luggage payload mass [kg]."""
+        """Passenger and luggage payload mass for the nominal design mission [kg]."""
         return SiValue(
             self._ac.constraints.payload.weightPerPassenger.si
+            * self._ac.design.mission.numberOfPassengers,
+            "kg",
+        )
+
+    @property
+    def max_structural_payload(self) -> SiValue:
+        """Maximum structural payload mass [kg]."""
+        return SiValue(
+            self._ac.constraints.payload.maxStructuralPayloadPerPassenger.si
             * self._ac.design.mission.numberOfPassengers,
             "kg",
         )
@@ -129,8 +138,15 @@ class AircraftMass:
 
     @property
     def battery(self) -> SiValue:
-        """Remaining mass budget for the battery pack at current MTOM [kg]."""
-        return SiValue(self._ac.mtom - self.operating_empty - self.payload, "kg")
+        """Remaining mass budget for the battery pack at current structural MTOM [kg]."""
+        return SiValue(
+            self._ac.mtom - self.operating_empty - self.max_structural_payload, "kg"
+        )
+
+    @property
+    def mission_takeoff(self) -> SiValue:
+        """Take-off mass for the nominal design mission (with weightPerPassenger) [kg]."""
+        return SiValue(self.operating_empty + self.payload + self.battery, "kg")
 
 
 class BatteryAircraft:
@@ -258,7 +274,7 @@ class BatteryAircraft:
             self.eta_electric,
             self.wing.lift_to_drag_cruise,
             self.mass.battery,
-            self.mtom,
+            self.mass.mission_takeoff,
         )
 
     @property
@@ -268,7 +284,7 @@ class BatteryAircraft:
             self.constraints,
             self.design,
             self.ref_mission,
-            self.mtom,
+            self.mass.mission_takeoff,
             lift_to_drag_cruise=self.wing.lift_to_drag_cruise,
         )
 
@@ -320,7 +336,9 @@ class BatteryAircraft:
         for _ in range(max_iterations):
             self.m_battery_required = self.calc_required_battery_mass()
             new_mtom = SiValue(
-                self.mass.operating_empty + self.mass.payload + self.m_battery_required,
+                self.mass.operating_empty
+                + self.mass.max_structural_payload
+                + self.m_battery_required,
                 "kg",
             )
             history.append(new_mtom)
