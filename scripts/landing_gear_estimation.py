@@ -4,8 +4,12 @@ Run from any working directory:
     python D:/document/aircraftDesignSeminar/scripts/landing_gear_estimation.py
 
 Equations and parameter references are cited in this file's comments and
-function docstrings. This is a differential conceptual mass
-model, not a detailed reconstruction of the Do228 gear or a certification tool.
+function docstrings. Cylinder mass is calculated explicitly as density *
+annulus area * extended length. The high-wing/fuselage material-mass ratio
+scales that same model's fuselage-cylinder mass, not the entire gear mass.
+This ratio calculation is algebraically equivalent to the previous mass
+difference; it does not calibrate the material model against Torenbeek.
+This is a conceptual model, not a detailed Do228 reconstruction.
 It never writes project inputs, source files, reports or bytecode.
 """
 
@@ -143,7 +147,18 @@ class Concept:
     gear_type: str
     baseline_main: float
     baseline_nose: float
-    structural_delta: float
+    fuselage_cylinder_pair_mass: float
+    cylinder_mass_ratio: float
+
+    @property
+    def cylinder_pair_mass(self):
+        """Mass of BOTH model cylinders after proportional scaling, kg."""
+        return self.fuselage_cylinder_pair_mass * self.cylinder_mass_ratio
+
+    @property
+    def structural_delta(self):
+        """Additional cylinder mass only: B * (k - 1), kg, for BOTH sides."""
+        return self.fuselage_cylinder_pair_mass * (self.cylinder_mass_ratio - 1.0)
 
     @property
     def total(self):
@@ -326,8 +341,8 @@ def calc_case_check(case, geometry, diameter, bore, a):
 def calc_leg(geometry, bore, cases, a):
     """Solve outer diameter, with bore fixed by load/pressure, not t/D guessed.
 
-    Mass is rho*A*L for the equivalent carrying cylinder only. It is used as
-    a difference between layouts, not as the complete gear assembly mass.
+    Mass is explicitly rho*A*L for ONE equivalent carrying cylinder. It is
+    a material-model estimate, not the complete shock absorber or gear mass.
     """
     def checks(diameter):
         return tuple(calc_case_check(c, geometry, diameter, bore, a) for c in cases)
@@ -361,7 +376,14 @@ def calc_empirical_group(mass, coefficients):
 
 
 def calc_concepts(project, a):
-    """Return four concepts at ONE common converged project mass."""
+    """Scale cylinder mass by its model ratio at one common converged MTOM.
+
+    B = 2 * fuselage cylinder material mass; k = selected / fuselage cylinder
+    material mass. The extra mass is B*(k-1); the empirical main/nose groups
+    are NOT multiplied by k. Because B comes from the same material model,
+    this equals the former direct difference and is not an independent
+    calibration. A measured/calibrated B would be required to change scale.
+    """
     validate_assumptions(a)
     if any(not isfinite(v) or v <= 0 for v in (
         project.mass, project.gravity, project.wing_area, project.wingspan
@@ -377,16 +399,21 @@ def calc_concepts(project, a):
     bore = sqrt(4 * (a.main_static_fraction * weight / 2) / (pi * a.oleo_static_pressure_pa))
     cases = calc_load_cases(weight, a)
     legs = tuple(calc_leg(geometry, bore, cases, a) for geometry in geometries)
+    fuselage_cylinder_pair_mass = 2 * legs[0].equivalent_mass
     concepts = []
     for leg in legs:
-        correction = 2 * (leg.equivalent_mass - legs[0].equivalent_mass)
+        cylinder_mass_ratio = leg.equivalent_mass / legs[0].equivalent_mass
         for gear_type, main, nose in (
             ("fixed", FIXED_MAIN, FIXED_NOSE),
             ("retractable", RETRACT_MAIN, RETRACT_NOSE),
         ):
             concepts.append(Concept(
-                leg.geometry.name, gear_type, calc_empirical_group(project.mass, main),
-                calc_empirical_group(project.mass, nose), correction,
+                mounting=leg.geometry.name,
+                gear_type=gear_type,
+                baseline_main=calc_empirical_group(project.mass, main),
+                baseline_nose=calc_empirical_group(project.mass, nose),
+                fuselage_cylinder_pair_mass=fuselage_cylinder_pair_mass,
+                cylinder_mass_ratio=cylinder_mass_ratio,
             ))
     # Keep the independent fixed/retractable table consistent with the current
     # shared retractable formula; fail explicitly if the shared formula changes.
@@ -440,7 +467,7 @@ def load_project(design_path, constraints_path, reference_path, mass_override=No
         loader._sync_dataclass_fields_in_source = sync
 
 
-def print_results(project, assumptions, calculation, paths):
+def print_results(project, assumptions, calculation, paths, verbose=False):
     """Print input provenance, governing checks and all four mass estimates."""
     sink_speed, stroke, cases, legs, concepts = calculation
     print("Conceptual comparison: equivalent cantilever oleo carrying cylinder")
@@ -455,12 +482,14 @@ def print_results(project, assumptions, calculation, paths):
     print("All concepts use this common MTOM; no new gear mass is fed back into iteration.")
     print("Selected material: normalized 4340; typical supplier properties, not Do228 allowables.")
     print("Geometry below is a layout proposal; only the 1.72 x 2.25 m section is user specified.")
-    for field in fields(assumptions):
-        print(f"  {field.name}: {getattr(assumptions, field.name):g}")
+    if verbose:
+        for field in fields(assumptions):
+            print(f"  {field.name}: {getattr(assumptions, field.name):g}")
     print(f"Descent-speed screen: {sink_speed:.3f} m/s | common vertical stroke: {stroke:.4f} m")
-    print("Limit loads for ONE main wheel (SF not yet applied):")
-    for case in cases:
-        print(f"  {case.name:30s} Fx={case.fx/1000:8.2f} Fy={case.fy/1000:8.2f} Fz={case.fz/1000:8.2f} kN")
+    if verbose:
+        print("Limit loads for ONE main wheel (SF not yet applied):")
+        for case in cases:
+            print(f"  {case.name:30s} Fx={case.fx/1000:8.2f} Fy={case.fy/1000:8.2f} Fz={case.fz/1000:8.2f} kN")
     print("Load arms and buckling length envelope the fully extended position in every case.")
     print("The 3.0 ground factor is selected, not drop-test derived; spin-up uses only the regulatory minimum.")
     print("Ultimate loads = SF * limit loads once; buckling capacity/limit compression >= SF.")
@@ -468,25 +497,42 @@ def print_results(project, assumptions, calculation, paths):
     print("No prescribed 2%-length deflection, fixed t/D, 3 mm wall or 1.35 mass multiplier.")
     for leg in legs:
         g = leg.geometry
+        area, _ = calc_section(leg.diameter, leg.bore)
         print(f"\n{g.name}: static L={g.static_length:.4f} m; extended L={g.extended_length:.4f} m; axial stroke={g.axial_stroke:.4f} m")
         print(f"  bore={leg.bore*1000:.2f} mm; outside D={leg.diameter*1000:.2f} mm; solved wall={leg.wall*1000:.2f} mm")
-        print(f"  ONE equivalent cylinder mass={leg.equivalent_mass:.2f} kg (not one complete gear)")
-        for check in leg.checks:
-            reserve = check.column_load / check.compression_limit if check.compression_limit > 0 else inf
-            print(
-                f"  {check.name:30s} N_limit={check.compression_limit/1000:7.2f} kN; "
-                f"M_limit={check.bending_limit/1000:7.2f} kNm; p_limit={check.pressure_limit/1e6:6.2f} MPa; "
-                f"P_cr={check.column_load/1000:8.2f} kN ({check.column_method}, lambda={check.slenderness:.1f}); "
-                f"P_cr/N_limit={reserve:.2f}; U_stress={check.stress_ratio:.3f}; U_buckle={check.buckling_ratio:.3f}"
-            )
+        print(
+            f"  ONE cylinder material mass = rho*A*L = {assumptions.density:g} * "
+            f"{area:.7f} * {g.extended_length:.4f} = {leg.equivalent_mass:.2f} kg"
+        )
+        print(f"  BOTH cylinders: {2*leg.equivalent_mass:.2f} kg (not complete shock absorbers)")
+        if verbose:
+            for check in leg.checks:
+                reserve = check.column_load / check.compression_limit if check.compression_limit > 0 else inf
+                print(
+                    f"  {check.name:30s} N_limit={check.compression_limit/1000:7.2f} kN; "
+                    f"M_limit={check.bending_limit/1000:7.2f} kNm; p_limit={check.pressure_limit/1e6:6.2f} MPa; "
+                    f"P_cr={check.column_load/1000:8.2f} kN ({check.column_method}, lambda={check.slenderness:.1f}); "
+                    f"P_cr/N_limit={reserve:.2f}; U_stress={check.stress_ratio:.3f}; U_buckle={check.buckling_ratio:.3f}"
+                )
         governing = max(leg.checks, key=lambda c: c.utilization)
         print(f"  Governing: {governing.name}; utilization={governing.utilization:.4f}")
+        print(f"  Maximum factored stress ratio={max(c.stress_ratio for c in leg.checks):.4f}; buckling ratio={max(c.buckling_ratio for c in leg.checks):.4f}")
+    wing_concept = next(c for c in concepts if c.mounting == "high-wing")
+    print("\nCylinder proportional scaling (B includes BOTH fuselage cylinders):")
+    print(f"  Baseline B = {wing_concept.fuselage_cylinder_pair_mass:.2f} kg, from the material model.")
+    print(f"  Ratio k = high-wing/fuselage cylinder material mass = {wing_concept.cylinder_mass_ratio:.6f}")
+    print(f"  High-wing cylinder pair B*k = {wing_concept.cylinder_pair_mass:.2f} kg.")
+    print(f"  Cylinder increment B*(k-1) = {wing_concept.structural_delta:.2f} kg ({100*(wing_concept.cylinder_mass_ratio-1):.2f}%).")
+    print("The same cylinder pair and increment are used for fixed and retractable concepts.")
+    print("The empirical main/nose masses and retraction equipment are NOT multiplied by k.")
     print("\nMasses in kg; base main includes BOTH legs. Nose gear is unchanged between mounts.")
     print(f"{'Mount':12s} {'Type':12s} {'Base main':>11s} {'Base nose':>11s} {'Strut delta':>12s} {'Total':>11s}")
     for concept in concepts:
         print(f"{concept.mounting:12s} {concept.gear_type:12s} {concept.baseline_main:11.2f} {concept.baseline_nose:11.2f} {concept.structural_delta:12.2f} {concept.total:11.2f}")
-    print("Totals = uncalibrated Torenbeek group masses + 2*(mount cylinder - fuselage cylinder).")
-    print("This anchoring/correction is our explicit hybrid model, not a published Torenbeek equation.")
+    print("Totals = uncalibrated Torenbeek group masses + B*(k-1), for each mounting.")
+    print("Because B comes from the SAME material model, proportional scaling equals the previous mass difference.")
+    print("Changing the arithmetic to a ratio does not independently calibrate the material model to the regression.")
+    print("This combination remains a project hybrid assumption, not a published Torenbeek correction.")
     print(f"Shared project's calibrated gear budget: {project.shared_calibrated_gear_mass:.2f} kg; reference calibration={project.reference_calibration:.5f}.")
     print("Calibration is reported separately; a retractable Do228 calibration is not validated for fixed gear.")
     print("Retraction difference uses the COMPLETE regression difference, not an added actuator percentage.")
@@ -510,6 +556,7 @@ def make_parser():
     parser.add_argument("--ground-factor", type=float, default=a.ground_reaction_factor)
     parser.add_argument("--safety-factor", type=float, default=a.safety_factor)
     parser.add_argument("--static-pressure-mpa", type=float, default=a.oleo_static_pressure_pa / 1e6)
+    parser.add_argument("--verbose", action="store_true", help="show every assumption and ground-load check")
     return parser
 
 
@@ -529,7 +576,7 @@ def main():
         calculation = calc_concepts(project, a)
     except (ValueError, OSError, ImportError, KeyError, TypeError, AttributeError, OverflowError) as error:
         parser.error(str(error))
-    print_results(project, a, calculation, paths)
+    print_results(project, a, calculation, paths, verbose=args.verbose)
 
 
 if __name__ == "__main__":
