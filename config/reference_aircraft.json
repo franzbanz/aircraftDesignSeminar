@@ -76,6 +76,14 @@
     "horizontalTailLeverArm": [9.15, "m"],
     // from 25% MAC to 25% vertical stabilizer
     "verticalTailLeverArm": [8.5, "m"],
+    // measured from 3-view (b_HTP = 6.47 m, AR = 6.47^2 / 8.3)
+    "horizontalTailAspectRatio": [5.04, ""],
+    // measured from 3-view (h_VTP = 2.9 m, AR = 2.9^2 / 6.0)
+    "verticalTailAspectRatio": [1.40, ""],
+    // measured from 3-view (unswept HTP)
+    "horizontalTailSweepHalfChord": [0.0, "deg"],
+    // measured from 3-view (trapezoid without dorsal fin)
+    "verticalTailSweepHalfChord": [15.0, "deg"],
     // sideview ~ 2*27.50m^2 + topview ~ 2*21.0m^2
     "fuselageWettedArea": [97, "m^2"]
   }

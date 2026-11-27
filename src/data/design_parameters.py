@@ -47,6 +47,8 @@ class DesignEmpennageParameters:
     technologyFactor: UnitValue
     horizontalTailAspectRatio: UnitValue
     verticalTailAspectRatio: UnitValue
+    horizontalTailSweepHalfChord: UnitValue
+    verticalTailSweepHalfChord: UnitValue
 
 
 @dataclass(frozen=True)

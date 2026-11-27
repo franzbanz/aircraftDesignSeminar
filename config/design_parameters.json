@@ -35,7 +35,9 @@
     // Composite technology factor (0.83-0.88 for CFRP; Raymer Table 15.4, p. 580)
     "technologyFactor": [0.88, ""],
     "horizontalTailAspectRatio": [4.5, ""],
-    "verticalTailAspectRatio": [1.6, ""]
+    "verticalTailAspectRatio": [1.6, ""],
+    "horizontalTailSweepHalfChord": [0.0, "deg"],
+    "verticalTailSweepHalfChord": [15.0, "deg"]
   },
   "propulsion": {
     // assumption of engine magni 650 -> to be determined

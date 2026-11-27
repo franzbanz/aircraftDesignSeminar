@@ -228,6 +228,8 @@ class ReferenceAircraft:
                 self.design_diving_speed,
                 self.data.dimensions.horizontalTailArea.si,
                 self.data.dimensions.verticalTailArea.si,
+                phi_50_h_deg=self.data.assumptions.horizontalTailSweepHalfChord,
+                phi_50_v_deg=self.data.assumptions.verticalTailSweepHalfChord,
             )
         return calc_empennage_mass(
             self.ultimate_load_factor,

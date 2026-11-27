@@ -32,7 +32,9 @@
     "maxHorizontalVolumeCoefficient": [1.5, ""],
     "technologyFactor": [1.0, ""],
     "horizontalTailAspectRatio": [4.5, ""],
-    "verticalTailAspectRatio": [1.6, ""]
+    "verticalTailAspectRatio": [1.6, ""],
+    "horizontalTailSweepHalfChord": [0.0, "deg"],
+    "verticalTailSweepHalfChord": [15.0, "deg"]
   },
   "propulsion": {
     // assumption of engine magni 650 (scaled to 1200kW)

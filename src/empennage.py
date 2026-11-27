@@ -106,7 +106,11 @@ class EmpennageDesign:
         if self.design.empennage.massMethod == "transport":
             v_d = SiValue(1.25 * self.design.mission.cruiseSpeedTAS.si, "m/s")
             return self._calibrate_mass(
-                calc_tailplane_mass(v_d, self.horizontal_tail_area)
+                calc_tailplane_mass(
+                    v_d,
+                    self.horizontal_tail_area,
+                    phi_50_deg=self.design.empennage.horizontalTailSweepHalfChord,
+                )
             )
         s_htp = self.horizontal_tail_area
         s_vtp = self.vertical_tail_area
@@ -118,7 +122,11 @@ class EmpennageDesign:
         if self.design.empennage.massMethod == "transport":
             v_d = SiValue(1.25 * self.design.mission.cruiseSpeedTAS.si, "m/s")
             return self._calibrate_mass(
-                calc_tailplane_mass(v_d, self.vertical_tail_area)
+                calc_tailplane_mass(
+                    v_d,
+                    self.vertical_tail_area,
+                    phi_50_deg=self.design.empennage.verticalTailSweepHalfChord,
+                )
             )
         s_htp = self.horizontal_tail_area
         s_vtp = self.vertical_tail_area

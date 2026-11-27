@@ -445,10 +445,10 @@ def plot_aircraft_geometry(
     )
     ax1.axvline(b_max / 2, color="red", ls=":", lw=1.5)
 
-    ar_ht = aircraft.design.empennage.horizontalTailAspectRatio
+    ar_ht_ref = ref_aircraft.data.assumptions.horizontalTailAspectRatio
     x_qc_ht_ref = x_qc_ref + ref_aircraft.horizontal_tail_lever_arm.si
     s_ht_ref = ref_aircraft.data.dimensions.horizontalTailArea.si
-    b_ht_ref = (s_ht_ref * ar_ht) ** 0.5
+    b_ht_ref = (s_ht_ref * ar_ht_ref) ** 0.5
     c_ht_ref = s_ht_ref / b_ht_ref
     ax1.fill(
         [-b_ht_ref / 2, b_ht_ref / 2, b_ht_ref / 2, -b_ht_ref / 2],
