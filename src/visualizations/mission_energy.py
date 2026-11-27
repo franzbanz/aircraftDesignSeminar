@@ -38,7 +38,9 @@ def print_mission_energy_breakdown(calc: MissionEnergyCalculator) -> None:
         f"Reference Turboprop Efficiency (eta_ref): {calc.ref_mission.propulsion_efficiency * 100:.2f} %"
     )
     print(
-        f"Electric Aircraft: MTOM = {calc.mtom}, eta_el = {calc.design.propulsion.etaElectric * 100:.1f} %, "
+        f"Electric Aircraft: MTOM = {calc.mtom}, "
+        f"eta_total = {calc.eta_cruise * 100:.2f} % "
+        f"(eta_el = {calc.design.propulsion.etaElectric * 100:.1f} % * eta_prop = {calc.design.propulsion.etaPropCruise * 100:.1f} %), "
         f"Range = {calc.range.to('nm'):.0f}, L/D = {calc.lift_to_drag_cruise:.2f}\n"
     )
     print(
@@ -249,7 +251,7 @@ def plot_mission_energy(
         textprops=dict(fontsize=10, fontweight="bold"),
     )
     ax2.set_title(
-        f"Total Mission Energy: {total_energy_kwh:.1f} kWh\n(Battery Mass: {aircraft.m_battery:.0f})",
+        f"Total Mission Energy: {total_energy_kwh:.1f} kWh\n(Battery Mass: {aircraft.mass.battery:.0f})",
         fontsize=11,
         fontweight="bold",
     )
@@ -262,15 +264,15 @@ def plot_payload_range(aircraft: BatteryAircraft) -> None:
     """Plots Payload-Range diagram for the electric aircraft."""
     pax_max = 19
     pax_weight = 90.0  # kg
-    nominal_payload = aircraft.m_payload
-    mtom = aircraft.mtom
+    nominal_payload = aircraft.mass.payload
+    mission_tom = aircraft.mass.mission_takeoff
     nominal_range_nm = aircraft.range.to("NM")
 
     pax_range = np.arange(0, 20)
     payload_vals = pax_range * pax_weight
-    masses = mtom - (nominal_payload - payload_vals)
+    masses = mission_tom - (nominal_payload - payload_vals)
 
-    ranges_fixed_nm = nominal_range_nm * (mtom / masses)
+    ranges_fixed_nm = nominal_range_nm * (mission_tom / masses)
 
     _fig, ax1 = plt.subplots(figsize=(10, 6))
 

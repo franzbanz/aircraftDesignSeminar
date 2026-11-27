@@ -65,6 +65,7 @@ class CenterOfGravity:
     def empty_components(self) -> list[ComponentCG]:
         """Operating Empty Mass (OEM) components excluding battery."""
         ac = self.aircraft
+        mass = ac.mass
         fuse = ac.fuselage
         wing = ac.wing
         emp = ac.empennage
@@ -73,8 +74,8 @@ class CenterOfGravity:
 
         x_nose_gear = ac.design.landingGear.noseGearPosition.si
         x_main_gear = ac.design.landingGear.mainGearPosition.si
-        m_nose_gear = ac.m_nose_landing_gear
-        m_main_gear = ac.m_main_landing_gear
+        m_nose_gear = mass.nose_landing_gear
+        m_main_gear = mass.main_landing_gear
         x_gear = SiValue(
             (m_nose_gear * x_nose_gear + m_main_gear * x_main_gear)
             / (m_nose_gear + m_main_gear),
@@ -88,11 +89,11 @@ class CenterOfGravity:
             x_lemac + ac.design.propulsion.engineLeadingEdgeOffset.si, "m"
         )
 
-        crew_mass = min(160.0, ac.m_operator_items)
+        crew_mass = min(160.0, mass.operator_items)
         x_crew = ac.design.fuselage.crewPosition.si
         x_ops = SiValue(
-            (crew_mass * x_crew + (ac.m_operator_items - crew_mass) * x_cabin_mid)
-            / ac.m_operator_items,
+            (crew_mass * x_crew + (mass.operator_items - crew_mass) * x_cabin_mid)
+            / mass.operator_items,
             "m",
         )
 
@@ -101,12 +102,12 @@ class CenterOfGravity:
             ComponentCG("Fuselage", fuse.mass, fuse.cog),
             ComponentCG("Horizontal Empennage", emp.horizontal_tail_mass, emp.htp_cog),
             ComponentCG("Vertical Empennage", emp.vertical_tail_mass, emp.vtp_cog),
-            ComponentCG("Landing Gear", ac.m_landing_gear, x_gear),
-            ComponentCG("Pylons & Nacelles", ac.m_pylons, x_pylons),
-            ComponentCG("Engines & Propellers", ac.m_engine, x_engines),
-            ComponentCG("Systems", ac.m_systems, fuse.cog),
-            ComponentCG("Furnishings", ac.m_furnishings, x_cabin_mid),
-            ComponentCG("Operator Items (Crew)", ac.m_operator_items, x_ops),
+            ComponentCG("Landing Gear", mass.landing_gear, x_gear),
+            ComponentCG("Pylons & Nacelles", mass.pylons, x_pylons),
+            ComponentCG("Engines & Propellers", mass.engine, x_engines),
+            ComponentCG("Systems", mass.systems, fuse.cog),
+            ComponentCG("Furnishings", mass.furnishings, x_cabin_mid),
+            ComponentCG("Operator Items (Crew)", mass.operator_items, x_ops),
         ]
 
     @property
@@ -114,10 +115,10 @@ class CenterOfGravity:
         """Full aircraft component mass and CG breakdown at MTOM."""
         return [
             *self.empty_components,
-            ComponentCG("Battery Pack", self.aircraft.m_battery, self.x_battery_cg),
+            ComponentCG("Battery Pack", self.aircraft.mass.battery, self.x_battery_cg),
             ComponentCG(
                 f"Payload ({self.aircraft.fuselage.n_pax} PAX + Luggage)",
-                self.aircraft.m_payload,
+                self.aircraft.mass.payload,
                 self.aircraft.fuselage.payload_cog,
             ),
         ]
@@ -151,7 +152,7 @@ class CenterOfGravity:
             "Empty + Battery (0 PAX)",
             [
                 *self.empty_components,
-                ComponentCG("Battery Pack", self.aircraft.m_battery, self.x_battery_cg),
+                ComponentCG("Battery Pack", self.aircraft.mass.battery, self.x_battery_cg),
             ],
         )
 
@@ -166,7 +167,7 @@ class CenterOfGravity:
         """Generates progressive front-to-back or back-to-front loading excursion."""
         fuse = self.aircraft.fuselage
         total_per_pax = self.aircraft.constraints.payload.weightPerPassenger.si
-        luggage_per_pax = min(15.0, 0.18 * total_per_pax)
+        luggage_per_pax = self.aircraft.design.mission.baggageMassPerPassenger.si
         seat_mass = SiValue(total_per_pax - luggage_per_pax, "kg")
         total_luggage = SiValue(fuse.n_pax * luggage_per_pax, "kg")
 
@@ -186,7 +187,7 @@ class CenterOfGravity:
 
         items = [
             *self.empty_components,
-            ComponentCG("Battery Pack", self.aircraft.m_battery, self.x_battery_cg),
+            ComponentCG("Battery Pack", self.aircraft.mass.battery, self.x_battery_cg),
         ]
         states = [self.zero_payload_state]
         x_ref = self.zero_payload_state.x_cg
@@ -237,6 +238,6 @@ class CenterOfGravity:
             c.moment for c in self.components if c.name != "Battery Pack"
         )
         return SiValue(
-            (self.aircraft.mtom * x_target - non_bat_moment) / self.aircraft.m_battery,
+            (self.mtom_state.mass * x_target - non_bat_moment) / self.aircraft.mass.battery,
             "m",
         )

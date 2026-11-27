@@ -98,6 +98,7 @@ class DesignMissionParameters:
     cruiseSpeedTAS: UnitValue
     cruiseAltitude: UnitValue
     numberOfPassengers: UnitValue
+    baggageMassPerPassenger: UnitValue
 
 
 @dataclass(frozen=True)

@@ -344,7 +344,7 @@ class FuselageDesign:
     def payload_cog(self) -> SiValue:
         """Combined CG of seated passengers and luggage [m]."""
         total_per_pax = self.constraints.payload.weightPerPassenger.si
-        luggage_per_pax = min(15.0, 0.18 * total_per_pax)
+        luggage_per_pax = self.design.mission.baggageMassPerPassenger.si
         seat_per_pax = total_per_pax - luggage_per_pax
 
         pax_moment = sum(

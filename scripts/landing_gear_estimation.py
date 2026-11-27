@@ -433,7 +433,7 @@ def load_project(design_path, constraints_path, reference_path, mass_override=No
             float(aircraft.mtom), float(GRAVITY), float(wing.area), float(wing.span),
             float(constraints.performance.takeOffMassMax.si),
             float(design.initialSizing.maximumTakeOffMass.si),
-            float(calc_landing_gear_mass(aircraft.mtom)), float(aircraft.m_landing_gear),
+            float(calc_landing_gear_mass(aircraft.mtom)), float(aircraft.mass.landing_gear),
             float(reference.landing_gear_calibration_factor), source,
         )
     finally:
