@@ -23,7 +23,6 @@ from formulas.geometry import (
     calc_aspect_ratio,
     calc_fuselage_wetted_area,
     calc_horizontal_tail_volume_coefficient,
-    calc_mean_aerodynamic_chord,
     calc_vertical_tail_volume_coefficient,
 )
 from formulas.mass import (
@@ -58,15 +57,14 @@ class ReferenceAircraft:
     @property
     def mean_aerodynamic_chord(self) -> SiValue:
         """Mean aerodynamic chord c_mu [m]."""
-        return calc_mean_aerodynamic_chord(
-            self.data.dimensions.wingArea.si, self.data.dimensions.wingspan.si
-        )
+        return self.data.dimensions.meanAerodynamicChord.si
 
     @property
     def wing_root_thickness(self) -> SiValue:
-        """Wing thickness at root t_root = c_mu * rel_thickness [m]."""
+        """Wing thickness at root t_root = c_root * rel_thickness [m]."""
         return SiValue(
-            self.mean_aerodynamic_chord * self.data.assumptions.relWingThickness,
+            self.data.dimensions.wingRootChord.si
+            * self.data.assumptions.relWingThickness,
             "m",
         )
 

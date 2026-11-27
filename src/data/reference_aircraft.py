@@ -44,6 +44,8 @@ class ReferenceDimensionsParameters:
 
     wingArea: UnitValue
     wingspan: UnitValue
+    meanAerodynamicChord: UnitValue
+    wingRootChord: UnitValue
     fuselageLength: UnitValue
     fuselageWidth: UnitValue
     fuselageHeight: UnitValue
@@ -73,7 +75,7 @@ class ReferenceAssumptionsParameters:
     fuselageMassPenaltyFactor: UnitValue
     horizontalTailLeverArm: UnitValue
     verticalTailLeverArm: UnitValue
-    wettedSurface: UnitValue
+    fuselageWettedArea: UnitValue
 
 
 @dataclass(frozen=True)

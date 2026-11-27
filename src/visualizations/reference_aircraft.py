@@ -21,6 +21,8 @@ def print_reference_aircraft(ref: ReferenceAircraft) -> None:
     print(f"Payload:                         {ref.data.mass.payload}")
     print(f"Wing area (S_W):                 {ref.data.dimensions.wingArea}")
     print(f"Wingspan (b_W):                  {ref.data.dimensions.wingspan}")
+    print(f"Mean aerodynamic chord (c_mu):   {ref.data.dimensions.meanAerodynamicChord}")
+    print(f"Wing root chord (c_root):        {ref.data.dimensions.wingRootChord}")
     print(f"Fuselage length (l_R):           {ref.data.dimensions.fuselageLength}")
     print(f"Fuselage width (b_R):            {ref.data.dimensions.fuselageWidth}")
     print(f"Fuselage height (h_R):           {ref.data.dimensions.fuselageHeight}")
@@ -33,7 +35,7 @@ def print_reference_aircraft(ref: ReferenceAircraft) -> None:
 
     print("\n--- CALCULATED VALUES (DERIVED) ---")
     print(f"Aspect ratio (AR):                   {ref.aspect_ratio:.3f}")
-    print(f"Mean aerodynamic chord (c_mu):       {ref.mean_aerodynamic_chord:.3f}")
+    print(f"Wing root thickness (t_root):        {ref.wing_root_thickness:.3f}")
     print(f"Ultimate load factor (n_ult):        {ref.ultimate_load_factor:.2f}")
     print(f"Horizontal tail arm (r_H):           {ref.horizontal_tail_lever_arm}")
     print(

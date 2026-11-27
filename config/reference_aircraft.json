@@ -20,6 +20,10 @@
   "dimensions": {
     "wingArea": [32.0, "m^2"],
     "wingspan": [17, "m"],
+    // Dornier 228 official MAC (EASA TCDS No. A.359)
+    "meanAerodynamicChord": [2.046, "m"],
+    // measured from Dornier 228 3-view drawing
+    "wingRootChord": [2.36, "m"],
     "fuselageLength": [16.6, "m"],
     "fuselageWidth": [1.7, "m"],
     "fuselageHeight": [2.0, "m"],
@@ -60,9 +64,9 @@
     "maxTakeOffLiftCoefficient": [1.7, ""],
     // fitted from reference drag polar (see scripts/verification/polar_oswald.py)
     "oswaldFactor": [0.9087, ""],
-    // 18% maximum thickness
-    "relWingThickness": [0.18, ""],
-    // rectangular wing
+    // Do A-5 airfoil (16.2% maximum relative thickness)
+    "relWingThickness": [0.162, ""],
+    // TNT wing: unswept center section, ~0 deg effective half-chord sweep
     "wingSweepHalfChord": [0.0, "deg"],
     // 2 engines (-5%) and no landing gear on wing (-5%)
     "wingMassPenaltyFactor": [-0.10, ""],
@@ -72,7 +76,7 @@
     "horizontalTailLeverArm": [9.15, "m"],
     // from 25% MAC to 25% vertical stabilizer
     "verticalTailLeverArm": [8.5, "m"],
-    // sideview ~ 2*27.50m^2 + topview ~ 2*21.0mm^2
-    "wettedSurface": [97, "m^2"]
+    // sideview ~ 2*27.50m^2 + topview ~ 2*21.0m^2
+    "fuselageWettedArea": [97, "m^2"]
   }
 }
