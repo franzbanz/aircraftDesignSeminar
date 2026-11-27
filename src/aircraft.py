@@ -172,9 +172,9 @@ class BatteryAircraft:
         self._sizing_diagrams: dict[tuple[SizingMode, float], SizingDiagram] = {}
 
     @property
-    def eta_electric(self) -> float:
-        """Overall electric powertrain efficiency [-]."""
-        return self.design.propulsion.etaElectric
+    def eta_cruise(self) -> float:
+        """Total propulsive efficiency in cruise (eta_electric * eta_prop_cruise) [-]."""
+        return self.design.propulsion.etaElectric * self.design.propulsion.etaPropCruise
 
     @property
     def wing(self) -> WingDesign:
@@ -271,7 +271,7 @@ class BatteryAircraft:
         """Achievable cruise range with available battery mass using pack energy density [m]."""
         return calc_electric_range(
             self.battery_pack_energy_density,
-            self.eta_electric,
+            self.eta_cruise,
             self.wing.lift_to_drag_cruise,
             self.mass.battery,
             self.mass.mission_takeoff,

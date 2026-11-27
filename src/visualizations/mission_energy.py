@@ -38,7 +38,9 @@ def print_mission_energy_breakdown(calc: MissionEnergyCalculator) -> None:
         f"Reference Turboprop Efficiency (eta_ref): {calc.ref_mission.propulsion_efficiency * 100:.2f} %"
     )
     print(
-        f"Electric Aircraft: MTOM = {calc.mtom}, eta_el = {calc.design.propulsion.etaElectric * 100:.1f} %, "
+        f"Electric Aircraft: MTOM = {calc.mtom}, "
+        f"eta_total = {calc.eta_cruise * 100:.2f} % "
+        f"(eta_el = {calc.design.propulsion.etaElectric * 100:.1f} % * eta_prop = {calc.design.propulsion.etaPropCruise * 100:.1f} %), "
         f"Range = {calc.range.to('nm'):.0f}, L/D = {calc.lift_to_drag_cruise:.2f}\n"
     )
     print(

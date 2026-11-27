@@ -146,7 +146,7 @@ def calc_breguet_fuel_mass_from_endurance(
 
 def calc_electric_range(
     battery_energy_density: SiValue,
-    eta_electric: float,
+    eta: float,
     lift_to_drag: float,
     battery_mass: SiValue,
     take_off_mass: SiValue,
@@ -154,11 +154,11 @@ def calc_electric_range(
     """Calculates range for a battery-electric aircraft [m].
 
     Formula:
-        R = e_bat * eta_el * (1 / g) * (L/D) * (m_bat / m_0)
+        R = e_bat * eta * (1 / g) * (L/D) * (m_bat / m_0)
 
     Args:
         battery_energy_density: Gravimetric energy density of battery e_bat [J/kg].
-        eta_electric: Total powertrain efficiency eta_el [-].
+        eta: Total propulsive efficiency eta = eta_el * eta_prop (powertrain * propeller) [-].
         lift_to_drag: Lift-to-drag ratio L/D [-].
         battery_mass: Installed battery mass m_bat [kg].
         take_off_mass: Maximum take-off mass m_0 [kg].
@@ -168,7 +168,7 @@ def calc_electric_range(
     """
     range_m = (
         battery_energy_density
-        * eta_electric
+        * eta
         * (1.0 / GRAVITY)
         * lift_to_drag
         * (battery_mass / take_off_mass)
@@ -179,19 +179,19 @@ def calc_electric_range(
 def calc_electric_battery_mass_from_range(
     range_m: SiValue,
     battery_energy_density: SiValue,
-    eta_electric: float,
+    eta: float,
     lift_to_drag: float,
     take_off_mass: SiValue,
 ) -> SiValue:
     """Calculates required battery mass for a given range [kg].
 
     Formula:
-        m_bat = (R * g * m_0) / (e_bat * eta_el * (L/D))
+        m_bat = (R * g * m_0) / (e_bat * eta * (L/D))
 
     Args:
         range_m: Target flight range [m].
         battery_energy_density: Gravimetric energy density of battery e_bat [J/kg].
-        eta_electric: Total powertrain efficiency eta_el [-].
+        eta: Total propulsive efficiency eta = eta_el * eta_prop (powertrain * propeller) [-].
         lift_to_drag: Lift-to-drag ratio L/D [-].
         take_off_mass: Maximum take-off mass m_0 [kg].
 
@@ -199,7 +199,7 @@ def calc_electric_battery_mass_from_range(
         Required battery mass [kg].
     """
     m_bat = (range_m * GRAVITY * take_off_mass) / (
-        battery_energy_density * eta_electric * lift_to_drag
+        battery_energy_density * eta * lift_to_drag
     )
     return SiValue(m_bat, "kg")
 
@@ -208,23 +208,23 @@ def calc_electric_cruise_energy(
     range_m: SiValue,
     take_off_mass: SiValue,
     lift_to_drag: float,
-    eta_electric: float,
+    eta: float,
 ) -> SiValue:
     """Calculates electrical battery energy required for horizontal cruise flight [J].
 
     Formula:
-        E_el = (R * g * m_0) / (eta_el * (L/D))
+        E_el = (R * g * m_0) / (eta * (L/D))
 
     Args:
         range_m: Target cruise range [m].
         take_off_mass: Aircraft take-off mass m_0 [kg].
         lift_to_drag: Cruise lift-to-drag ratio L/D [-].
-        eta_electric: Powertrain efficiency eta_el [-].
+        eta: Total propulsive efficiency eta = eta_el * eta_prop (powertrain * propeller) [-].
 
     Returns:
         Required electrical energy [J].
     """
-    energy_j = (range_m * GRAVITY * take_off_mass) / (eta_electric * lift_to_drag)
+    energy_j = (range_m * GRAVITY * take_off_mass) / (eta * lift_to_drag)
     return SiValue(energy_j, "J")
 
 
@@ -233,25 +233,25 @@ def calc_electric_loiter_energy(
     loiter_speed: SiValue,
     take_off_mass: SiValue,
     lift_to_drag_loiter: float,
-    eta_electric: float,
+    eta: float,
 ) -> SiValue:
     """Calculates electrical battery energy required for loiter hold [J].
 
-    Derived from steady level flight equilibrium (P_el = D * v / eta_el):
-        E_el = (v * t_loiter * g * m_0) / (eta_el * (L/D)_loiter)
+    Derived from steady level flight equilibrium (P_el = D * v / eta):
+        E_el = (v * t_loiter * g * m_0) / (eta * (L/D)_loiter)
 
     Args:
         loiter_time: Loiter hold duration [s].
         loiter_speed: True airspeed during loiter [m/s].
         take_off_mass: Aircraft take-off mass m_0 [kg].
         lift_to_drag_loiter: Loiter lift-to-drag ratio [-].
-        eta_electric: Powertrain efficiency eta_el [-].
+        eta: Total propulsive efficiency eta = eta_el * eta_prop (powertrain * propeller) [-].
 
     Returns:
         Required electrical energy [J].
     """
     energy_j = (loiter_speed * loiter_time * GRAVITY * take_off_mass) / (
-        eta_electric * lift_to_drag_loiter
+        eta * lift_to_drag_loiter
     )
     return SiValue(energy_j, "J")
 
@@ -282,7 +282,7 @@ if __name__ == "__main__":
     mtom_el = des.initialSizing.maximumTakeOffMass.si
     ld_cr_el = ref.aerodynamics.liftToDragRatioCruise
     ld_loit_el = des.aerodynamics.liftToDragRatioLoiter
-    eta_el = des.propulsion.etaElectric
+    eta = des.propulsion.etaElectric * des.propulsion.etaPropCruise
     e_pack = SiValue(
         con.battery.cellEnergyDensityMax.si / con.battery.cellToPackFactorMin,
         "J/kg",
@@ -309,24 +309,24 @@ if __name__ == "__main__":
 
     print("\nBattery-Electric Aircraft (Breguet Electric):")
     m_bat_cr = calc_electric_battery_mass_from_range(
-        des.mission.range.si, e_pack, eta_el, ld_cr_el, mtom_el
+        des.mission.range.si, e_pack, eta, ld_cr_el, mtom_el
     )
     print(f"  Cruise battery pack mass ({des.mission.range}): {m_bat_cr:.1f}")
     m_bat_div = calc_electric_battery_mass_from_range(
-        con.mission.diversionDistance.si, e_pack, eta_el, ld_cr_el, mtom_el
+        con.mission.diversionDistance.si, e_pack, eta, ld_cr_el, mtom_el
     )
     print(
         f"  Diversion battery pack mass ({con.mission.diversionDistance}): {m_bat_div:.1f}"
     )
     e_cr = calc_electric_cruise_energy(
-        des.mission.range.si, mtom_el, ld_cr_el, eta_el
+        des.mission.range.si, mtom_el, ld_cr_el, eta
     ).to("kWh")
     print(f"  Cruise electric energy ({des.mission.range}): {e_cr:.1f}")
     e_loit = calc_electric_loiter_energy(
-        con.mission.loiterTime.si, v_cr_el, mtom_el, ld_loit_el, eta_el
+        con.mission.loiterTime.si, v_cr_el, mtom_el, ld_loit_el, eta
     ).to("kWh")
     print(f"  Loiter electric energy ({con.mission.loiterTime}): {e_loit:.1f}")
-    r_achieved = calc_electric_range(e_pack, eta_el, ld_cr_el, m_bat_cr, mtom_el).to(
+    r_achieved = calc_electric_range(e_pack, eta, ld_cr_el, m_bat_cr, mtom_el).to(
         "nm"
     )
     print(f"  Cruise range achieved ({m_bat_cr:.1f} pack): {r_achieved:.1f}")

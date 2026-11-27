@@ -142,21 +142,37 @@ class MissionEnergyCalculator:
         """Nominal mission cruise range [m]."""
         return self.design.mission.range.si
 
+    @property
+    def eta_cruise(self) -> float:
+        """Total propulsive efficiency in cruise (eta_electric * eta_prop_cruise) [-]."""
+        return self.design.propulsion.etaElectric * self.design.propulsion.etaPropCruise
+
+    @property
+    def eta_takeoff(self) -> float:
+        """Total propulsive efficiency in take-off/approach (eta_electric * eta_prop_to) [-]."""
+        return self.design.propulsion.etaElectric * self.design.propulsion.etaPropTakeOff
+
     def scaled_electric_energy(
-        self, fuel_mass_ref: SiValue, m_start_ref: SiValue
+        self,
+        fuel_mass_ref: SiValue,
+        m_start_ref: SiValue,
+        eta: float | None = None,
     ) -> SiValue:
         """Scales reference segment fuel mass to required electric battery energy [J]."""
         m_avg_ref = m_start_ref - 0.5 * fuel_mass_ref
         prop_energy = (
             self.ref_mission.propulsive_energy(fuel_mass_ref) * self.mtom / m_avg_ref
         )
-        return SiValue(prop_energy / self.design.propulsion.etaElectric, "J")
+        eff = eta if eta is not None else self.eta_cruise
+        return SiValue(prop_energy / eff, "J")
 
     def taxi_and_takeoff_energy(self) -> SiValue:
         """Electric energy required for taxi-out and take-off [J]."""
         fuel = self.ref_mission.ref.fuel
         return self.scaled_electric_energy(
-            fuel.taxiOutAndTakeOff.si, fuel.referenceMass.si
+            fuel.taxiOutAndTakeOff.si,
+            fuel.referenceMass.si,
+            eta=self.eta_takeoff,
         )
 
     def cruise_energy(self, distance: SiValue | None = None) -> SiValue:
@@ -166,7 +182,7 @@ class MissionEnergyCalculator:
             dist,
             self.mtom,
             self.lift_to_drag_cruise,
-            self.design.propulsion.etaElectric,
+            self.eta_cruise,
         )
 
     def climb_and_descent_energy(self) -> SiValue:
@@ -187,6 +203,7 @@ class MissionEnergyCalculator:
         return self.scaled_electric_energy(
             self.ref_mission.ref.fuel.approachLandingAndTaxiIn.si,
             self.ref_mission.m_end_descent,
+            eta=self.eta_takeoff,
         )
 
     def trip_energy(self) -> SiValue:
@@ -210,7 +227,7 @@ class MissionEnergyCalculator:
             self.constraints.performance.cruiseSpeedMin.si,
             self.mtom,
             self.design.aerodynamics.liftToDragRatioLoiter,
-            self.design.propulsion.etaElectric,
+            self.eta_cruise,
         )
 
     def diversion_energy(self) -> SiValue:
@@ -259,7 +276,7 @@ class MissionEnergyCalculator:
         )
         return calc_electric_range(
             e_pack,
-            self.design.propulsion.etaElectric,
+            self.eta_cruise,
             ld,
             self.battery_pack_mass(electric_energy),
             self.mtom,
