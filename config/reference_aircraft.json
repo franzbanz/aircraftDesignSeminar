@@ -52,7 +52,7 @@
     "descent": [9, "kg"],
     "approachLandingAndTaxiIn": [17, "kg"],
     "reserve": [186, "kg"],
-    "total": [350, "kg"]
+    "total": [339, "kg"]
   },
   "assumptions": {
     // from flight manual p. 56

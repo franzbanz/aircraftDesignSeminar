@@ -46,7 +46,7 @@
     "etaPropTakeOff": [0.75, ""],
     "etaPropClimb": [0.78, ""],
     "etaPropCruise": [0.85, ""],
-    "etaElectric": [0.85, ""],
+    "etaElectric": [0.88, ""],
     "engineLeadingEdgeOffset": [-0.78, "m"],
     "pylonLeadingEdgeOffset": [-0.22, "m"]
   },
@@ -83,6 +83,7 @@
   "mission": {
     "range": [100, "nm"],
     "cruiseSpeedTAS": [170, "kts"],
+    // max. altitude (10000ft) without pressurized cabin / supplemental oxygen (EASA Air OPS, EU 965/2012, CAT.IDE.A.240, p. 1341)
     "cruiseAltitude": [10000, "ft"],
     "numberOfPassengers": [19, ""],
     "baggageMassPerPassenger": [15, "kg"]
